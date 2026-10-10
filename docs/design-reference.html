@@ -1,0 +1,712 @@
+<!-- Plainbill design reference, exported from Claude Design (v1). Static markup + the artboard logic script (seed rows, status colors, waterfall copy). Fonts: load Figtree + IBM Plex Mono from Google Fonts. {{ }} placeholders are filled by the logic script; read it for the grid rows. -->
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics="">
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>/* latin-ext */
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("9018e30b-e351-4d67-bac1-fbcede5fcf8d") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("a8aefe2e-aa6d-4179-9303-5d6c3ff30fba") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("9018e30b-e351-4d67-bac1-fbcede5fcf8d") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("a8aefe2e-aa6d-4179-9303-5d6c3ff30fba") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("9018e30b-e351-4d67-bac1-fbcede5fcf8d") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("a8aefe2e-aa6d-4179-9303-5d6c3ff30fba") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("9018e30b-e351-4d67-bac1-fbcede5fcf8d") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("a8aefe2e-aa6d-4179-9303-5d6c3ff30fba") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("9018e30b-e351-4d67-bac1-fbcede5fcf8d") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("a8aefe2e-aa6d-4179-9303-5d6c3ff30fba") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("73feeb8c-fe9f-4c7f-aa72-57bef814647c") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("8fc58090-59e5-4c6f-8ac0-d693409783ee") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("1dc12c3b-89c0-4ee3-86d3-75ac729dfec5") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("08f53073-5c6c-47a0-9163-ebaca4744af0") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("8cc53dec-b188-48f3-b2e2-ec00e4257b41") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("151e5d31-4e2f-466e-a23d-72496534d08e") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("d5cd9d85-9f7e-4814-97f9-3f20cfbc357c") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("f161f8da-e184-4fad-8f75-f4abb069a206") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("8573b418-a592-4b82-ba22-813c8f9c0e3b") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("73ea5553-efcd-4611-9e59-fd7165569a32") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>body{margin:0;background:#EAE6DF;font-family:'Figtree',system-ui,sans-serif;color:#1C2B2D;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}a{color:#1D5C5C}a:hover{color:#134545}textarea,input,button{font-family:inherit}.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}.dv-tid{font:600 10px 'IBM Plex Mono',monospace;padding:3px 7px;background:#1C2B2D;color:#fff;border-radius:4px;text-decoration:none}.dv-tname{font:600 14px/1.2 'Figtree',sans-serif;color:#1C2B2D}.dv-opts{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}.dv-oid{font:600 10.5px 'IBM Plex Mono',monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1C2B2D;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:500 13px/1.3 'Figtree',sans-serif;color:#1C2B2D}.dv-olabel span{color:rgba(0,0,0,.55);font-weight:400}.dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}.dv-opt:target .dv-oid{background:#1D5C5C;color:#fff}.dv-next{margin:28px 0 0;font:13px/1.5 'Figtree',sans-serif;color:rgba(0,0,0,.55)}</style>
+</helmet>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Plainbill — hackathon artboards, v1</span></div>
+<div style="max-width:880px;margin:0 0 32px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;font-size:13px;line-height:1.5;color:#3E4A4B">
+<div><div style="font-weight:700;color:#1C2B2D;margin-bottom:4px">Assumptions</div>"Plainbill" is a working name — swap freely. All data fictional. Figtree stands in for Inter (same clean, friendly sans). Deep teal is the only brand color; everything else is warm neutral.</div>
+<div><div style="font-weight:700;color:#1C2B2D;margin-bottom:4px">PayPal</div>Striped slots mark where the official PayPal SDK buttons render (Smart Button, Pay Later). We never restyle or imitate them. In email, the slot is PayPal's official static button image.</div>
+<div><div style="font-weight:700;color:#1C2B2D;margin-bottom:4px">Status system</div>Every status = icon + label + color: <b>!</b> review, <b>×</b> denied, <b>→</b> ready, <b>↗</b> sent, <b>◐</b> partial, <b>✓</b> paid. Aging pills always print their bucket.</div>
+</div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a"><div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Staff dashboard <span>· desktop 1440 · grid styled after AG Grid Quartz</span></div>
+<div class="dv-card" style="width:1440px;background:#F7F5F1">
+<div style="height:64px;background:#FFFFFF;border-bottom:1px solid #E5E1D9;display:flex;align-items:center;gap:32px;padding:0 32px">
+<div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:8px;background:#1D5C5C;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px">P</div><div style="font-weight:700;font-size:17px">Plainbill</div><div style="font-size:13px;color:#5C6766;padding-left:10px;border-left:1px solid #E5E1D9">Harborview Family Medicine</div></div>
+<nav style="display:flex;gap:4px;font-size:14px;font-weight:500"><span style="padding:8px 14px;border-radius:8px;background:#E2EEEC;color:#134545;font-weight:600">Dashboard</span><span style="padding:8px 14px;color:#3E4A4B">Intake</span><span style="padding:8px 14px;color:#3E4A4B">Invoices</span><span style="padding:8px 14px;color:#3E4A4B">Patients</span></nav>
+<div style="flex:1"></div>
+<div style="width:280px;height:38px;border:1px solid #E5E1D9;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:13px;color:#5C6766;background:#FBFAF8">Search patient, claim, or invoice</div>
+<div style="width:36px;height:36px;border-radius:50%;background:#ECEAE5;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">RM</div>
+</div>
+<div style="padding:28px 32px 36px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px">
+<div><div style="font-size:26px;font-weight:700;letter-spacing:-0.01em">Good morning, Rosa</div><div style="font-size:15px;color:#3E4A4B;margin-top:4px">4 visits need a quick check, then 2 bills are ready to send. About 5 minutes.</div></div>
+<div style="display:flex;gap:10px"><button style="height:42px;padding:0 16px;border-radius:8px;border:1px solid #D5D0C6;background:#fff;font-size:14px;font-weight:600;color:#1C2B2D">Upload remittance</button><button style="height:42px;padding:0 18px;border-radius:8px;border:0;background:#1D5C5C;font-size:14px;font-weight:600;color:#fff">Start review (4) →</button></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px">
+<div style="background:#fff;border:1px solid #E5E1D9;border-radius:12px;padding:18px 20px"><div style="font-size:13px;color:#5C6766;font-weight:500">Outstanding patient balances</div><div style="font-size:30px;font-weight:700;margin-top:6px;letter-spacing:-0.02em">$18,420</div><div style="font-size:13px;color:#3E4A4B;margin-top:4px">across 41 patients</div></div>
+<div style="background:#fff;border:1px solid #E5E1D9;border-radius:12px;padding:18px 20px"><div style="font-size:13px;color:#5C6766;font-weight:500">Collected this month</div><div style="font-size:30px;font-weight:700;margin-top:6px;letter-spacing:-0.02em">$9,860</div><div style="font-size:13px;color:#24633A;margin-top:4px;font-weight:500">▲ $2,140 vs. September</div></div>
+<div style="background:#fff;border:1px solid #E5E1D9;border-radius:12px;padding:18px 20px"><div style="font-size:13px;color:#5C6766;font-weight:500">Average days to pay</div><div style="font-size:30px;font-weight:700;margin-top:6px;letter-spacing:-0.02em">11 days</div><div style="font-size:13px;color:#24633A;margin-top:4px;font-weight:500">▼ from 34 on paper statements</div></div>
+<div style="background:#FAEFD6;border:1px solid #EFD9A0;border-radius:12px;padding:18px 20px"><div style="font-size:13px;color:#7A4E00;font-weight:600">! Items needing review</div><div style="font-size:30px;font-weight:700;margin-top:6px;letter-spacing:-0.02em;color:#5A3A00">4</div><div style="font-size:13px;color:#7A4E00;margin-top:4px;font-weight:600;text-decoration:underline">Start with Priya Raman →</div></div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start">
+<div style="background:#fff;border:1px solid #E5E1D9;border-radius:12px;overflow:hidden">
+<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #ECE8E1">
+<div style="font-size:16px;font-weight:700">Patient balances</div>
+<div style="display:flex;background:#F2EFEA;border-radius:8px;padding:3px;font-size:13px;font-weight:500"><span style="padding:5px 12px;border-radius:6px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08)">Needs action</span><span style="padding:5px 12px;color:#5C6766">All</span></div>
+<div style="flex:1"></div>
+<div style="font-size:13px;color:#5C6766">Group by <b style="color:#1C2B2D">Status</b> ▾</div>
+<div style="height:32px;width:200px;border:1px solid #E5E1D9;border-radius:6px;font-size:13px;color:#5C6766;display:flex;align-items:center;padding:0 10px">Quick filter…</div>
+</div>
+<div style="display:grid;grid-template-columns:28px 184px 84px 140px 84px 96px 96px 112px minmax(0,1fr);align-items:center;height:42px;background:#F8F7F4;border-bottom:1px solid #E5E1D9;font-size:12px;font-weight:600;color:#5C6766;padding:0 0 0 8px">
+<span></span><span style="padding:0 12px">Patient</span><span style="padding:0 12px">Visit</span><span style="padding:0 12px">Payer</span><span style="padding:0 12px;text-align:right">Billed</span><span style="padding:0 12px;text-align:right">Insurance paid</span><span style="padding:0 12px;text-align:right">Patient owes</span><span style="padding:0 12px">Days out</span><span style="padding:0 12px">AI suggests</span>
+</div>
+<sc-for list="{{ groups }}" as="g" hint-placeholder-count="6">
+<div>
+<div style="display:flex;align-items:center;gap:10px;height:42px;padding:0 16px;background:#FBFAF7;border-bottom:1px solid #ECE8E1;font-size:13px">
+<span style="color:#5C6766;font-size:10px;width:12px">▼</span>
+<span style="display:inline-flex;align-items:center;gap:7px;padding:3px 11px 3px 4px;border-radius:999px;background:{{ g.bg }};border:1px solid {{ g.bd }};color:{{ g.fg }};font-weight:700;font-size:12px"><span style="width:18px;height:18px;border-radius:50%;background:{{ g.fg }};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">{{ g.icon }}</span>{{ g.label }}</span>
+<span style="color:#5C6766">{{ g.meta }}</span>
+</div>
+<sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="2">
+<div>
+<div style="display:grid;grid-template-columns:28px 184px 84px 140px 84px 96px 96px 112px minmax(0,1fr);align-items:center;min-height:54px;border-bottom:1px solid #ECE8E1;font-size:13px;padding:0 0 0 8px;background:{{ r.bg }}">
+<span style="color:#5C6766;font-size:10px;text-align:center">{{ r.caret }}</span>
+<div style="padding:0 12px"><div style="font-weight:600;font-size:14px">{{ r.name }}</div><div style="font-size:12px;color:#5C6766">{{ r.sub }}</div></div>
+<span style="padding:0 12px">{{ r.date }}</span>
+<span style="padding:0 12px">{{ r.payer }}</span>
+<span style="padding:0 12px;text-align:right">{{ r.billed }}</span>
+<span style="padding:0 12px;text-align:right">{{ r.ins }}</span>
+<span style="padding:0 12px;text-align:right;font-weight:700">{{ r.owes }}</span>
+<div style="padding:0 12px;display:flex;align-items:center;gap:6px">
+<sc-if value="{{ r.age }}" hint-placeholder-val="{{ true }}"><span style="font-size:13px;min-width:28px">{{ r.dayN }}</span><span style="padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;background:{{ r.ageBg }};color:{{ r.ageFg }}">{{ r.ageL }}</span></sc-if>
+<sc-if value="{{ r.noAge }}"><span style="font-size:12px;color:#5C6766">{{ r.daysText }}</span></sc-if>
+</div>
+<div style="padding:0 14px 0 12px">
+<sc-if value="{{ r.hasAi }}" hint-placeholder-val="{{ true }}"><button style="display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:5px 12px;border-radius:8px;border:1px solid #B9D3CF;background:#E2EEEC;color:#134545;font-size:12.5px;font-weight:600;text-align:left;cursor:pointer"><span style="font-size:11px">✦</span>{{ r.ai }}</button></sc-if>
+<sc-if value="{{ r.paidNow }}"><span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;background:#24633A;color:#fff;font-size:12.5px;font-weight:700">✓ Paid via PayPal · just now</span></sc-if>
+<sc-if value="{{ r.noAi }}"><span style="color:#5C6766">—</span></sc-if>
+</div>
+</div>
+<sc-if value="{{ r.expanded }}">
+<div style="background:#FBFAF7;border-bottom:1px solid #E5E1D9;padding:18px 20px 20px 48px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) 200px;gap:28px">
+<div>
+<div style="font-size:12px;font-weight:700;color:#5C6766;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Services</div>
+<div style="display:grid;grid-template-columns:62px minmax(0,1fr) 70px;row-gap:8px;font-size:13px;align-items:baseline">
+<span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5C6766">99214</span><span>Office visit, established patient (30–39 min)</span><span style="text-align:right">$350.00</span>
+<span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5C6766">80053</span><span>Blood work — metabolic panel</span><span style="text-align:right">$180.00</span>
+<span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5C6766">93000</span><span>Heart rhythm test (ECG)</span><span style="text-align:right">$320.00</span>
+<span></span><span style="font-weight:700;border-top:1px solid #E5E1D9;padding-top:8px">Billed</span><span style="text-align:right;font-weight:700;border-top:1px solid #E5E1D9;padding-top:8px">$850.00</span>
+</div>
+</div>
+<div>
+<div style="font-size:12px;font-weight:700;color:#5C6766;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Adjustments, translated</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+<div style="display:flex;gap:8px;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:#ECEAE5;padding:1px 6px;border-radius:4px">CO-45</span><span style="color:#5C6766">→</span><span style="flex:1">Insurance discount (contract rate)</span><span>−$400.00</span></div>
+<div style="display:flex;gap:8px;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:#ECEAE5;padding:1px 6px;border-radius:4px">PAID</span><span style="color:#5C6766">→</span><span style="flex:1">BlueCross BlueShield paid</span><span>−$210.00</span></div>
+<div style="display:flex;gap:8px;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:#ECEAE5;padding:1px 6px;border-radius:4px">PR-1</span><span style="color:#5C6766">→</span><span style="flex:1">Deductible — patient pays</span><span>$200.00</span></div>
+<div style="display:flex;gap:8px;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:#ECEAE5;padding:1px 6px;border-radius:4px">PR-2</span><span style="color:#5C6766">→</span><span style="flex:1">Coinsurance — patient's share</span><span>$40.00</span></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;justify-content:space-between">
+<div><div style="font-size:12px;color:#5C6766">Patient owes</div><div style="font-size:26px;font-weight:700">$240.00</div><div style="font-size:12px;color:#3E4A4B;margin-top:2px">Plan-eligible: 3 × $80</div></div>
+<button style="height:42px;border-radius:8px;border:0;background:#1D5C5C;color:#fff;font-size:14px;font-weight:600">Review &amp; send →</button>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<div style="background:#fff;border:1px solid #E5E1D9;border-radius:12px;padding:18px 20px">
+<div style="font-size:15px;font-weight:700">Balances by age</div><div style="font-size:12px;color:#5C6766;margin-bottom:16px">Patient-owed, $18,420 total</div>
+<div style="display:flex;flex-direction:column;gap:12px;font-size:13px">
+<div style="display:grid;grid-template-columns:52px minmax(0,1fr) 58px;gap:10px;align-items:center"><span style="font-weight:600">0–30</span><div style="height:16px;border-radius:4px;background:#1D5C5C;width:100%"></div><span style="text-align:right">$7,240</span></div>
+<div style="display:grid;grid-template-columns:52px minmax(0,1fr) 58px;gap:10px;align-items:center"><span style="font-weight:600">31–60</span><div style="height:16px;border-radius:4px;background:#1D5C5C;width:71%"></div><span style="text-align:right">$5,110</span></div>
+<div style="display:grid;grid-template-columns:52px minmax(0,1fr) 58px;gap:10px;align-items:center"><span style="font-weight:600">61–90</span><div style="height:16px;border-radius:4px;background:#1D5C5C;width:48%"></div><span style="text-align:right">$3,480</span></div>
+<div style="display:grid;grid-template-columns:52px minmax(0,1fr) 58px;gap:10px;align-items:center"><span style="font-weight:600">90+</span><div style="height:16px;border-radius:4px;background:#1D5C5C;width:36%"></div><span style="text-align:right">$2,590</span></div>
+</div>
+</div>
+<div style="background:#fff;border:1px solid #E5E1D9;border-radius:12px;padding:18px 20px">
+<div style="font-size:15px;font-weight:700">Denials by payer</div><div style="font-size:12px;color:#5C6766;margin-bottom:16px">Last 90 days</div>
+<div style="display:flex;flex-direction:column;gap:12px;font-size:13px">
+<div style="display:grid;grid-template-columns:96px minmax(0,1fr) 24px;gap:10px;align-items:center"><span style="font-weight:600">UnitedHealth</span><div style="height:16px;border-radius:4px;background:#B5483E;width:100%"></div><span style="text-align:right">6</span></div>
+<div style="display:grid;grid-template-columns:96px minmax(0,1fr) 24px;gap:10px;align-items:center"><span style="font-weight:600">BlueCross</span><div style="height:16px;border-radius:4px;background:#B5483E;width:67%"></div><span style="text-align:right">4</span></div>
+<div style="display:grid;grid-template-columns:96px minmax(0,1fr) 24px;gap:10px;align-items:center"><span style="font-weight:600">Aetna</span><div style="height:16px;border-radius:4px;background:#B5483E;width:50%"></div><span style="text-align:right">3</span></div>
+</div>
+<div style="margin-top:16px;padding-top:14px;border-top:1px solid #ECE8E1;font-size:13px;color:#3E4A4B;line-height:1.45"><b style="color:#1C2B2D">Most common:</b> missing prior authorization (CO-197). 5 of 13.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b"><div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Intake <span>· desktop 1440 · after upload, AI-unsure fields flagged</span></div>
+<div class="dv-card" style="width:1440px;background:#F7F5F1">
+<div style="height:64px;background:#FFFFFF;border-bottom:1px solid #E5E1D9;display:flex;align-items:center;gap:32px;padding:0 32px">
+<div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:8px;background:#1D5C5C;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px">P</div><div style="font-weight:700;font-size:17px">Plainbill</div><div style="font-size:13px;color:#5C6766;padding-left:10px;border-left:1px solid #E5E1D9">Harborview Family Medicine</div></div>
+<nav style="display:flex;gap:4px;font-size:14px;font-weight:500"><span style="padding:8px 14px;color:#3E4A4B">Dashboard</span><span style="padding:8px 14px;border-radius:8px;background:#E2EEEC;color:#134545;font-weight:600">Intake</span><span style="padding:8px 14px;color:#3E4A4B">Invoices</span><span style="padding:8px 14px;color:#3E4A4B">Patients</span></nav>
+</div>
+<div style="padding:28px 32px 36px;display:flex;flex-direction:column;gap:24px;max-width:1180px">
+<div><div style="font-size:26px;font-weight:700;letter-spacing:-0.01em">Add insurance responses &amp; visits</div><div style="font-size:15px;color:#3E4A4B;margin-top:4px">Drop files here. We'll read them and work out what each patient owes.</div></div>
+<div style="border:2px dashed #B9D3CF;background:#FFFFFF;border-radius:12px;padding:24px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 220px;gap:16px;align-items:stretch">
+<div style="border:1px solid #E5E1D9;border-radius:10px;padding:16px;background:#FBFAF8"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#134545;font-weight:500">.835 / .txt</div><div style="font-size:15px;font-weight:700;margin-top:6px">Insurance remittance</div><div style="font-size:13px;color:#5C6766;margin-top:2px">The electronic file your clearinghouse sends</div></div>
+<div style="border:1px solid #E5E1D9;border-radius:10px;padding:16px;background:#FBFAF8"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#134545;font-weight:500">.pdf</div><div style="font-size:15px;font-weight:700;margin-top:6px">Explanation of Benefits</div><div style="font-size:13px;color:#5C6766;margin-top:2px">Scanned or downloaded EOB from a payer</div></div>
+<div style="border:1px solid #E5E1D9;border-radius:10px;padding:16px;background:#FBFAF8"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#134545;font-weight:500">.pdf / .csv</div><div style="font-size:15px;font-weight:700;margin-top:6px">Self-pay visit summary</div><div style="font-size:13px;color:#5C6766;margin-top:2px">Visits with no insurance on file</div></div>
+<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;text-align:center"><div style="font-size:14px;font-weight:600">Drag files anywhere here</div><button style="height:40px;padding:0 16px;border-radius:8px;border:1px solid #D5D0C6;background:#fff;font-size:14px;font-weight:600">Browse files</button></div>
+</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:13px">
+<span style="display:inline-flex;gap:8px;align-items:center;padding:6px 12px;border-radius:8px;background:#fff;border:1px solid #E5E1D9"><b style="color:#24633A">✓</b>BCBS_ERA_1008.835 · 2 visits</span>
+<span style="display:inline-flex;gap:8px;align-items:center;padding:6px 12px;border-radius:8px;background:#fff;border:1px solid #E5E1D9"><b style="color:#24633A">✓</b>aetna_eob_raman.pdf · 1 visit</span>
+<span style="display:inline-flex;gap:8px;align-items:center;padding:6px 12px;border-radius:8px;background:#fff;border:1px solid #E5E1D9"><b style="color:#24633A">✓</b>uhc_eob_sept.pdf · 1 visit</span>
+<span style="display:inline-flex;gap:8px;align-items:center;padding:6px 12px;border-radius:8px;background:#fff;border:1px solid #E5E1D9"><b style="color:#24633A">✓</b>selfpay_0929.csv · 1 visit</span>
+</div>
+<div style="background:#fff;border:1px solid #E5E1D9;border-radius:12px;overflow:hidden">
+<div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-bottom:1px solid #ECE8E1">
+<div><div style="font-size:16px;font-weight:700">We found 5 visits</div><div style="font-size:13px;color:#3E4A4B;margin-top:2px"><span style="display:inline-flex;align-items:center;gap:6px;color:#7A4E00;font-weight:600"><span style="width:16px;height:16px;border-radius:50%;background:#7A4E00;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">?</span>2 fields need a quick look</span> — click to confirm or fix. Everything else matched.</div></div>
+<div style="flex:1"></div>
+<button style="height:42px;padding:0 16px;border-radius:8px;border:1px solid #D5D0C6;background:#fff;font-size:14px;font-weight:600">Discard</button>
+<button style="height:42px;padding:0 18px;border-radius:8px;border:0;background:#1D5C5C;color:#fff;font-size:14px;font-weight:600">Approve all 5</button>
+</div>
+<div style="display:grid;grid-template-columns:200px 170px 96px 130px 96px 120px minmax(0,1fr) 110px;font-size:12px;font-weight:600;color:#5C6766;background:#F8F7F4;border-bottom:1px solid #E5E1D9;height:40px;align-items:center">
+<span style="padding:0 16px">Source</span><span style="padding:0 12px">Patient</span><span style="padding:0 12px">Visit</span><span style="padding:0 12px">Payer</span><span style="padding:0 12px;text-align:right">Billed</span><span style="padding:0 12px;text-align:right">Insurance paid</span><span style="padding:0 12px">Adjustments</span><span style="padding:0 16px 0 12px;text-align:right">Patient owes</span>
+</div>
+<div style="display:grid;grid-template-columns:200px 170px 96px 130px 96px 120px minmax(0,1fr) 110px;font-size:13px;border-bottom:1px solid #ECE8E1;min-height:52px;align-items:center">
+<span style="padding:0 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#3E4A4B">835 · BCBS_ERA_1008</span><span style="padding:0 12px;font-weight:600">Maria Delgado</span><span style="padding:0 12px">10/3/26</span><span style="padding:0 12px">BlueCross BS</span><span style="padding:0 12px;text-align:right">$850.00</span><span style="padding:0 12px;text-align:right">$210.00</span><span style="padding:0 12px">Insurance discount · Deductible · Coinsurance</span><span style="padding:0 16px 0 12px;text-align:right;font-weight:700">$240.00</span>
+</div>
+<div style="display:grid;grid-template-columns:200px 170px 96px 130px 96px 120px minmax(0,1fr) 110px;font-size:13px;border-bottom:1px solid #ECE8E1;min-height:52px;align-items:center">
+<span style="padding:0 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#3E4A4B">835 · BCBS_ERA_1008</span><span style="padding:0 12px;font-weight:600">Samuel Ortiz</span><span style="padding:0 12px">9/22/26</span><span style="padding:0 12px">BlueCross BS</span><span style="padding:0 12px;text-align:right">$380.00</span><span style="padding:0 12px;text-align:right">$300.00</span><span style="padding:0 12px">Insurance discount · Copay</span><span style="padding:0 16px 0 12px;text-align:right;font-weight:700">$80.00</span>
+</div>
+<div style="display:grid;grid-template-columns:200px 170px 96px 130px 96px 120px minmax(0,1fr) 110px;font-size:13px;border-bottom:1px solid #ECE8E1;min-height:72px;align-items:center;background:#FFFBF2">
+<span style="padding:0 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#3E4A4B">EOB · aetna_eob_raman</span><span style="padding:0 12px;font-weight:600">Priya Raman</span><span style="padding:0 12px">10/1/26</span><span style="padding:0 12px">Aetna</span><span style="padding:0 12px;text-align:right">$420.00</span>
+<div style="padding:0 8px;display:flex;justify-content:flex-end"><div style="border:1.5px solid #D9A53C;background:#FAEFD6;border-radius:8px;padding:5px 8px;text-align:right"><div style="font-weight:700;color:#5A3A00;display:flex;gap:6px;align-items:center;justify-content:flex-end"><span style="width:16px;height:16px;border-radius:50%;background:#7A4E00;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">?</span>$260.00</div><div style="font-size:11px;color:#7A4E00">or $280? Scan blurry</div></div></div>
+<span style="padding:0 12px">Insurance discount · Copay</span><span style="padding:0 16px 0 12px;text-align:right;font-weight:700">$160.00</span>
+</div>
+<div style="display:grid;grid-template-columns:200px 170px 96px 130px 96px 120px minmax(0,1fr) 110px;font-size:13px;border-bottom:1px solid #ECE8E1;min-height:72px;align-items:center;background:#FFFBF2">
+<span style="padding:0 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#3E4A4B">EOB · uhc_eob_sept</span><span style="padding:0 12px;font-weight:600">Tomás Herrera</span><span style="padding:0 12px">9/12/26</span><span style="padding:0 12px">UnitedHealthcare</span><span style="padding:0 12px;text-align:right">$1,180.00</span><span style="padding:0 12px;text-align:right">$812.00</span>
+<div style="padding:0 8px"><div style="display:inline-block;border:1.5px solid #D9A53C;background:#FAEFD6;border-radius:8px;padding:5px 8px"><div style="font-weight:700;color:#5A3A00;display:flex;gap:6px;align-items:center"><span style="width:16px;height:16px;border-radius:50%;background:#7A4E00;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">?</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px">PR-3</span> → Copay</div><div style="font-size:11px;color:#7A4E00">Code unclear — may be PR-2 (coinsurance)</div></div></div>
+<span style="padding:0 16px 0 12px;text-align:right;font-weight:700">$368.00</span>
+</div>
+<div style="display:grid;grid-template-columns:200px 170px 96px 130px 96px 120px minmax(0,1fr) 110px;font-size:13px;min-height:52px;align-items:center">
+<span style="padding:0 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#3E4A4B">Self-pay · selfpay_0929</span><span style="padding:0 12px;font-weight:600">Kevin Lam</span><span style="padding:0 12px">9/29/26</span><span style="padding:0 12px">Self-pay</span><span style="padding:0 12px;text-align:right">$275.00</span><span style="padding:0 12px;text-align:right;color:#5C6766">—</span><span style="padding:0 12px">Self-pay rate applied</span><span style="padding:0 16px 0 12px;text-align:right;font-weight:700">$275.00</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c"><div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Review &amp; send drawer <span>· slides over the dashboard</span></div>
+<div class="dv-card" style="width:1440px;height:1040px;position:relative;background:#F7F5F1">
+<div style="position:absolute;inset:0;padding:0;display:flex;flex-direction:column">
+<div style="height:64px;background:#fff;border-bottom:1px solid #E5E1D9"></div>
+<div style="padding:28px 32px;display:flex;flex-direction:column;gap:20px">
+<div style="height:30px;width:340px;background:#E5E1D9;border-radius:6px"></div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px"><div style="height:110px;background:#fff;border-radius:12px"></div><div style="height:110px;background:#fff;border-radius:12px"></div><div style="height:110px;background:#fff;border-radius:12px"></div><div style="height:110px;background:#fff;border-radius:12px"></div></div>
+<div style="height:640px;background:#fff;border-radius:12px"></div>
+</div>
+</div>
+<div style="position:absolute;inset:0;background:rgba(28,43,45,.42)"></div>
+<div style="position:absolute;top:0;right:0;bottom:0;width:620px;background:#fff;box-shadow:-12px 0 40px rgba(0,0,0,.18);display:flex;flex-direction:column">
+<div style="padding:22px 28px 18px;border-bottom:1px solid #ECE8E1;display:flex;gap:16px;align-items:flex-start">
+<div style="flex:1"><div style="display:inline-flex;align-items:center;gap:6px;padding:2px 10px 2px 3px;border-radius:999px;background:#ECEAE5;border:1px solid #DAD6CE;color:#454B4D;font-weight:700;font-size:12px"><span style="width:16px;height:16px;border-radius:50%;background:#454B4D;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px">→</span>Ready to invoice</div><div style="font-size:22px;font-weight:700;margin-top:8px">Maria Delgado</div><div style="font-size:14px;color:#3E4A4B">Visit Oct 3, 2026 · Dr. Anand Patel · BlueCross BlueShield</div></div>
+<button style="width:40px;height:40px;border-radius:8px;border:1px solid #E5E1D9;background:#fff;font-size:18px;color:#3E4A4B">×</button>
+</div>
+<div style="flex:1;overflow:hidden;padding:20px 28px;display:flex;flex-direction:column;gap:22px">
+<div style="display:grid;grid-template-columns:160px minmax(0,1fr);gap:20px;align-items:center;background:#F7F5F1;border-radius:12px;padding:16px 18px">
+<div><div style="font-size:13px;color:#5C6766">Patient owes</div><div style="font-size:32px;font-weight:700;letter-spacing:-0.02em">$240.00</div></div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;row-gap:4px;font-size:13px"><span>Billed</span><span style="text-align:right">$850.00</span><span>Insurance discount</span><span style="text-align:right">−$400.00</span><span>Insurance paid</span><span style="text-align:right">−$210.00</span><span style="font-weight:700">Deductible $200 + coinsurance $40</span><span style="text-align:right;font-weight:700">$240.00</span></div>
+</div>
+<div>
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="font-size:15px;font-weight:700">Message to Maria</div><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#E2EEEC;color:#134545">✦ AI draft</span><div style="flex:1"></div><span style="font-size:13px;color:#1D5C5C;font-weight:600">Make simpler</span><span style="font-size:13px;color:#1D5C5C;font-weight:600">Spanish</span></div>
+<textarea style="width:100%;box-sizing:border-box;height:132px;border:1px solid #D5D0C6;border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.5;color:#1C2B2D;resize:none">Hi Maria, thanks for visiting Dr. Patel on Oct 3. Your visit came to $850. Your BlueCross plan lowered that to $450 and paid $210. The $240 left is $200 toward your yearly deductible plus $40 for your share of the cost. You can pay in full or split it into 3 payments of $80.</textarea>
+<div style="font-size:12px;color:#5C6766;margin-top:6px">Written from the 835 remittance. No diagnosis details are included.</div>
+</div>
+<div>
+<div style="font-size:15px;font-weight:700;margin-bottom:10px">Payment options</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+<div sc-camel-on-click="{{ setPayFull }}" style="cursor:pointer;border:2px solid {{ payFullBd }};border-radius:10px;padding:12px 14px;background:{{ payFullBg }}"><div style="display:flex;gap:8px;align-items:center;font-weight:700;font-size:14px"><span style="width:16px;height:16px;border-radius:50%;border:2px solid #1D5C5C;box-sizing:border-box;background:{{ payFullDot }}"></span>Pay in full</div><div style="font-size:12px;color:#5C6766;margin-top:4px">$240 today</div></div>
+<div sc-camel-on-click="{{ setPayPartial }}" style="cursor:pointer;border:2px solid {{ payPartBd }};border-radius:10px;padding:12px 14px;background:{{ payPartBg }}"><div style="display:flex;gap:8px;align-items:center;font-weight:700;font-size:14px"><span style="width:16px;height:16px;border-radius:50%;border:2px solid #1D5C5C;box-sizing:border-box;background:{{ payPartDot }}"></span>Allow partial</div><div style="font-size:12px;color:#5C6766;margin-top:4px">Any amount, $20 min</div></div>
+<div sc-camel-on-click="{{ setPayPlan }}" style="cursor:pointer;border:2px solid {{ payPlanBd }};border-radius:10px;padding:12px 14px;background:{{ payPlanBg }}"><div style="display:flex;gap:8px;align-items:center;font-weight:700;font-size:14px"><span style="width:16px;height:16px;border-radius:50%;border:2px solid #1D5C5C;box-sizing:border-box;background:{{ payPlanDot }}"></span>Payment plan</div><div style="font-size:12px;color:#5C6766;margin-top:4px">{{ planSummary }}</div></div>
+</div>
+<sc-if value="{{ isPlan }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:12px;margin-top:10px;font-size:13px;color:#3E4A4B"><span>Split over</span><div style="display:flex;background:#F2EFEA;border-radius:8px;padding:3px;font-weight:600"><span sc-camel-on-click="{{ set3 }}" style="cursor:pointer;padding:6px 14px;border-radius:6px;background:{{ m3Bg }}">3 months</span><span sc-camel-on-click="{{ set6 }}" style="cursor:pointer;padding:6px 14px;border-radius:6px;background:{{ m6Bg }}">6 months</span></div><span>No interest or fees from Harborview</span></div>
+</sc-if>
+</div>
+<div style="display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;align-items:center">
+<div style="height:150px;border:1px solid #E5E1D9;border-radius:8px;background:#F7F5F1;padding:10px;box-sizing:border-box;display:flex;flex-direction:column;gap:6px">
+<div style="height:10px;width:50px;background:repeating-linear-gradient(135deg,#E5E1D9 0 3px,#EFECE6 3px 6px);border-radius:2px"></div>
+<div style="background:#fff;border-radius:4px;padding:8px;display:flex;flex-direction:column;gap:5px;flex:1"><div style="height:5px;width:70%;background:#D5D0C6;border-radius:2px"></div><div style="font-size:15px;font-weight:800">$240.00</div><div style="display:flex;height:7px;border-radius:2px;overflow:hidden"><span style="width:47%;background:#CFDDDA"></span><span style="width:25%;background:#7FA6A3"></span><span style="width:28%;background:#1D5C5C"></span></div><div style="height:16px;border-radius:3px;background:repeating-linear-gradient(135deg,#E5E1D9 0 3px,#EFECE6 3px 6px);margin-top:4px"></div><div style="height:4px;width:50%;background:#E5E1D9;border-radius:2px"></div></div>
+</div>
+<div style="font-size:13px;color:#3E4A4B;line-height:1.5"><div style="font-weight:700;color:#1C2B2D;font-size:14px">Email preview</div>Subject: Your Oct 3 visit — $240.00 due Nov 2<br>To m•••••@gmail.com · <a href="#1d" style="font-weight:600">Open full preview</a></div>
+</div>
+</div>
+<div style="padding:16px 28px;border-top:1px solid #ECE8E1;display:flex;align-items:center;gap:12px">
+<div style="flex:1;font-size:13px;color:#5C6766">Pay link opens a secure page — patient verifies with last name + date of birth.</div>
+<button style="height:48px;padding:0 16px;border-radius:8px;border:1px solid #D5D0C6;background:#fff;font-size:15px;font-weight:600">Save draft</button>
+<button style="height:48px;padding:0 24px;border-radius:8px;border:0;background:#1D5C5C;color:#fff;font-size:15px;font-weight:700">Send invoice</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1d"><div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Patient email <span>· 600px · table-based bars, no JS/SVG · chart style in Tweaks</span></div>
+<div class="dv-card" style="width:600px;background:#F2EFEA">
+<sc-raw-table role="presentation" cellpadding="0" cellspacing="0" width="600" style="border-collapse:collapse;font-family:'Figtree',Helvetica,Arial,sans-serif;color:#1C2B2D">
+<sc-raw-tbody>
+<sc-raw-tr><sc-raw-td style="padding:28px 40px 18px"><div style="width:150px;height:40px;border-radius:6px;background:repeating-linear-gradient(135deg,#E5E1D9 0 6px,#EDEAE4 6px 12px);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5C6766">practice logo</div></sc-raw-td></sc-raw-tr>
+<sc-raw-tr><sc-raw-td style="padding:0 24px">
+<sc-raw-table role="presentation" cellpadding="0" cellspacing="0" width="552" style="border-collapse:collapse;background:#FFFFFF;border-radius:12px">
+<sc-raw-tbody>
+<sc-raw-tr><sc-raw-td style="padding:32px 32px 8px;font-size:17px;line-height:1.5">Hi Maria,</sc-raw-td></sc-raw-tr>
+<sc-raw-tr><sc-raw-td style="padding:0 32px 24px;font-size:16px;line-height:1.55;color:#3E4A4B">Thanks for visiting Harborview Family Medicine on Oct 3. Insurance has processed your visit — here's what's left for you.</sc-raw-td></sc-raw-tr>
+<sc-raw-tr><sc-raw-td style="padding:0 32px">
+<sc-raw-table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background:#F3F8F7;border-radius:10px"><sc-raw-tbody><sc-raw-tr>
+<sc-raw-td style="padding:20px 22px"><div style="font-size:14px;color:#3E4A4B">Amount due</div><div style="font-size:40px;font-weight:800;letter-spacing:-0.02em;line-height:1.1">$240.00</div></sc-raw-td>
+<sc-raw-td style="padding:20px 22px;text-align:right;vertical-align:bottom"><div style="font-size:14px;color:#3E4A4B">Due by</div><div style="font-size:18px;font-weight:700">Nov 2, 2026</div></sc-raw-td>
+</sc-raw-tr></sc-raw-tbody></sc-raw-table>
+</sc-raw-td></sc-raw-tr>
+<sc-raw-tr><sc-raw-td style="padding:28px 32px 8px;font-size:15px;font-weight:700">How we got to $240</sc-raw-td></sc-raw-tr>
+<sc-if value="{{ emailStacked }}" hint-placeholder-val="{{ true }}">
+<sc-raw-tr><sc-raw-td style="padding:4px 32px 0">
+<sc-raw-table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;border-spacing:0"><sc-raw-tbody><sc-raw-tr>
+<sc-raw-td width="47%" style="height:28px;background:#CFDDDA;border-radius:6px 0 0 6px"></sc-raw-td>
+<sc-raw-td width="25%" style="height:28px;background:#7FA6A3;border-left:2px solid #fff"></sc-raw-td>
+<sc-raw-td width="28%" style="height:28px;background:#1D5C5C;border-left:2px solid #fff;border-radius:0 6px 6px 0"></sc-raw-td>
+</sc-raw-tr></sc-raw-tbody></sc-raw-table>
+<div style="font-size:13px;color:#5C6766;margin-top:6px">Full bar = $850.00 billed</div>
+</sc-raw-td></sc-raw-tr>
+<sc-raw-tr><sc-raw-td style="padding:14px 32px 0">
+<sc-raw-table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;font-size:15px"><sc-raw-tbody>
+<sc-raw-tr><sc-raw-td style="padding:7px 0;width:20px"><div style="width:12px;height:12px;border-radius:3px;background:#CFDDDA"></div></sc-raw-td><sc-raw-td style="padding:7px 0">Insurance discount <span style="color:#5C6766">— you never pay this</span></sc-raw-td><sc-raw-td style="padding:7px 0;text-align:right">−$400.00</sc-raw-td></sc-raw-tr>
+<sc-raw-tr><sc-raw-td style="padding:7px 0"><div style="width:12px;height:12px;border-radius:3px;background:#7FA6A3"></div></sc-raw-td><sc-raw-td style="padding:7px 0">Paid by your insurance</sc-raw-td><sc-raw-td style="padding:7px 0;text-align:right">−$210.00</sc-raw-td></sc-raw-tr>
+<sc-raw-tr><sc-raw-td style="padding:9px 0;border-top:1px solid #E5E1D9"><div style="width:12px;height:12px;border-radius:3px;background:#1D5C5C"></div></sc-raw-td><sc-raw-td style="padding:9px 0;border-top:1px solid #E5E1D9;font-weight:700">You owe</sc-raw-td><sc-raw-td style="padding:9px 0;border-top:1px solid #E5E1D9;text-align:right;font-weight:700">$240.00</sc-raw-td></sc-raw-tr>
+</sc-raw-tbody></sc-raw-table>
+</sc-raw-td></sc-raw-tr>
+</sc-if>
+<sc-if value="{{ emailWaterfall }}">
+<sc-raw-tr><sc-raw-td style="padding:6px 32px 0">
+<sc-raw-table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;font-size:14px"><sc-raw-tbody>
+<sc-raw-tr><sc-raw-td width="128" style="padding:6px 10px 6px 0">Billed</sc-raw-td><sc-raw-td style="padding:6px 0"><sc-raw-table role="presentation" cellpadding="0" cellspacing="0" width="100%"><sc-raw-tbody><sc-raw-tr><sc-raw-td width="100%" style="height:22px;background:#5E7F7C;border-radius:4px"></sc-raw-td></sc-raw-tr></sc-raw-tbody></sc-raw-table></sc-raw-td><sc-raw-td width="80" style="text-align:right;padding-left:10px">$850.00</sc-raw-td></sc-raw-tr>
+<sc-raw-tr><sc-raw-td style="padding:6px 10px 6px 0">Discount</sc-raw-td><sc-raw-td style="padding:6px 0"><sc-raw-table role="presentation" cellpadding="0" cellspacing="0" width="100%"><sc-raw-tbody><sc-raw-tr><sc-raw-td width="53%"></sc-raw-td><sc-raw-td width="47%" style="height:22px;background:#CFDDDA;border-radius:4px"></sc-raw-td></sc-raw-tr></sc-raw-tbody></sc-raw-table></sc-raw-td><sc-raw-td style="text-align:right;padding-left:10px">−$400.00</sc-raw-td></sc-raw-tr>
+<sc-raw-tr><sc-raw-td style="padding:6px 10px 6px 0">Insurance paid</sc-raw-td><sc-raw-td style="padding:6px 0"><sc-raw-table role="presentation" cellpadding="0" cellspacing="0" width="100%"><sc-raw-tbody><sc-raw-tr><sc-raw-td width="28%"></sc-raw-td><sc-raw-td width="25%" style="height:22px;background:#7FA6A3;border-radius:4px"></sc-raw-td><sc-raw-td width="47%"></sc-raw-td></sc-raw-tr></sc-raw-tbody></sc-raw-table></sc-raw-td><sc-raw-td style="text-align:right;padding-left:10px">−$210.00</sc-raw-td></sc-raw-tr>
+<sc-raw-tr><sc-raw-td style="padding:6px 10px 6px 0;font-weight:700">You owe</sc-raw-td><sc-raw-td style="padding:6px 0"><sc-raw-table role="presentation" cellpadding="0" cellspacing="0" width="100%"><sc-raw-tbody><sc-raw-tr><sc-raw-td width="28%" style="height:22px;background:#1D5C5C;border-radius:4px"></sc-raw-td><sc-raw-td width="72%"></sc-raw-td></sc-raw-tr></sc-raw-tbody></sc-raw-table></sc-raw-td><sc-raw-td style="text-align:right;padding-left:10px;font-weight:700">$240.00</sc-raw-td></sc-raw-tr>
+</sc-raw-tbody></sc-raw-table>
+</sc-raw-td></sc-raw-tr>
+</sc-if>
+<sc-raw-tr><sc-raw-td style="padding:28px 32px 10px" align="center">
+<div style="width:300px;height:52px;border:1.5px dashed #B9B3A8;border-radius:8px;background:repeating-linear-gradient(135deg,#F3F0EA 0 8px,#ECE8E0 8px 16px);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3E4A4B;text-align:center">Pay with PayPal — official<br>PayPal button image, linked</div>
+</sc-raw-td></sc-raw-tr>
+<sc-raw-tr><sc-raw-td style="padding:4px 32px 28px;text-align:center;font-size:15px"><a href="#1f" style="font-weight:600">See full breakdown</a> <span style="color:#5C6766">· payment plans available</span></sc-raw-td></sc-raw-tr>
+</sc-raw-tbody>
+</sc-raw-table>
+</sc-raw-td></sc-raw-tr>
+<sc-raw-tr><sc-raw-td style="padding:20px 40px 32px;font-size:13px;line-height:1.55;color:#5C6766">Questions? Call Harborview at (555) 014-2290, Mon–Fri 8–5. For your privacy, visit details are only shown after you verify on the secure page.<br>Harborview Family Medicine · 220 Harbor St, Suite 4</sc-raw-td></sc-raw-tr>
+</sc-raw-tbody>
+</sc-raw-table>
+</div>
+</div>
+
+<div class="dv-opt" id="1e"><div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Breakdown · step 1 <span>· verify · mobile 390</span></div>
+<div class="dv-card" style="width:390px;height:844px;border-radius:36px;border:8px solid #1C2B2D;box-sizing:content-box;background:#F7F5F1;display:flex;flex-direction:column">
+<div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;font-size:15px;font-weight:600"><span>9:41</span><span style="width:24px;height:11px;border:1.5px solid #1C2B2D;border-radius:3px"></span></div>
+<div style="margin:0 16px;height:34px;border-radius:10px;background:#E8E4DD;display:flex;align-items:center;justify-content:center;font-size:13px;color:#3E4A4B">pay.harborviewfm.com</div>
+<div style="padding:32px 24px 24px;display:flex;flex-direction:column;gap:24px;flex:1">
+<div style="width:132px;height:36px;border-radius:6px;background:repeating-linear-gradient(135deg,#E5E1D9 0 6px,#EDEAE4 6px 12px);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5C6766">practice logo</div>
+<div><div style="font-size:28px;font-weight:700;line-height:1.15;letter-spacing:-0.01em">Let's find your bill</div><div style="font-size:16px;color:#3E4A4B;margin-top:8px;line-height:1.45">To keep your information private, please confirm two things.</div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><label style="font-size:15px;font-weight:600">Last name</label><div style="height:56px;border:1.5px solid #1D5C5C;border-radius:10px;background:#fff;display:flex;align-items:center;padding:0 16px;font-size:17px;box-shadow:0 0 0 3px #E2EEEC">Delgado</div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><label style="font-size:15px;font-weight:600">Date of birth</label>
+<div style="display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:10px">
+<div><div style="height:56px;border:1px solid #D5D0C6;border-radius:10px;background:#fff;display:flex;align-items:center;padding:0 16px;font-size:17px">04</div><div style="font-size:12px;color:#5C6766;margin-top:4px">Month</div></div>
+<div><div style="height:56px;border:1px solid #D5D0C6;border-radius:10px;background:#fff;display:flex;align-items:center;padding:0 16px;font-size:17px">17</div><div style="font-size:12px;color:#5C6766;margin-top:4px">Day</div></div>
+<div><div style="height:56px;border:1px solid #D5D0C6;border-radius:10px;background:#fff;display:flex;align-items:center;padding:0 16px;font-size:17px">1984</div><div style="font-size:12px;color:#5C6766;margin-top:4px">Year</div></div>
+</div></div>
+<div style="flex:1"></div>
+<button style="height:56px;border-radius:12px;border:0;background:#1D5C5C;color:#fff;font-size:17px;font-weight:700">View my bill</button>
+<div style="font-size:13px;color:#5C6766;text-align:center;line-height:1.45">We'll never ask for your Social Security or insurance ID here.<br>Trouble? Call (555) 014-2290</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1f"><div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Breakdown · step 2 <span>· the bill · full scroll · tap the bars</span></div>
+<div class="dv-card" style="width:390px;border-radius:36px;border:8px solid #1C2B2D;box-sizing:content-box;background:#F7F5F1">
+<div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;font-size:15px;font-weight:600"><span>9:41</span><span style="width:24px;height:11px;border:1.5px solid #1C2B2D;border-radius:3px"></span></div>
+<div style="margin:0 16px;height:34px;border-radius:10px;background:#E8E4DD;display:flex;align-items:center;justify-content:center;font-size:13px;color:#3E4A4B">pay.harborviewfm.com</div>
+<div style="padding:24px 20px 32px;display:flex;flex-direction:column;gap:20px">
+<div style="padding:0 4px"><div style="font-size:15px;color:#3E4A4B">Hi Maria — you owe</div><div style="font-size:52px;font-weight:800;letter-spacing:-0.03em;line-height:1.05;margin-top:2px">$240.00</div><div style="font-size:15px;color:#3E4A4B;margin-top:6px">Due Nov 2, 2026 · Visit Oct 3 with Dr. Patel</div>
+<a href="#pay" style="display:flex;align-items:center;justify-content:center;height:52px;border-radius:12px;background:#1D5C5C;color:#fff;font-size:16px;font-weight:700;text-decoration:none;margin-top:16px">Choose how to pay ↓</a></div>
+<div style="background:#fff;border-radius:16px;padding:20px 16px 16px;border:1px solid #E5E1D9">
+<div style="font-size:17px;font-weight:700;padding:0 4px">How we got to $240</div><div style="font-size:13px;color:#5C6766;padding:0 4px;margin-top:2px">Tap a bar to learn what it means</div>
+<div style="display:flex;height:236px;margin-top:16px;border-bottom:1.5px solid #C9C3B8">
+<div sc-camel-on-click="{{ setWf0 }}" style="flex:1;position:relative;cursor:pointer"><div style="position:absolute;bottom:206px;left:0;right:0;text-align:center;font-size:13px;font-weight:{{ wfLbl0 }}">$850</div><div style="position:absolute;bottom:0;left:16%;right:16%;height:200px;background:#5E7F7C;border-radius:6px 6px 0 0;box-shadow:{{ wfRing0 }}"></div><div style="position:absolute;bottom:199px;left:84%;width:32%;border-top:1.5px dashed #9AA3A1"></div></div>
+<div sc-camel-on-click="{{ setWf1 }}" style="flex:1;position:relative;cursor:pointer"><div style="position:absolute;bottom:206px;left:0;right:0;text-align:center;font-size:13px;font-weight:{{ wfLbl1 }}">−$400</div><div style="position:absolute;bottom:106px;left:16%;right:16%;height:94px;background:repeating-linear-gradient(135deg,#CFDDDA 0 6px,#BFD2CE 6px 12px);border-radius:6px;box-shadow:{{ wfRing1 }}"></div><div style="position:absolute;bottom:105px;left:84%;width:32%;border-top:1.5px dashed #9AA3A1"></div></div>
+<div sc-camel-on-click="{{ setWf2 }}" style="flex:1;position:relative;cursor:pointer"><div style="position:absolute;bottom:112px;left:0;right:0;text-align:center;font-size:13px;font-weight:{{ wfLbl2 }}">−$210</div><div style="position:absolute;bottom:56px;left:16%;right:16%;height:50px;background:#7FA6A3;border-radius:6px;box-shadow:{{ wfRing2 }}"></div><div style="position:absolute;bottom:55px;left:84%;width:32%;border-top:1.5px dashed #9AA3A1"></div></div>
+<div sc-camel-on-click="{{ setWf3 }}" style="flex:1;position:relative;cursor:pointer"><div style="position:absolute;bottom:62px;left:0;right:0;text-align:center;font-size:13px;font-weight:{{ wfLbl3 }}">$240</div><div style="position:absolute;bottom:0;left:16%;right:16%;height:56px;background:#1D5C5C;border-radius:6px 6px 0 0;box-shadow:{{ wfRing3 }}"></div></div>
+</div>
+<div style="display:flex;font-size:12px;color:#3E4A4B;text-align:center;margin-top:8px;line-height:1.25"><span style="flex:1">Billed</span><span style="flex:1">Insurance discount</span><span style="flex:1">Insurance paid</span><span style="flex:1;font-weight:700;color:#1C2B2D">You owe</span></div>
+<div style="margin-top:14px;background:#F3F8F7;border-radius:10px;padding:12px 14px"><div style="font-size:15px;font-weight:700">{{ wfTitle }}</div><div style="font-size:14px;line-height:1.45;color:#3E4A4B;margin-top:2px">{{ wfBody }}</div></div>
+</div>
+<div style="background:#fff;border-radius:16px;padding:18px 20px;border:1px solid #E5E1D9">
+<div style="font-size:17px;font-weight:700;margin-bottom:10px">What you were seen for</div>
+<div style="display:flex;flex-direction:column;font-size:15px">
+<div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #ECE8E1"><span>Office visit with Dr. Patel</span><span>$350.00</span></div>
+<div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #ECE8E1"><span>Blood work (metabolic panel)</span><span>$180.00</span></div>
+<div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #ECE8E1"><span>Heart rhythm test (ECG)</span><span>$320.00</span></div>
+<div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0 0;font-weight:700"><span>Total billed</span><span>$850.00</span></div>
+</div>
+</div>
+<div style="background:#fff;border-radius:16px;border:1px solid #E5E1D9;overflow:hidden">
+<div sc-camel-on-click="{{ toggleTerms }}" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:0 20px;min-height:56px;font-size:17px;font-weight:700"><span>What do these terms mean?</span><span style="width:28px;height:28px;border-radius:50%;background:#F2EFEA;display:flex;align-items:center;justify-content:center;font-size:18px">{{ termsSign }}</span></div>
+<sc-if value="{{ termsOpen }}" hint-placeholder-val="{{ true }}">
+<div style="padding:0 20px 18px;display:flex;flex-direction:column;gap:14px;font-size:15px;line-height:1.45;color:#3E4A4B">
+<div><b style="color:#1C2B2D">Allowed amount</b> — the price your insurance agreed to pay for a service. Here, $450.</div>
+<div><b style="color:#1C2B2D">Deductible</b> — what you pay each year before insurance starts sharing costs. $200 of this visit counted toward yours.</div>
+<div><b style="color:#1C2B2D">Coinsurance</b> — after your deductible, the share of the cost you pay. Here, $40.</div>
+</div>
+</sc-if>
+</div>
+<div style="background:#fff;border-radius:16px;padding:18px 16px;border:1px solid #E5E1D9;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:8px;padding:0 4px"><div style="font-size:17px;font-weight:700">Ask about your bill</div><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#E2EEEC;color:#134545">✦ AI helper</span></div>
+<div style="align-self:flex-end;max-width:78%;background:#1D5C5C;color:#fff;padding:10px 14px;border-radius:16px 16px 4px 16px;font-size:15px">Why do I owe $240?</div>
+<div style="align-self:flex-start;max-width:90%;background:#F2EFEA;padding:12px 14px;border-radius:16px 16px 16px 4px;font-size:15px;line-height:1.5">Good question! Your plan put <b>$200</b> toward your yearly deductible — the amount you pay before insurance starts sharing costs. After that, your share was <b>$40</b> (coinsurance). $200 + $40 = $240.<div style="font-size:12px;color:#5C6766;margin-top:8px">Based on BlueCross's statement for your Oct 3 visit</div></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><span style="padding:8px 12px;border-radius:999px;border:1px solid #D5D0C6;font-size:14px">Can I pay over time?</span><span style="padding:8px 12px;border-radius:999px;border:1px solid #D5D0C6;font-size:14px">Is this right?</span></div>
+<div style="display:flex;gap:8px"><div style="flex:1;height:48px;border:1px solid #D5D0C6;border-radius:12px;display:flex;align-items:center;padding:0 14px;font-size:15px;color:#5C6766">Type a question…</div><button style="width:48px;height:48px;border-radius:12px;border:0;background:#1D5C5C;color:#fff;font-size:18px">↑</button></div>
+<div style="font-size:13px;color:#5C6766;padding:0 4px">Prefer a person? Call (555) 014-2290</div>
+</div>
+<div id="pay" style="background:#fff;border-radius:16px;padding:20px 16px;border:1px solid #E5E1D9;display:flex;flex-direction:column;gap:12px">
+<div style="font-size:17px;font-weight:700;padding:0 4px">Pay $240.00</div>
+<div style="height:52px;border:1.5px dashed #B9B3A8;border-radius:8px;background:repeating-linear-gradient(135deg,#F3F0EA 0 8px,#ECE8E0 8px 16px);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3E4A4B">PayPal button · official SDK</div>
+<div style="height:52px;border:1.5px dashed #B9B3A8;border-radius:8px;background:repeating-linear-gradient(135deg,#F3F0EA 0 8px,#ECE8E0 8px 16px);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3E4A4B">Pay Later button · official SDK</div>
+<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#5C6766;margin:4px 0"><span style="flex:1;height:1px;background:#E5E1D9"></span>or split it with Harborview<span style="flex:1;height:1px;background:#E5E1D9"></span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div style="border:2px solid #1D5C5C;background:#F3F8F7;border-radius:12px;padding:12px 14px;min-height:44px"><div style="font-size:20px;font-weight:800">$80<span style="font-size:14px;font-weight:500">/mo</span></div><div style="font-size:13px;color:#3E4A4B">3 payments</div></div>
+<div style="border:1px solid #D5D0C6;border-radius:12px;padding:12px 14px;min-height:44px"><div style="font-size:20px;font-weight:800">$40<span style="font-size:14px;font-weight:500">/mo</span></div><div style="font-size:13px;color:#3E4A4B">6 payments</div></div>
+</div>
+<div style="font-size:13px;color:#5C6766;padding:0 4px">No interest or fees. First payment today through PayPal.</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1g"><div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Confirmation · paid in full <span>· mobile 390</span></div>
+<div class="dv-card" style="width:390px;height:844px;border-radius:36px;border:8px solid #1C2B2D;box-sizing:content-box;background:#F7F5F1;display:flex;flex-direction:column">
+<div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;font-size:15px;font-weight:600"><span>9:41</span><span style="width:24px;height:11px;border:1.5px solid #1C2B2D;border-radius:3px"></span></div>
+<div style="margin:0 16px;height:34px;border-radius:10px;background:#E8E4DD;display:flex;align-items:center;justify-content:center;font-size:13px;color:#3E4A4B">pay.harborviewfm.com</div>
+<div style="padding:72px 24px 28px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;flex:1">
+<div style="width:88px;height:88px;border-radius:50%;background:#24633A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:700">✓</div>
+<div style="font-size:26px;font-weight:700;margin-top:8px">Payment received</div>
+<div style="font-size:48px;font-weight:800;letter-spacing:-0.03em">$240.00</div>
+<div style="font-size:15px;color:#3E4A4B">Paid via PayPal · Oct 10, 2026, 9:41 AM</div>
+<div style="width:100%;background:#fff;border:1px solid #E5E1D9;border-radius:14px;padding:4px 18px;margin-top:20px;text-align:left;font-size:15px">
+<div style="display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid #ECE8E1"><span>Remaining balance</span><b>$0.00</b></div>
+<div style="display:flex;justify-content:space-between;padding:14px 0"><span>Confirmation #</span><span style="font-family:'IBM Plex Mono',monospace;font-size:14px">HFM-24819</span></div>
+</div>
+<div style="font-size:15px;color:#3E4A4B;line-height:1.45">You're all set. Harborview has been notified — nothing else to do.</div>
+<div style="flex:1"></div>
+<button style="width:100%;height:56px;border-radius:12px;border:1.5px solid #1D5C5C;background:#fff;color:#1D5C5C;font-size:17px;font-weight:700">View receipt</button>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1h"><div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Confirmation · plan, partial <span>· remaining balance shown</span></div>
+<div class="dv-card" style="width:390px;height:844px;border-radius:36px;border:8px solid #1C2B2D;box-sizing:content-box;background:#F7F5F1;display:flex;flex-direction:column">
+<div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;font-size:15px;font-weight:600"><span>9:41</span><span style="width:24px;height:11px;border:1.5px solid #1C2B2D;border-radius:3px"></span></div>
+<div style="margin:0 16px;height:34px;border-radius:10px;background:#E8E4DD;display:flex;align-items:center;justify-content:center;font-size:13px;color:#3E4A4B">pay.harborviewfm.com</div>
+<div style="padding:56px 24px 28px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;flex:1">
+<div style="width:88px;height:88px;border-radius:50%;background:#24633A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:700">✓</div>
+<div style="font-size:26px;font-weight:700;margin-top:8px">Payment 1 of 3 received</div>
+<div style="font-size:48px;font-weight:800;letter-spacing:-0.03em">$80.00</div>
+<div style="font-size:15px;color:#3E4A4B">Paid via PayPal · Oct 10, 2026</div>
+<div style="width:100%;background:#fff;border:1px solid #E5E1D9;border-radius:14px;padding:16px 18px;margin-top:16px;text-align:left;font-size:15px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span>Remaining balance</span><b style="font-size:20px">$160.00</b></div>
+<div style="display:flex;height:10px;border-radius:5px;overflow:hidden;background:#ECEAE5;margin:12px 0 14px"><span style="width:33.3%;background:#24633A"></span></div>
+<div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #ECE8E1"><span>✓ Oct 10</span><span>$80.00 paid</span></div>
+<div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #ECE8E1;color:#3E4A4B"><span>○ Nov 10</span><span>$80.00 auto-pay</span></div>
+<div style="display:flex;justify-content:space-between;padding:10px 0 0;border-top:1px solid #ECE8E1;color:#3E4A4B"><span>○ Dec 10</span><span>$80.00 auto-pay</span></div>
+</div>
+<div style="font-size:14px;color:#3E4A4B;line-height:1.45">We'll email you 3 days before each payment.</div>
+<div style="flex:1"></div>
+<button style="width:100%;height:56px;border-radius:12px;border:1.5px solid #1D5C5C;background:#fff;color:#1D5C5C;font-size:17px;font-weight:700">View receipt</button>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1i"><div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>Good Faith Estimate <span>· optional · self-pay deposit</span></div>
+<div class="dv-card" style="width:390px;height:844px;border-radius:36px;border:8px solid #1C2B2D;box-sizing:content-box;background:#F7F5F1;display:flex;flex-direction:column">
+<div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;font-size:15px;font-weight:600"><span>9:41</span><span style="width:24px;height:11px;border:1.5px solid #1C2B2D;border-radius:3px"></span></div>
+<div style="margin:0 16px;height:34px;border-radius:10px;background:#E8E4DD;display:flex;align-items:center;justify-content:center;font-size:13px;color:#3E4A4B">pay.harborviewfm.com</div>
+<div style="padding:24px 20px;display:flex;flex-direction:column;gap:16px;flex:1">
+<div style="padding:0 4px"><div style="font-size:13px;font-weight:700;color:#134545;text-transform:uppercase;letter-spacing:.06em">Good Faith Estimate</div><div style="font-size:24px;font-weight:700;margin-top:4px;line-height:1.2">Your visit on Oct 21 with Dr. Kim</div><div style="font-size:15px;color:#3E4A4B;margin-top:4px">Estimated cost without insurance</div></div>
+<div style="background:#fff;border:1px solid #E5E1D9;border-radius:16px;padding:6px 18px;font-size:15px">
+<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #ECE8E1"><span>New patient visit (45 min)</span><span>$220.00</span></div>
+<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #ECE8E1"><span>Basic blood work</span><span>$95.00</span></div>
+<div style="display:flex;justify-content:space-between;padding:12px 0;font-weight:700;font-size:17px"><span>Estimated total</span><span>$315.00</span></div>
+</div>
+<div style="background:#F3F8F7;border-radius:14px;padding:14px 16px;display:grid;grid-template-columns:1fr auto;row-gap:4px;font-size:15px"><b>Deposit today</b><b>$100.00</b><span style="color:#3E4A4B">After your visit</span><span style="color:#3E4A4B">$215.00</span></div>
+<div style="height:52px;border:1.5px dashed #B9B3A8;border-radius:8px;background:repeating-linear-gradient(135deg,#F3F0EA 0 8px,#ECE8E0 8px 16px);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3E4A4B">PayPal button · official SDK · $100</div>
+<div style="font-size:14px;line-height:1.45;color:#3E4A4B;background:#fff;border:1px solid #E5E1D9;border-radius:14px;padding:14px 16px"><b style="color:#1C2B2D">Your rights:</b> if your final bill is $400 or more above this estimate, you can dispute it. <a href="#1i" style="font-weight:600">Learn more</a></div>
+</div>
+</div>
+</div>
+</div>
+<p class="dv-next">Try next: "two alternative dashboard layouts — queue-first vs. grid-first" · "denied-claim drawer for James Whitfield" · "dark navy instead of teal"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;emailChart&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;stacked&quot;,&quot;waterfall&quot;],&quot;default&quot;:&quot;stacked&quot;,&quot;tsType&quot;:&quot;'stacked'|'waterfall'&quot;,&quot;section&quot;:&quot;Patient email&quot;},&quot;paidHighlight&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Dashboard&quot;}}">
+class Component extends DCLogic {
+  state = { wf: 3, terms: true, pay: 'plan', months: 3 };
+  renderVals() {
+    const s = this.state, hl = this.props.paidHighlight ?? true, chart = this.props.emailChart ?? 'stacked';
+    const ST = {
+      review: ['Needs review', '!', '#7A4E00', '#FAEFD6', '#EFD9A0'],
+      denied: ['Denied', '×', '#9B2C24', '#FAE5E1', '#F0C4BD'],
+      ready: ['Ready to invoice', '→', '#454B4D', '#ECEAE5', '#DAD6CE'],
+      sent: ['Sent', '↗', '#23518C', '#E2EBF7', '#C3D4EC'],
+      partial: ['Partially paid', '◐', '#24633A', '#FFFFFF', '#A9D2B2'],
+      paid: ['Paid', '✓', '#24633A', '#E0F0E3', '#B9DDC0']
+    };
+    const age = d => d <= 30 ? ['0–30', '#ECEAE5', '#454B4D'] : d <= 60 ? ['31–60', '#FAEFD6', '#7A4E00'] : d <= 90 ? ['61–90', '#F8E1CC', '#7D3F12'] : ['90+', '#FAE5E1', '#9B2C24'];
+    const row = (name, sub, date, payer, billed, ins, owes, days, ai, x = {}) => {
+      const a = days != null ? age(days) : null;
+      return { name, sub, date, payer, billed, ins, owes, ai, hasAi: !!ai && !x.paidNow, noAi: !ai && !x.paidNow, paidNow: !!x.paidNow,
+        age: !!a, noAge: !a, daysText: x.daysText || '', dayN: days != null ? days + 'd' : '', ageL: a ? a[0] : '', ageBg: a ? a[1] : '', ageFg: a ? a[2] : '',
+        bg: x.bg || '#FFFFFF', expanded: !!x.expanded, caret: x.expanded ? '▼' : '▶' };
+    };
+    const grp = (k, meta, rows) => ({ label: ST[k][0], icon: ST[k][1], fg: ST[k][2], bg: ST[k][3], bd: ST[k][4], meta, rows });
+    const groups = [
+      grp('review', '4 visits · $1,078 to confirm', [
+        row('Priya Raman', 'Dr. Patel', '10/1/26', 'Aetna', '$420.00', '$260.00', '$160.00', 9, 'Confirm insurance paid amount'),
+        row('Tomás Herrera', 'Dr. Kim', '9/12/26', 'UnitedHealthcare', '$1,180.00', '$812.00', '$368.00', 28, 'Check copay vs. coinsurance'),
+        row('Ellen Brooks', 'Dr. Patel', '9/30/26', 'Self-pay', '$310.00', '—', '$310.00', 10, 'Apply self-pay rate'),
+        row('Marcus Reid', 'Dr. Okoye', '8/25/26', 'Aetna', '$760.00', '$520.00', '$240.00', 46, 'Possible duplicate — compare')
+      ]),
+      grp('denied', '2 visits · $3,010 billed', [
+        row('James Whitfield', 'MRI · CO-197 prior auth missing', '9/18/26', 'BlueCross BlueShield', '$2,400.00', '$0.00', '—', 22, 'Resubmit with auth number'),
+        row('Denise Okafor', 'CO-16 · referral missing', '8/14/26', 'UnitedHealthcare', '$610.00', '$0.00', '—', 57, 'Add referral & resubmit')
+      ]),
+      grp('ready', '2 visits · $515 to invoice', [
+        row('Maria Delgado', 'Dr. Patel', '10/3/26', 'BlueCross BlueShield', '$850.00', '$210.00', '$240.00', 7, 'Send invoice + 3-month plan', { expanded: true, bg: '#F3F8F7' }),
+        row('Kevin Lam', 'Dr. Kim', '9/29/26', 'Self-pay', '$275.00', '—', '$275.00', 11, 'Send invoice')
+      ]),
+      grp('sent', '2 visits · $400 outstanding', [
+        row('Grace Whitaker', 'Opened 2× · not paid', '8/2/26', 'Aetna', '$940.00', '$690.00', '$250.00', 69, 'Send friendly reminder'),
+        row('Robert Chen', 'Not opened', '9/5/26', 'UnitedHealthcare', '$530.00', '$380.00', '$150.00', 35, 'Offer 3-month plan')
+      ]),
+      grp('partial', '1 visit · $600 remaining', [
+        row('Aisha Bello', '$600 of $1,200 paid', '6/20/26', 'Self-pay', '$1,200.00', '—', '$600.00', 112, 'Offer 6-month plan · $100/mo')
+      ]),
+      grp('paid', '2 visits · $180 collected', [
+        hl ? row('Samuel Ortiz', 'Dr. Okoye', '9/22/26', 'BlueCross BlueShield', '$380.00', '$300.00', '$80.00', null, null, { paidNow: true, bg: '#E4F2E6', daysText: 'Paid in 18 days' })
+           : row('Samuel Ortiz', 'Dr. Okoye', '9/22/26', 'BlueCross BlueShield', '$380.00', '$300.00', '$80.00', null, null, { daysText: 'Paid in 18 days' }),
+        row('Linda Park', 'Dr. Patel', '9/10/26', 'Aetna', '$510.00', '$410.00', '$100.00', null, null, { daysText: 'Paid in 6 days' })
+      ])
+    ];
+    const opt = k => s.pay === k;
+    const wfInfo = [
+      ['Billed: $850.00', 'What Harborview charged for your Oct 3 visit, before insurance.'],
+      ['Insurance discount: −$400.00', 'BlueCross has a contract rate with Harborview. This part is written off — you never pay it.'],
+      ['Insurance paid: −$210.00', 'BlueCross paid this part directly to Harborview.'],
+      ['You owe: $240.00', '$200 goes toward your yearly deductible, plus $40 coinsurance — your share of the cost after the deductible.']
+    ];
+    const v = {
+      groups,
+      setPayFull: () => this.setState({ pay: 'full' }), setPayPartial: () => this.setState({ pay: 'partial' }), setPayPlan: () => this.setState({ pay: 'plan' }),
+      set3: () => this.setState({ months: 3 }), set6: () => this.setState({ months: 6 }),
+      isPlan: s.pay === 'plan', planSummary: s.months === 3 ? '3 × $80.00' : '6 × $40.00',
+      m3Bg: s.months === 3 ? '#FFFFFF' : 'transparent', m6Bg: s.months === 6 ? '#FFFFFF' : 'transparent',
+      wfTitle: wfInfo[s.wf][0], wfBody: wfInfo[s.wf][1],
+      toggleTerms: () => this.setState(p => ({ terms: !p.terms })), termsOpen: s.terms, termsSign: s.terms ? '−' : '+',
+      emailStacked: chart === 'stacked', emailWaterfall: chart === 'waterfall'
+    };
+    [['Full', 'full'], ['Part', 'partial'], ['Plan', 'plan']].forEach(([n, k]) => {
+      v['pay' + n + 'Bd'] = opt(k) ? '#1D5C5C' : '#E5E1D9';
+      v['pay' + n + 'Bg'] = opt(k) ? '#F3F8F7' : '#FFFFFF';
+      v['pay' + n + 'Dot'] = opt(k) ? 'radial-gradient(circle,#1D5C5C 0 4px,#fff 4.5px)' : '#FFFFFF';
+    });
+    [0, 1, 2, 3].forEach(i => {
+      v['setWf' + i] = () => this.setState({ wf: i });
+      v['wfRing' + i] = s.wf === i ? '0 0 0 2px #FFFFFF, 0 0 0 4px #1C2B2D' : 'none';
+      v['wfLbl' + i] = s.wf === i ? '700' : '500';
+    });
+    return v;
+  }
+}
+</script>
+
+
+</body></html>

@@ -1,0 +1,15 @@
+{
+  "name": "@plainbill/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pure billing domain logic: 835 parser, CARC/RARC dictionary, balance math, aging, status machine, payment plans.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p ."
+  }
+}
