@@ -8,11 +8,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
-import { EobExtractionSchema, type EobExtraction } from './schema';
+import { EobModelOutputSchema, toExtraction, type EobExtraction, type EobModelOutput } from './schema';
 
 export interface EobExtractor {
   readonly name: string;
-  extract(pdf: Uint8Array, fileName: string): Promise<EobExtraction>;
+  /** Returns the per-field extraction plus the raw model output it came from. */
+  extract(pdf: Uint8Array, fileName: string): Promise<{ extraction: EobExtraction; raw: EobModelOutput }>;
 }
 
 export class AiExtractionError extends Error {
@@ -27,7 +28,7 @@ const SYSTEM_PROMPT = `You transcribe Explanation of Benefits (EOB) documents fo
 
 Transcribe exactly what is printed. Do not calculate, infer, or correct any figure: if a printed total looks inconsistent with the lines, transcribe it anyway. The practice's own software does all the arithmetic and will catch inconsistencies.
 
-Rate every field. Scans are often blurry, skewed or smudged. When a character could be read more than one way, give your best reading as \`value\`, list the other readings in \`alternatives\`, lower \`confidence\` accordingly, and say what is unclear in \`note\`. A field you can read cleanly should have high confidence, no alternatives, and a null note. Never invent a value that is not on the page: use null where the schema allows it.`;
+Scans are often blurry, skewed or smudged. Put your best reading of every field in the main structure, then list in \`uncertain_fields\` every field you are less than 95% sure of: its dot path (for example "claims.0.insurance_paid" or "claims.0.adjustments.1.reason_code"), your confidence from 0 to 1, a few words on what is unclear, and the other plausible readings, most likely first. Leave out fields you read cleanly. Never invent a value that is not on the page: use null where the schema allows it.`;
 
 export interface ClaudeEobExtractorOptions {
   client: Anthropic;
@@ -39,14 +40,14 @@ export class ClaudeEobExtractor implements EobExtractor {
 
   constructor(private readonly options: ClaudeEobExtractorOptions) {}
 
-  async extract(pdf: Uint8Array, fileName: string): Promise<EobExtraction> {
+  async extract(pdf: Uint8Array, fileName: string): Promise<{ extraction: EobExtraction; raw: EobModelOutput }> {
     const response = await this.options.client.beta.messages.parse({
       model: this.options.model,
       max_tokens: 16000,
       // Re-run on Anthropic's recommended fallback model if a safety classifier declines.
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
-      output_config: { effort: 'high', format: betaZodOutputFormat(EobExtractionSchema) },
+      output_config: { effort: 'high', format: betaZodOutputFormat(EobModelOutputSchema) },
       system: SYSTEM_PROMPT,
       messages: [
         {
@@ -77,7 +78,7 @@ export class ClaudeEobExtractor implements EobExtractor {
         `The model's answer for ${fileName} did not match the extraction schema.`,
       );
     }
-    return response.parsed_output;
+    return { extraction: toExtraction(response.parsed_output), raw: response.parsed_output };
   }
 }
 
@@ -86,7 +87,8 @@ export interface EobRecording {
   sha256: string;
   model: string;
   recordedAt: string;
-  extraction: EobExtraction;
+  /** The model's raw structured output. */
+  output: EobModelOutput;
 }
 
 export class RecordedEobExtractor implements EobExtractor {
@@ -102,7 +104,7 @@ export class RecordedEobExtractor implements EobExtractor {
     return existsSync(this.path(pdf));
   }
 
-  async extract(pdf: Uint8Array, fileName: string): Promise<EobExtraction> {
+  async extract(pdf: Uint8Array, fileName: string): Promise<{ extraction: EobExtraction; raw: EobModelOutput }> {
     const file = this.path(pdf);
     if (!existsSync(file)) {
       throw new AiExtractionError(
@@ -110,7 +112,8 @@ export class RecordedEobExtractor implements EobExtractor {
       );
     }
     const recording = JSON.parse(readFileSync(file, 'utf8')) as EobRecording;
-    return EobExtractionSchema.parse(recording.extraction);
+    const raw = EobModelOutputSchema.parse(recording.output);
+    return { extraction: toExtraction(raw), raw };
   }
 }
 
@@ -123,7 +126,7 @@ export class RecordedThenLiveExtractor implements EobExtractor {
     private readonly live: EobExtractor | null,
   ) {}
 
-  extract(pdf: Uint8Array, fileName: string): Promise<EobExtraction> {
+  extract(pdf: Uint8Array, fileName: string): Promise<{ extraction: EobExtraction; raw: EobModelOutput }> {
     if (this.recorded.has(pdf) || !this.live) return this.recorded.extract(pdf, fileName);
     return this.live.extract(pdf, fileName);
   }

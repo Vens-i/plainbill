@@ -78,9 +78,23 @@ export function withFieldValue(
   return copy;
 }
 
+/**
+ * Printed money → signed cents. EOBs print "$1,480.00", "-100.00" or "(100.00)"; strip the
+ * formatting (never the digits) and let core do an exact decimal parse.
+ */
+export function parseMoneyText(raw: string): number {
+  let text = raw.trim().replace(/[$,\s]/g, '');
+  let sign = 1;
+  if (text.startsWith('(') && text.endsWith(')')) {
+    sign = -1;
+    text = text.slice(1, -1);
+  }
+  return sign * parseDecimalToCents(text);
+}
+
 function cents(f: ExtractedField<string>, what: string): number {
   try {
-    return parseDecimalToCents(f.value);
+    return parseMoneyText(f.value);
   } catch {
     throw new FieldError(`${what} "${f.value}" is not an amount`);
   }
@@ -90,7 +104,7 @@ class FieldError extends Error {}
 
 function moneyDisplay(raw: string): string {
   try {
-    return formatMoney(parseDecimalToCents(raw));
+    return formatMoney(parseMoneyText(raw));
   } catch {
     return raw;
   }
@@ -163,7 +177,8 @@ function buildClaim(extraction: EobExtraction, index: number, fileName: string):
     return {
       group: a.group_code.value,
       reason: a.reason_code.value.trim(),
-      amountCents: cents(a.amount, 'Adjustment'),
+      // EOBs often print write-offs as negatives; adjustment amounts are magnitudes (as in CAS).
+      amountCents: Math.abs(cents(a.amount, 'Adjustment')),
     };
   });
   const provider = c.provider_name.value?.trim();
@@ -268,7 +283,7 @@ export function eobToClaims(extraction: EobExtraction, options: ToClaimsOptions)
       let problem: string | undefined;
       if (meta.kind === 'money') {
         try {
-          parseDecimalToCents(f.value);
+          parseMoneyText(f.value);
         } catch {
           problem = `"${f.value}" is not a readable amount`;
         }

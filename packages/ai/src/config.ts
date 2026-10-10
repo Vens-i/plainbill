@@ -1,3 +1,10 @@
+import Anthropic from '@anthropic-ai/sdk';
+
+/** SDK client; with no key argument it resolves credentials from the environment. */
+export function createClaudeClient(apiKey?: string): Anthropic {
+  return new Anthropic(apiKey ? { apiKey } : {});
+}
+
 /** Fields extracted below this confidence are flagged for a human on the Intake screen. */
 export const CONFIDENCE_THRESHOLD = 0.85;
 

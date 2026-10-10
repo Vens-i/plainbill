@@ -7,7 +7,7 @@
  * - Uncertainty is surfaced: fields below CONFIDENCE_THRESHOLD become flags for a human, each
  *   with the readings that do (and don't) make the claim add up.
  */
-export { CONFIDENCE_THRESHOLD, resolveModel } from './config';
+export { CONFIDENCE_THRESHOLD, createClaudeClient, resolveModel } from './config';
 export * from './eob/schema';
 export * from './eob/extractor';
 export * from './eob/to-claims';
