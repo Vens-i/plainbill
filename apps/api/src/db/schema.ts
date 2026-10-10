@@ -21,6 +21,8 @@ export const practices = sqliteTable('practices', {
   state: text('state').notNull(),
   zip: text('zip').notNull(),
   phone: text('phone').notNull(),
+  /** Phone hours shown in patient emails ("Mon–Fri 8–5"). */
+  hours: text('hours'),
   npi: text('npi'),
   /** Average days-to-pay on paper statements, for the KPI comparison. */
   paperBaselineDays: integer('paper_baseline_days'),
@@ -170,18 +172,47 @@ export const invoices = sqliteTable(
     dueDate: text('due_date'),
     openCount: integer('open_count').notNull().default(0),
     lastOpenedAt: text('last_opened_at'),
+    /** "INV2-…" once the PayPal draft exists (kept so a retried send never makes a second one). */
     paypalInvoiceId: text('paypal_invoice_id'),
+    /** PayPal's auto-incremented invoice number ("0007"). */
+    paypalInvoiceNumber: text('paypal_invoice_number'),
+    /** Last status PayPal reported (UNPAID, PARTIALLY_PAID, PAID, MARKED_AS_PAID…). */
+    paypalStatus: text('paypal_status'),
+    /** PayPal's payer-view link: what the email's PayPal button opens. */
+    paypalPayerUrl: text('paypal_payer_url'),
+    /** "paypal" when PayPal accepted the invoice; "local" when PayPal isn't configured. */
+    sentVia: text('sent_via', { enum: ['paypal', 'local'] }),
+    /** Unguessable token in the patient's /pay/:token link. */
+    payToken: text('pay_token'),
+    /** Wrong last-name/DOB attempts since the last success, and the lockout they trigger. */
+    verifyFailures: integer('verify_failures').notNull().default(0),
+    verifyLockedUntil: text('verify_locked_until'),
     /** The plain-language message staff approved (AI draft or template, possibly edited). */
     message: text('message'),
     messageSource: text('message_source', { enum: ['ai', 'template', 'edited'] }),
     paymentOption: text('payment_option', { mode: 'json' }).$type<PaymentOptionJson>(),
     createdAt: createdAt(),
   },
-  (t) => [index('invoices_balance_idx').on(t.balanceId)],
+  (t) => [
+    index('invoices_balance_idx').on(t.balanceId),
+    uniqueIndex('invoices_pay_token_unique').on(t.payToken),
+    uniqueIndex('invoices_paypal_invoice_unique').on(t.paypalInvoiceId),
+  ],
 );
 
 export type PaymentOptionJson =
   { type: 'full' } | { type: 'partial'; minimumCents: number } | { type: 'plan'; months: 3 | 6 };
+
+/** Where a payment came from. The paypal-* sources are real (sandbox or live) money movements. */
+export const paymentSources = [
+  'seed',
+  'simulated',
+  'manual',
+  'paypal-checkout',
+  'paypal-invoice',
+  'paypal-plan',
+] as const;
+export type PaymentSource = (typeof paymentSources)[number];
 
 export const payments = sqliteTable(
   'payments',
@@ -193,16 +224,116 @@ export const payments = sqliteTable(
     invoiceId: integer('invoice_id').references(() => invoices.id),
     amountCents: integer('amount_cents').notNull(),
     method: text('method', { enum: ['paypal', 'card', 'cash'] }).notNull(),
-    source: text('source', { enum: ['seed', 'simulated', 'paypal-webhook', 'manual'] }).notNull(),
+    source: text('source', { enum: paymentSources }).notNull(),
+    /**
+     * PayPal's id for the money movement (order capture, invoice transaction, subscription
+     * sale). Unique, so a webhook, a capture response and a reconciliation poll that all report
+     * the same payment record it once.
+     */
     externalId: text('external_id'),
+    /** The copy we recorded on the PayPal invoice ("EXTR-…"), so the poll doesn't count it twice. */
+    paypalInvoiceTxnId: text('paypal_invoice_txn_id'),
+    planId: integer('plan_id').references(() => paymentPlans.id),
     /** Calendar date the payment counts toward (demo-aware). */
     postedOn: text('posted_on').notNull(),
     /** Wall-clock time it arrived, for "just now". */
     receivedAt: text('received_at').notNull(),
     createdAt: createdAt(),
   },
-  (t) => [index('payments_balance_idx').on(t.balanceId)],
+  (t) => [
+    index('payments_balance_idx').on(t.balanceId),
+    uniqueIndex('payments_external_unique').on(t.externalId),
+    uniqueIndex('payments_invoice_txn_unique').on(t.paypalInvoiceTxnId),
+  ],
 );
+
+// ── PayPal: orders from the patient page, payment plans, webhooks ───────────
+
+export const paypalOrders = sqliteTable(
+  'paypal_orders',
+  {
+    /** PayPal's order id. */
+    id: text('id').primaryKey(),
+    invoiceId: integer('invoice_id')
+      .notNull()
+      .references(() => invoices.id),
+    /** What we asked PayPal to collect, computed server-side from the balance. */
+    amountCents: integer('amount_cents').notNull(),
+    status: text('status', { enum: ['created', 'captured', 'failed'] }).notNull(),
+    captureId: text('capture_id'),
+    createdAt: createdAt(),
+    capturedAt: text('captured_at'),
+  },
+  (t) => [index('paypal_orders_invoice_idx').on(t.invoiceId)],
+);
+
+export const paymentPlans = sqliteTable(
+  'payment_plans',
+  {
+    id: integer('id').primaryKey(),
+    invoiceId: integer('invoice_id')
+      .notNull()
+      .references(() => invoices.id),
+    balanceId: integer('balance_id')
+      .notNull()
+      .references(() => balances.id),
+    months: integer('months').notNull(),
+    firstCents: integer('first_cents').notNull(),
+    regularCents: integer('regular_cents').notNull(),
+    paypalPlanId: text('paypal_plan_id'),
+    paypalSubscriptionId: text('paypal_subscription_id'),
+    /** pending: created, waiting for the patient's approval in PayPal. */
+    status: text('status', { enum: ['pending', 'active', 'completed', 'cancelled'] }).notNull(),
+    startedOn: text('started_on'),
+    createdAt: createdAt(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => [
+    index('payment_plans_invoice_idx').on(t.invoiceId),
+    uniqueIndex('payment_plans_subscription_unique').on(t.paypalSubscriptionId),
+  ],
+);
+
+/** Every webhook delivery we accepted, so a redelivered event is handled once. */
+export const webhookEvents = sqliteTable('webhook_events', {
+  /** PayPal's event id ("WH-…"). */
+  id: text('id').primaryKey(),
+  eventType: text('event_type').notNull(),
+  resourceId: text('resource_id'),
+  status: text('status', { enum: ['processed', 'ignored', 'failed'] }).notNull(),
+  detail: text('detail'),
+  receivedAt: text('received_at').notNull(),
+});
+
+/** Bill emails as rendered and sent (or kept in the outbox when no email provider is set). */
+export const emails = sqliteTable(
+  'emails',
+  {
+    id: integer('id').primaryKey(),
+    invoiceId: integer('invoice_id')
+      .notNull()
+      .references(() => invoices.id),
+    /** The patient's address on file. */
+    intendedTo: text('intended_to'),
+    /** Where it actually went (EMAIL_TO_OVERRIDE in demos); null when kept in the outbox. */
+    deliveredTo: text('delivered_to'),
+    subject: text('subject').notNull(),
+    html: text('html').notNull(),
+    text: text('text').notNull(),
+    provider: text('provider', { enum: ['resend', 'outbox'] }).notNull(),
+    providerMessageId: text('provider_message_id'),
+    status: text('status', { enum: ['sent', 'outbox', 'failed'] }).notNull(),
+    error: text('error'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('emails_invoice_idx').on(t.invoiceId)],
+);
+
+/** Small key/value store: cached PayPal catalog product and plan ids. */
+export const appSettings = sqliteTable('app_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+});
 
 export const events = sqliteTable('events', {
   id: integer('id').primaryKey(),

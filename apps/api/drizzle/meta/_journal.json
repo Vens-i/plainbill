@@ -15,6 +15,13 @@
       "when": 1791651843080,
       "tag": "0001_intake_and_invoice_drafts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791655392563,
+      "tag": "0002_paypal_email_patient_pages",
+      "breakpoints": true
     }
   ]
 }

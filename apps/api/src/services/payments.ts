@@ -6,7 +6,15 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { addDays, nextStatus, type BalanceStatus, type IsoDate } from '@plainbill/core';
 import type { Db, DbLike } from '../db/client';
-import { balances, events, invoices, payments, visits, type PaymentOptionJson } from '../db/schema';
+import {
+  balances,
+  events,
+  invoices,
+  payments,
+  visits,
+  type PaymentOptionJson,
+  type PaymentSource,
+} from '../db/schema';
 
 export class PaymentError extends Error {
   override name = 'PaymentError';
@@ -22,8 +30,10 @@ export interface RecordPaymentInput {
   /** Defaults to the full remaining balance. */
   amountCents?: number;
   method: 'paypal' | 'card' | 'cash';
-  source: 'seed' | 'simulated' | 'paypal-webhook' | 'manual';
+  source: PaymentSource;
+  /** PayPal's id for the money movement. A second payment with the same id is a no-op. */
   externalId?: string;
+  planId?: number;
   /** Calendar date the payment counts toward (demo-aware "today"). */
   postedOn: IsoDate;
   /** Wall-clock arrival time. */
@@ -36,6 +46,8 @@ export interface RecordPaymentResult {
   status: BalanceStatus;
   amountCents: number;
   remainingCents: number;
+  /** True when this externalId was already recorded; nothing changed. */
+  duplicate: boolean;
 }
 
 export function recordPayment(
@@ -45,6 +57,23 @@ export function recordPayment(
 ): RecordPaymentResult {
   return db.transaction((tx) => {
     const balance = loadBalance(tx, balanceId);
+    if (input.externalId) {
+      const seen = tx
+        .select()
+        .from(payments)
+        .where(eq(payments.externalId, input.externalId))
+        .get();
+      if (seen) {
+        return {
+          paymentId: seen.id,
+          eventId: 0,
+          status: balance.status,
+          amountCents: seen.amountCents,
+          remainingCents: balance.patientResponsibilityCents - balance.patientPaidCents,
+          duplicate: true,
+        };
+      }
+    }
     // Status first: paying a denied, unreviewed or already-paid balance is a state error, not an
     // amount error.
     nextStatus(balance.status, { type: 'payment', remainingCents: 0 });
@@ -79,6 +108,7 @@ export function recordPayment(
         method: input.method,
         source: input.source,
         externalId: input.externalId ?? null,
+        planId: input.planId ?? null,
         postedOn: input.postedOn,
         receivedAt: input.receivedAt,
       })
@@ -116,7 +146,14 @@ export function recordPayment(
       .returning({ id: events.id })
       .get().id;
 
-    return { paymentId, eventId, status, amountCents: amount, remainingCents: remaining - amount };
+    return {
+      paymentId,
+      eventId,
+      status,
+      amountCents: amount,
+      remainingCents: remaining - amount,
+      duplicate: false,
+    };
   });
 }
 
@@ -128,12 +165,16 @@ export interface SendInvoiceInput {
   message?: string;
   messageSource?: 'ai' | 'template' | 'edited';
   paymentOption?: PaymentOptionJson;
+  /** Token for the patient's /pay/:token link. */
+  payToken?: string;
+  /** Set when PayPal accepted the invoice; omitted when PayPal isn't configured. */
+  paypal?: { invoiceId: string; number: string | null; status: string; payerUrl: string };
   now: string;
 }
 
 /**
- * Record that an invoice went out. Phase 1 only uses this from the seed; the PayPal Invoicing
- * send flow (Phase 2+) will call it after PayPal accepts the invoice.
+ * Record that an invoice went out: the seed calls it directly, and the send flow calls it after
+ * PayPal has accepted the invoice.
  */
 export function markInvoiceSent(
   db: Db,
@@ -154,6 +195,16 @@ export function markInvoiceSent(
       message: input.message ?? null,
       messageSource: input.messageSource ?? null,
       paymentOption: input.paymentOption ?? null,
+      payToken: input.payToken ?? null,
+      sentVia: input.paypal ? ('paypal' as const) : ('local' as const),
+      ...(input.paypal
+        ? {
+            paypalInvoiceId: input.paypal.invoiceId,
+            paypalInvoiceNumber: input.paypal.number,
+            paypalStatus: input.paypal.status,
+            paypalPayerUrl: input.paypal.payerUrl,
+          }
+        : {}),
     };
     // A saved draft becomes the sent invoice; otherwise create one.
     const draft = tx

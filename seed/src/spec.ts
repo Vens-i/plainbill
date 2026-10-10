@@ -20,6 +20,7 @@ export const PRACTICE = {
   state: 'CA',
   zip: '94000',
   phone: '(555) 014-2290',
+  hours: 'Mon–Fri 8–5',
   npi: '1999999984',
   taxId: '999999999',
   /** Days-to-pay on paper statements before Plainbill (the KPI's comparison line). */

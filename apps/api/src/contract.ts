@@ -71,7 +71,18 @@ export interface BalanceRow {
   patientShare: PatientShare;
   /** The 3-month plan option ("Plan-eligible: 3 × $80"), when there is something to pay. */
   plan: PlanOption | null;
-  invoice: { status: string; sentOn: IsoDate | null; openCount: number } | null;
+  invoice: {
+    status: string;
+    sentOn: IsoDate | null;
+    openCount: number;
+    /** For staff: the patient's /pay/:token link (relative to the web app). */
+    payPath: string | null;
+    sentVia: 'paypal' | 'local' | null;
+    paypalInvoiceNumber: string | null;
+    paypalStatus: string | null;
+  } | null;
+  /** A PayPal payment plan in progress or finished. */
+  activePlan: { months: number; paidCount: number; status: string } | null;
 }
 
 export interface PracticeInfo {
@@ -250,4 +261,102 @@ export interface DraftMessageResult {
 export interface SendResult {
   balance: BalanceRow;
   invoiceId: number;
+  /** The patient's link (absolute, APP_BASE_URL). */
+  payUrl: string;
+  /** Null when PayPal isn't configured (the invoice is local only). */
+  paypal: { invoiceId: string; number: string | null; payerUrl: string } | null;
+  email: {
+    id: number;
+    status: 'sent' | 'outbox' | 'failed';
+    provider: 'resend' | 'outbox';
+    deliveredTo: string | null;
+    error: string | null;
+  };
+}
+
+/** Staff email preview (/email-preview/:balanceId). */
+export interface EmailPreview {
+  /** "sent" emails come from the outbox log; "draft" is rendered from the saved draft. */
+  kind: 'sent' | 'draft';
+  subject: string;
+  html: string;
+  to: string;
+  status: 'sent' | 'outbox' | 'failed' | 'draft';
+  provider: 'resend' | 'outbox' | null;
+  error: string | null;
+  createdAt: string | null;
+  patientName: string;
+  payPath: string | null;
+  paypalPayerUrl: string | null;
+}
+
+// ── Patient pay page ────────────────────────────────────────────────────────
+
+export interface PayLinkInfo {
+  practice: { name: string; phone: string; hours: string | null };
+  /** True when this browser already has a session for this bill. */
+  verified: boolean;
+}
+
+export interface WaterfallStep {
+  key: 'billed' | 'discount' | 'insurance' | 'paid' | 'owes';
+  label: string;
+  /** Negative for amounts taken off the bill. */
+  amountCents: number;
+  title: string;
+  body: string;
+}
+
+export interface PatientBill {
+  practice: { name: string; phone: string; hours: string | null; address: string };
+  firstName: string;
+  status: BalanceStatus;
+  visit: { date: IsoDate; provider: string | null };
+  dueDate: IsoDate;
+  selfPay: boolean;
+  payerShortName: string;
+  amounts: {
+    billedCents: number;
+    discountCents: number;
+    allowedCents: number;
+    insurancePaidCents: number | null;
+    patientShareCents: number;
+    paidCents: number;
+    remainingCents: number;
+  };
+  waterfall: WaterfallStep[];
+  /** Plain-language service names (never codes). */
+  services: Array<{ name: string; chargeCents: number }>;
+  terms: Array<{ term: string; body: string }>;
+  options: {
+    /** Set when staff allowed partial payments. */
+    partialMinimumCents: number | null;
+    /** Set when staff offered a plan and none is active yet. */
+    plans: Array<{ months: 3 | 6; firstCents: number; regularCents: number; selected: boolean }>;
+  };
+  payments: Array<{
+    id: number;
+    amountCents: number;
+    paidAt: string;
+    via: string;
+    confirmation: string;
+    planId: number | null;
+  }>;
+  plan: {
+    id: number;
+    months: 3 | 6;
+    status: string;
+    totalCents: number;
+    paidCount: number;
+    schedule: Array<{ number: number; dueDate: IsoDate; amountCents: number; paid: boolean }>;
+  } | null;
+  paypal: { enabled: boolean; clientId: string | null; env: 'sandbox' | 'live' };
+}
+
+/** After a capture or plan approval: the refreshed bill and the payment to confirm. */
+export interface PayResult {
+  bill: PatientBill;
+  paymentId: number | null;
+  /** PayPal accepted it but hasn't settled it yet (it lands via sync/webhook). */
+  pending: boolean;
 }

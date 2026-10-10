@@ -1,5 +1,5 @@
 /**
- * Review & Send drawer: drafts, review-flag resolution, and the (Phase 2: stubbed) send.
+ * Review & Send drawer: drafts and review-flag resolution. The send itself is in send.ts.
  *
  * Every amount here comes from the computed balance. The AI only drafts wording, and a message
  * can't be sent if it mentions a figure the core didn't produce.
@@ -28,7 +28,6 @@ import { balances, intakeItems, invoices, patients, practices, visits } from '..
 import { getBalanceRows } from '../queries/rows';
 import { replaceVisitClaim } from './ingest';
 import { IntakeError, itemForBalance, resolveFlag } from './intake';
-import { markInvoiceSent } from './payments';
 
 export const PARTIAL_MINIMUM_CENTS = 2000;
 
@@ -43,11 +42,11 @@ export class DrawerError extends Error {
   }
 }
 
-function practiceName(db: Db): string {
+export function practiceName(db: Db): string {
   return db.select().from(practices).orderBy(asc(practices.id)).get()?.name ?? 'your provider';
 }
 
-function row(db: Db, balanceId: number, today: IsoDate): BalanceRow {
+export function balanceRow(db: Db, balanceId: number, today: IsoDate): BalanceRow {
   const [r] = getBalanceRows(db, today, [balanceId]);
   if (!r) throw new DrawerError('No such balance.', 404);
   return r;
@@ -107,7 +106,7 @@ function defaultOption(r: BalanceRow): PaymentOption {
     : { type: 'full' };
 }
 
-function maskEmail(email: string | null): string {
+export function maskEmail(email: string | null): string {
   if (!email || !email.includes('@')) return 'no email on file';
   const [local, domain] = email.split('@');
   return `${local!.slice(0, 1)}•••••@${domain}`;
@@ -150,7 +149,7 @@ export function getDrawerData(
   ai: { available: boolean; model: string | null },
   templateMessage: (f: MessageFacts, v: MessageVariant) => string,
 ): DrawerData {
-  const r = row(db, balanceId, today);
+  const r = balanceRow(db, balanceId, today);
   const practice = practiceName(db);
   const visit = db
     .select()
@@ -199,7 +198,7 @@ export async function draftMessage(
   variant: MessageVariant,
   option: PaymentOption,
 ) {
-  const r = row(db, balanceId, today);
+  const r = balanceRow(db, balanceId, today);
   return drafter.draft(
     buildMessageFacts(r, practiceName(db), option, dueDateFor(r, today)),
     variant,
@@ -212,7 +211,7 @@ export interface DraftInput {
   paymentOption: PaymentOption;
 }
 
-function validateOption(r: BalanceRow, option: PaymentOption): void {
+export function validateOption(r: BalanceRow, option: PaymentOption): void {
   if (option.type === 'plan') {
     const p = planOption(r.remainingCents, option.months);
     if (!p.eligible)
@@ -225,7 +224,7 @@ function validateOption(r: BalanceRow, option: PaymentOption): void {
   }
 }
 
-function checkAmounts(db: Db, r: BalanceRow, message: string): void {
+export function checkAmounts(db: Db, r: BalanceRow, message: string): void {
   const issues = checkMessage(message, guardFacts(r, practiceName(db)));
   if (issues.length) {
     throw new DrawerError(
@@ -236,8 +235,8 @@ function checkAmounts(db: Db, r: BalanceRow, message: string): void {
   }
 }
 
-export function saveDraft(db: Db, balanceId: number, today: IsoDate, input: DraftInput): void {
-  const r = row(db, balanceId, today);
+export function saveDraft(db: Db, balanceId: number, today: IsoDate, input: DraftInput): number {
+  const r = balanceRow(db, balanceId, today);
   validateOption(r, input.paymentOption);
   const existing = db
     .select()
@@ -250,46 +249,15 @@ export function saveDraft(db: Db, balanceId: number, today: IsoDate, input: Draf
     paymentOption: input.paymentOption,
     amountCents: r.remainingCents,
   };
-  if (existing) db.update(invoices).set(values).where(eq(invoices.id, existing.id)).run();
-  else
-    db.insert(invoices)
-      .values({ balanceId, status: 'draft', ...values })
-      .run();
-}
-
-/**
- * Phase 2 stub: records the invoice as sent and moves the balance to Sent. Creating the PayPal
- * invoice and emailing the patient arrive in Phase 3, behind this same call.
- */
-export function sendInvoice(
-  db: Db,
-  balanceId: number,
-  today: IsoDate,
-  input: DraftInput,
-  now = new Date().toISOString(),
-) {
-  const r = row(db, balanceId, today);
-  if (r.status !== 'ready')
-    throw new DrawerError(
-      `Only balances that are ready to invoice can be sent (this one is ${r.status}).`,
-      409,
-    );
-  validateOption(r, input.paymentOption);
-  checkAmounts(db, r, input.message);
-  const result = markInvoiceSent(db, balanceId, {
-    sentOn: today,
-    dueDate: dueDateFor(r, today),
-    message: input.message.trim(),
-    messageSource: input.messageSource,
-    paymentOption: input.paymentOption,
-    now,
-  });
-  // The suggestion ("Send invoice") is done; reminders get suggested later.
-  db.update(balances)
-    .set({ aiSuggestion: null, updatedAt: now })
-    .where(eq(balances.id, balanceId))
-    .run();
-  return result;
+  if (existing) {
+    db.update(invoices).set(values).where(eq(invoices.id, existing.id)).run();
+    return existing.id;
+  }
+  return db
+    .insert(invoices)
+    .values({ balanceId, status: 'draft', ...values })
+    .returning({ id: invoices.id })
+    .get().id;
 }
 
 /** Resolve an AI flag on a balance that is already on the dashboard (status "review"). */
@@ -301,7 +269,7 @@ export function resolveBalanceFlag(
   value: string,
   now = new Date().toISOString(),
 ): void {
-  const r = row(db, balanceId, today);
+  const r = balanceRow(db, balanceId, today);
   if (r.status !== 'review')
     throw new DrawerError('Only balances in review have fields to confirm.', 409);
   const linked = itemForBalance(db, balanceId);
@@ -337,7 +305,7 @@ export function markReady(
   today: IsoDate,
   now = new Date().toISOString(),
 ): void {
-  const r = row(db, balanceId, today);
+  const r = balanceRow(db, balanceId, today);
   const review = reviewInfo(db, r);
   if (review && !review.canMarkReady) {
     throw new DrawerError(

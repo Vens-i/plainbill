@@ -2,6 +2,9 @@ import type { EobExtractor, MessageDrafter } from '@plainbill/ai';
 import type { IsoDate } from '@plainbill/core';
 import type { Db } from '../db/client';
 import type { EventBus } from '../events';
+import type { PayPalApi } from '../paypal/client';
+import type { Mailer } from '../services/email';
+import type { PatientSessions } from '../services/sessions';
 
 /** AI services the API uses. Without an API key: recorded EOB extractions + template messages. */
 export interface AiServices {
@@ -12,16 +15,50 @@ export interface AiServices {
   model: string | null;
 }
 
+export interface PayPalServices {
+  /** Null when PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET aren't set: sends stay local. */
+  api: PayPalApi | null;
+  /** Public client id for the browser SDK. */
+  clientId: string | null;
+  env: 'sandbox' | 'live';
+  /** Webhooks are refused (not trusted) without it. */
+  webhookId: string | null;
+}
+
+export interface EmailServices {
+  mailer: Mailer;
+  /** Demo safety: deliver every patient email here instead of the address on file. */
+  toOverride: string | null;
+}
+
+/** Runs async jobs one at a time, so payment bookkeeping never interleaves. */
+export class SerialQueue {
+  private tail: Promise<unknown> = Promise.resolve();
+
+  run<T>(job: () => Promise<T>): Promise<T> {
+    const next = this.tail.then(job, job);
+    this.tail = next.catch(() => undefined);
+    return next;
+  }
+}
+
 export interface RouteContext {
   db: Db;
   bus: EventBus;
   ai: AiServices;
+  paypal: PayPalServices;
+  email: EmailServices;
+  sessions: PatientSessions;
+  queue: SerialQueue;
   today: () => IsoDate;
   practiceId: () => number;
+  /** Public base URL for patient links ("http://localhost:5173"). */
+  appBaseUrl: string;
   /** Directory dev routes may read sample files from. */
   sampleDir: string;
+  log: { info: (msg: string) => void; warn: (msg: string) => void; error: (msg: string) => void };
 }
 
-export function publishChanged(ctx: RouteContext, ids: number[]): void {
+export function publishChanged(ctx: Pick<RouteContext, 'bus'>, ids: number[]): void {
   if (ids.length) ctx.bus.publish({ type: 'balances.changed', data: { ids } });
 }

@@ -1,16 +1,17 @@
 /**
- * Review & Send drawer routes. "Send" is a stub until Phase 3 wires PayPal Invoicing + email.
+ * Review & Send drawer routes. "Send" creates and sends the PayPal invoice, then emails the
+ * patient (services/send.ts).
  */
 import type { FastifyInstance } from 'fastify';
 import { templateMessage } from '@plainbill/ai';
 import type {
   DraftMessageResult,
   DrawerData,
+  EmailPreview,
   MessageVariant,
   PaymentOption,
   SendResult,
 } from '../contract';
-import { getBalanceRows } from '../queries/rows';
 import {
   DrawerError,
   draftMessage,
@@ -18,9 +19,9 @@ import {
   markReady,
   resolveBalanceFlag,
   saveDraft,
-  sendInvoice,
   type DraftInput,
 } from '../services/drawer';
+import { emailPreview, sendBalanceInvoice } from '../services/send';
 import { publishChanged, type RouteContext } from './context';
 
 const VARIANTS: readonly MessageVariant[] = ['default', 'simpler', 'spanish'];
@@ -96,10 +97,18 @@ export function registerDrawerRoutes(api: FastifyInstance, ctx: RouteContext): v
     '/balances/:id/send',
     async (request): Promise<SendResult> => {
       const balanceId = id(request.params.id);
-      const { invoiceId } = sendInvoice(ctx.db, balanceId, ctx.today(), parseDraft(request.body));
+      const result = await sendBalanceInvoice(ctx, balanceId, parseDraft(request.body));
       publishChanged(ctx, [balanceId]);
-      const [balance] = getBalanceRows(ctx.db, ctx.today(), [balanceId]);
-      return { balance: balance!, invoiceId };
+      return result;
+    },
+  );
+
+  api.get<{ Params: { id: string } }>(
+    '/balances/:id/email',
+    async (request): Promise<EmailPreview> => {
+      const balanceId = id(request.params.id);
+      const { draft } = drawer(balanceId);
+      return emailPreview(ctx, balanceId, draft);
     },
   );
 

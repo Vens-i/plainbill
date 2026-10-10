@@ -27,6 +27,7 @@ import {
   getOrCreateOpenBatch,
   ingestClaim,
   markInvoiceSent,
+  newPayToken,
   recordPayment,
   resetDatabase,
   schema,
@@ -95,6 +96,7 @@ export async function loadSeed(db: Db, options: LoadSeedOptions = {}): Promise<S
       state: PRACTICE.state,
       zip: PRACTICE.zip,
       phone: PRACTICE.phone,
+      hours: PRACTICE.hours,
       npi: PRACTICE.npi,
       paperBaselineDays: PRACTICE.paperBaselineDays,
       staffName: PRACTICE.user.name,
@@ -182,6 +184,8 @@ export async function loadSeed(db: Db, options: LoadSeedOptions = {}): Promise<S
       markInvoiceSent(db, balanceId, {
         sentOn: visit.invoice.sentOn,
         openCount: visit.invoice.openCount,
+        // Seeded invoices predate PayPal; their patients pay on the Plainbill page.
+        payToken: newPayToken(),
         now,
       });
     }

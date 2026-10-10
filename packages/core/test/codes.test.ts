@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { describeAdjustment, describeRemark, isGroupCode } from '../src/codes';
-import { describeProcedure } from '../src/procedures';
+import { describeProcedure, patientServiceName } from '../src/procedures';
 import { normalizePayer, SELF_PAY } from '../src/payers';
 
 describe('CARC dictionary', () => {
@@ -67,11 +67,28 @@ describe('procedure labels', () => {
     expect(describeProcedure('80053').label).toBe('Blood work — metabolic panel');
     expect(describeProcedure('93000').label).toBe('Heart rhythm test (ECG)');
     expect(describeProcedure('72148').short).toBe('MRI');
-    expect(describeProcedure('00000')).toEqual({
+    expect(describeProcedure('00000')).toMatchObject({
       code: '00000',
       label: 'Service 00000',
       known: false,
     });
+  });
+});
+
+describe('patient-facing procedure names', () => {
+  it('matches the bill page wording and appends the provider to visits', () => {
+    expect(patientServiceName('99214', 'Dr. Patel')).toBe('Office visit with Dr. Patel');
+    expect(patientServiceName('99214', null)).toBe('Office visit');
+    expect(patientServiceName('80053', 'Dr. Patel')).toBe('Blood work (metabolic panel)');
+    expect(patientServiceName('93000', 'Dr. Patel')).toBe('Heart rhythm test (ECG)');
+    expect(patientServiceName('99204', 'Dr. Kim')).toBe('New patient visit with Dr. Kim');
+  });
+
+  it('never shows a patient the code itself', () => {
+    expect(patientServiceName('00000', 'Dr. Patel')).toBe('Other service');
+    for (const code of ['99213', '72148', '36415', '00000']) {
+      expect(patientServiceName(code, 'Dr. Okoye')).not.toMatch(/\d{5}/);
+    }
   });
 });
 

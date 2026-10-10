@@ -21,10 +21,23 @@ import { getBalanceRows } from './queries/rows';
 import { DuplicateClaimError, ingestClaim } from './services/ingest';
 import { PaymentError, recordPayment } from './services/payments';
 import { DrawerError } from './services/drawer';
+import { OutboxMailer } from './services/email';
 import { IntakeError } from './services/intake';
-import type { AiServices, RouteContext } from './routes/context';
+import { PatientError } from './services/patient';
+import { PatientSessions } from './services/sessions';
+import { PayPalError } from './paypal/client';
+import { syncOpenItems } from './services/paypal-sync';
+import {
+  SerialQueue,
+  type AiServices,
+  type EmailServices,
+  type PayPalServices,
+  type RouteContext,
+} from './routes/context';
 import { registerDrawerRoutes } from './routes/drawer';
 import { registerIntakeRoutes } from './routes/intake';
+import { registerPatientRoutes } from './routes/patient';
+import { registerWebhookRoutes } from './routes/webhooks';
 
 export const DEFAULT_SAMPLE_DIR = join(REPO_ROOT, 'seed', 'data');
 export const DEFAULT_RECORDINGS_DIR = join(DEFAULT_SAMPLE_DIR, 'eob-recordings');
@@ -50,11 +63,30 @@ export interface AppOptions {
   ai?: AiServices;
   /** Where dev routes read sample files (defaults to seed/data). */
   sampleDir?: string;
+  /** Defaults to "not configured": sends stay local, patient pages can't take payments. */
+  paypal?: PayPalServices;
+  /** Defaults to the outbox (emails are stored and previewable, not delivered). */
+  email?: EmailServices;
+  /** Public base URL for patient links (defaults to the Vite dev server). */
+  appBaseUrl?: string;
+  /** Patient session signing. Defaults to a random secret and non-Secure cookies. */
+  sessions?: PatientSessions;
 }
+
+export const NO_PAYPAL: PayPalServices = {
+  api: null,
+  clientId: null,
+  env: 'sandbox',
+  webhookId: null,
+};
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
-export function buildApp(options: AppOptions): { app: FastifyInstance; bus: EventBus } {
+export function buildApp(options: AppOptions): {
+  app: FastifyInstance;
+  bus: EventBus;
+  ctx: RouteContext;
+} {
   const { db } = options;
   const bus = options.bus ?? new EventBus();
   const today = () => todayIso(options.demoToday ?? null);
@@ -70,6 +102,20 @@ export function buildApp(options: AppOptions): { app: FastifyInstance; bus: Even
   app.register(multipart, { limits: { fileSize: MAX_UPLOAD_BYTES, files: 10 } });
 
   app.setErrorHandler((error, _request, reply) => {
+    if (error instanceof PatientError) {
+      return reply
+        .code(error.status)
+        .send({ error: error.code, message: error.message, ...error.extra });
+    }
+    if (error instanceof PayPalError) {
+      app.log.error(
+        `PayPal ${error.status} ${error.code} ${error.issue ?? ''} debug_id=${error.debugId}`,
+      );
+      return reply.code(502).send({
+        error: 'paypal',
+        message: 'PayPal could not complete that request. Please try again in a moment.',
+      });
+    }
     if (error instanceof IntakeError || error instanceof DrawerError) {
       return reply.code(error.status).send({
         error: error instanceof IntakeError ? 'intake' : 'drawer',
@@ -98,9 +144,19 @@ export function buildApp(options: AppOptions): { app: FastifyInstance; bus: Even
     db,
     bus,
     ai: options.ai ?? offlineAi(),
+    paypal: options.paypal ?? NO_PAYPAL,
+    email: options.email ?? { mailer: new OutboxMailer(), toOverride: null },
+    sessions: options.sessions ?? new PatientSessions(null, false),
+    queue: new SerialQueue(),
     today,
     practiceId: () => practice()!.id,
+    appBaseUrl: options.appBaseUrl ?? 'http://localhost:5173',
     sampleDir: options.sampleDir ?? DEFAULT_SAMPLE_DIR,
+    log: {
+      info: (msg) => app.log.info(msg),
+      warn: (msg) => app.log.warn(msg),
+      error: (msg) => app.log.error(msg),
+    },
   };
 
   app.register(
@@ -144,6 +200,8 @@ export function buildApp(options: AppOptions): { app: FastifyInstance; bus: Even
 
       registerIntakeRoutes(api, ctx, options.devRoutes ?? false);
       registerDrawerRoutes(api, ctx);
+      registerPatientRoutes(api, ctx);
+      registerWebhookRoutes(api, ctx);
 
       api.post<{ Querystring: { fileName?: string }; Body: string }>(
         '/intake/835',
@@ -195,6 +253,9 @@ export function buildApp(options: AppOptions): { app: FastifyInstance; bus: Even
       );
 
       if (options.devRoutes) {
+        /** Dev only: run one PayPal reconciliation pass now instead of waiting for the poll. */
+        api.post('/dev/paypal/sync', async () => syncOpenItems(ctx));
+
         /**
          * Dev only: pretend PayPal just told us this balance was paid in full, so the live
          * flash can be rehearsed before the webhook exists.
@@ -231,5 +292,5 @@ export function buildApp(options: AppOptions): { app: FastifyInstance; bus: Even
     { prefix: '/api' },
   );
 
-  return { app, bus };
+  return { app, bus, ctx };
 }

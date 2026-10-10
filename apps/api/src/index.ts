@@ -29,3 +29,35 @@ export {
 } from './services/intake';
 export type { AiServices } from './routes/context';
 export type * from './contract';
+export {
+  PayPalClient,
+  PayPalError,
+  toPayPalMoney,
+  fromPayPalMoney,
+  type PayPalApi,
+} from './paypal/client';
+export { FakePayPal } from './paypal/fake';
+export type * as paypalTypes from './paypal/types';
+export { NO_PAYPAL } from './app';
+export {
+  SerialQueue,
+  type PayPalServices,
+  type EmailServices,
+  type RouteContext,
+} from './routes/context';
+export {
+  OutboxMailer,
+  ResendMailer,
+  renderBillEmail,
+  barWidths,
+  PAYPAL_BUTTON_IMAGE,
+  type BillEmailData,
+  type Mailer,
+} from './services/email';
+export {
+  PatientSessions,
+  SESSION_COOKIE,
+  newPayToken,
+  normalizeLastName,
+} from './services/sessions';
+export { syncOpenItems, handleWebhookEvent } from './services/paypal-sync';

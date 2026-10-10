@@ -28,7 +28,28 @@ export interface Config {
     eobMode: 'auto' | 'live' | 'recorded';
     recordingsDir: string;
   };
+  paypal: {
+    clientId: string | null;
+    clientSecret: string | null;
+    env: 'sandbox' | 'live';
+    /** Needed to verify webhook signatures; webhooks are refused without it. */
+    webhookId: string | null;
+    /** Seconds between reconciliation polls of open PayPal invoices and plans; 0 turns it off. */
+    syncSeconds: number;
+  };
+  email: {
+    resendApiKey: string | null;
+    from: string;
+    /** Demo safety: every patient email goes to this address instead of the one on file. */
+    toOverride: string | null;
+  };
+  /** Public base URL for patient links in emails ("http://localhost:5173"). */
+  appBaseUrl: string;
+  /** Signs patient-page sessions. A random one is generated per process when unset. */
+  sessionSecret: string | null;
 }
+
+const blank = (v: string | undefined) => v?.trim() || null;
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const production = env.NODE_ENV === 'production';
@@ -48,5 +69,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         env.AI_EOB_MODE === 'live' || env.AI_EOB_MODE === 'recorded' ? env.AI_EOB_MODE : 'auto',
       recordingsDir: resolveFromRoot(env.EOB_RECORDINGS_DIR?.trim() || 'seed/data/eob-recordings'),
     },
+    paypal: {
+      clientId: blank(env.PAYPAL_CLIENT_ID),
+      clientSecret: blank(env.PAYPAL_CLIENT_SECRET),
+      env: env.PAYPAL_ENV === 'live' ? 'live' : 'sandbox',
+      webhookId: blank(env.PAYPAL_WEBHOOK_ID),
+      syncSeconds: Math.max(0, Number(env.PAYPAL_SYNC_SECONDS ?? 20) || 0),
+    },
+    email: {
+      resendApiKey: blank(env.RESEND_API_KEY),
+      from: blank(env.EMAIL_FROM) ?? 'Harborview Family Medicine <onboarding@resend.dev>',
+      toOverride: blank(env.EMAIL_TO_OVERRIDE),
+    },
+    appBaseUrl: (blank(env.APP_BASE_URL) ?? 'http://localhost:5173').replace(/\/+$/, ''),
+    sessionSecret: blank(env.SESSION_SECRET),
   };
 }

@@ -23,6 +23,7 @@ import {
   claimLines,
   invoices,
   patients,
+  paymentPlans,
   payments,
   visits,
 } from '../db/schema';
@@ -129,6 +130,16 @@ export function getBalanceRows(db: DbLike, today: IsoDate, ids?: number[]): Bala
       .all(),
     (p) => p.balanceId,
   );
+  const plansByBalance = groupBy(
+    db
+      .select()
+      .from(paymentPlans)
+      .where(inArray(paymentPlans.balanceId, balanceIds))
+      .orderBy(asc(paymentPlans.id))
+      .all()
+      .filter((p) => p.status === 'active' || p.status === 'completed'),
+    (p) => p.balanceId,
+  );
 
   return rows.map(({ balance, visit, patient }) => {
     const lines = linesByVisit.get(visit.id) ?? [];
@@ -137,6 +148,14 @@ export function getBalanceRows(db: DbLike, today: IsoDate, ids?: number[]): Bala
     const invoice = invoicesByBalance.get(balance.id)?.at(-1) ?? null;
     const paymentList = paymentsByBalance.get(balance.id) ?? [];
     const lastPayment = paymentList.at(-1) ?? null;
+    const plan = plansByBalance.get(balance.id)?.at(-1) ?? null;
+    const activePlan = plan
+      ? {
+          months: plan.months,
+          paidCount: paymentList.filter((p) => p.planId === plan.id).length,
+          status: plan.status,
+        }
+      : null;
     const remaining = balance.patientResponsibilityCents - balance.patientPaidCents;
     const selfPay = visit.payerKind === 'self-pay';
     const paid = balance.status === 'paid';
@@ -223,7 +242,10 @@ export function getBalanceRows(db: DbLike, today: IsoDate, ids?: number[]): Bala
       const opens = invoice?.openCount ?? 0;
       sub = opens > 0 ? `Opened ${opens}× · not paid` : 'Not opened';
     } else if (balance.status === 'partial') {
-      sub = `${formatMoneyShort(balance.patientPaidCents)} of ${formatMoneyShort(balance.patientResponsibilityCents)} paid`;
+      sub =
+        activePlan?.status === 'active'
+          ? `Plan · ${activePlan.paidCount} of ${activePlan.months} paid`
+          : `${formatMoneyShort(balance.patientPaidCents)} of ${formatMoneyShort(balance.patientResponsibilityCents)} paid`;
     } else {
       sub = provider ?? visit.payerName;
     }
@@ -272,8 +294,17 @@ export function getBalanceRows(db: DbLike, today: IsoDate, ids?: number[]): Bala
       patientShare: computed.patientShare,
       plan: remaining > 0 && !visit.denied ? planOption(remaining, 3) : null,
       invoice: invoice
-        ? { status: invoice.status, sentOn: invoice.sentOn, openCount: invoice.openCount }
+        ? {
+            status: invoice.status,
+            sentOn: invoice.sentOn,
+            openCount: invoice.openCount,
+            payPath: invoice.payToken ? `/pay/${invoice.payToken}` : null,
+            sentVia: invoice.sentVia,
+            paypalInvoiceNumber: invoice.paypalInvoiceNumber,
+            paypalStatus: invoice.paypalStatus,
+          }
         : null,
+      activePlan,
     } satisfies BalanceRow;
   });
 }

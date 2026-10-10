@@ -29,7 +29,11 @@ export function resetDatabase(db: Db): void {
   db.transaction((tx) => {
     for (const table of [
       schema.events,
+      schema.webhookEvents,
+      schema.emails,
       schema.payments,
+      schema.paypalOrders,
+      schema.paymentPlans,
       schema.invoices,
       schema.intakeItems,
       schema.intakeFiles,
