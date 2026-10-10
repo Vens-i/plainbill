@@ -148,6 +148,10 @@ export const balances = sqliteTable(
     patientPaidCents: integer('patient_paid_cents').notNull().default(0),
     reviewReason: text('review_reason'),
     aiSuggestion: text('ai_suggestion'),
+    /** What the suggestion's one-click button does (see @plainbill/ai SUGGESTION_ACTIONS). */
+    aiAction: text('ai_action'),
+    /** "claude" or "rules"; null for suggestions set by the seed or intake. */
+    aiSuggestionBy: text('ai_suggestion_by'),
     /** Calendar date (demo-aware) the balance was settled. */
     paidOn: text('paid_on'),
     createdAt: createdAt(),
@@ -409,3 +413,29 @@ export interface IntakeResolution {
   to: string;
   at: string;
 }
+
+/**
+ * Payment actions the bill helper proposed. The amounts were computed by code when the card was
+ * shown; "Confirm" can only run an action stored here, for the same bill, recently.
+ */
+export const assistantActions = sqliteTable(
+  'assistant_actions',
+  {
+    /** Random id the card carries. */
+    id: text('id').primaryKey(),
+    invoiceId: integer('invoice_id')
+      .notNull()
+      .references(() => invoices.id),
+    kind: text('kind', { enum: ['pay_in_full', 'payment_plan', 'partial_payment'] }).notNull(),
+    months: integer('months'),
+    amountCents: integer('amount_cents').notNull(),
+    /** The balance's remaining amount when proposed; a changed balance voids the card. */
+    remainingCents: integer('remaining_cents').notNull(),
+    status: text('status', { enum: ['proposed', 'confirmed'] }).notNull(),
+    paypalOrderId: text('paypal_order_id'),
+    paypalSubscriptionId: text('paypal_subscription_id'),
+    createdAt: text('created_at').notNull(),
+    confirmedAt: text('confirmed_at'),
+  },
+  (t) => [index('assistant_actions_invoice_idx').on(t.invoiceId)],
+);

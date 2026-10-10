@@ -388,6 +388,29 @@ function paypalIdOf(row: BalanceRow): string {
     .find((i) => i.balanceId === row.id)!.paypalInvoiceId!;
 }
 
+describe('An order approved in PayPal but never captured (the page closed)', () => {
+  it('is captured by the reconciliation poll', async () => {
+    const robert = await rowOf('Robert Chen');
+    const token = tokenOf(robert);
+    // Robert's link was locked by the earlier test; wait it out by clearing the locks directly.
+    db.update(schema.invoices).set({ verifyLockedUntil: null, verifyFailures: 0 }).run();
+    const { cookie } = await verify(token, 'Chen', [5, 27, 1981]);
+    const { json: order } = await call<{ orderId: string }>(
+      'POST',
+      `/pay/${token}/orders`,
+      {},
+      { cookie },
+    );
+    paypal.payerApprovesOrder(order.orderId);
+    // No capture call from the page: the browser went away.
+    published.length = 0;
+    const sync = await call<{ recorded: number }>('POST', '/dev/paypal/sync');
+    expect(sync.json.recorded).toBe(1);
+    expect((await rowOf('Robert Chen')).status).toBe('paid');
+    expect(published.filter((e) => e.type === 'payment')).toHaveLength(1);
+  });
+});
+
 describe('Paying on PayPal’s own invoice page', () => {
   it('is picked up by the reconciliation poll, once', async () => {
     const ellen = await rowOf('Ellen Brooks');

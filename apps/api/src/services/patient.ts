@@ -33,11 +33,11 @@ import {
   practices,
   visits,
 } from '../db/schema';
-import { fromPayPalMoney, PayPalError, toPayPalMoney } from '../paypal/client';
+import { PayPalError, toPayPalMoney } from '../paypal/client';
 import type { BillingCycle } from '../paypal/types';
 import { getBalanceRows } from '../queries/rows';
 import { publishChanged, type RouteContext } from '../routes/context';
-import { applyPayPalPayment, markOrderCaptured, reconcilePlan } from './paypal-sync';
+import { captureApprovedOrder, reconcilePlan } from './paypal-sync';
 import { normalizeLastName, payUrl } from './sessions';
 
 type Ctx = Pick<RouteContext, 'db' | 'bus' | 'today' | 'paypal' | 'queue' | 'log' | 'appBaseUrl'>;
@@ -291,7 +291,7 @@ function terms(r: BalanceRow) {
   ].filter((t): t is { term: string; body: string } => Boolean(t));
 }
 
-function activePlan(ctx: Pick<Ctx, 'db'>, invoiceId: number) {
+export function activePlan(ctx: Pick<Ctx, 'db'>, invoiceId: number) {
   return ctx.db
     .select()
     .from(paymentPlans)
@@ -370,6 +370,7 @@ export function patientBill(ctx: Ctx, invoiceId: number): PatientBill {
       paidCents: r.patientPaidCents,
       remainingCents: r.remainingCents,
     },
+    patientShare: r.patientShare,
     waterfall: waterfall(r, p.name),
     services: lines.map((l) => ({
       name: patientServiceName(l.procedureCode, r.provider),
@@ -410,7 +411,7 @@ export function patientBill(ctx: Ctx, invoiceId: number): PatientBill {
 
 // ── Pay with PayPal (Orders v2) ─────────────────────────────────────────────
 
-function openBalance(ctx: Ctx, invoice: InvoiceRow) {
+export function openBalance(ctx: Ctx, invoice: InvoiceRow) {
   const [r] = getBalanceRows(ctx.db, ctx.today(), [invoice.balanceId]);
   if (!r || invoice.status !== 'sent' || r.remainingCents <= 0) {
     throw new PatientError('This bill is already paid. Thank you!', 409, 'already_paid');
@@ -492,7 +493,7 @@ export async function captureCheckoutOrder(
   invoice: InvoiceRow,
   orderId: string,
 ): Promise<{ paymentId: number | null; pending: boolean }> {
-  const api = requireApi(ctx);
+  requireApi(ctx);
   const order = ctx.db
     .select()
     .from(paypalOrders)
@@ -500,47 +501,19 @@ export async function captureCheckoutOrder(
     .get();
   if (!order) throw new PatientError('Unknown payment.', 404, 'not_found');
 
-  return ctx.queue.run(async () => {
-    if (order.captureId) {
-      const paid = ctx.db
-        .select()
-        .from(payments)
-        .where(eq(payments.externalId, order.captureId))
-        .get();
-      return { paymentId: paid?.id ?? null, pending: !paid };
+  try {
+    return await ctx.queue.run(() => captureApprovedOrder(ctx, order));
+  } catch (err) {
+    if (err instanceof PayPalError && err.issue === 'INSTRUMENT_DECLINED') {
+      throw new PatientError(
+        'PayPal declined that payment method. Please try another one.',
+        422,
+        'declined',
+      );
     }
-    let result;
-    try {
-      result = await api.captureOrder(orderId, `pb-capture-${orderId}`);
-    } catch (err) {
-      if (err instanceof PayPalError && err.issue === 'ORDER_ALREADY_CAPTURED') {
-        result = await api.getOrder(orderId);
-      } else if (err instanceof PayPalError && err.issue === 'INSTRUMENT_DECLINED') {
-        throw new PatientError(
-          'PayPal declined that payment method. Please try another one.',
-          422,
-          'declined',
-        );
-      } else {
-        throw err;
-      }
-    }
-    const capture = result.purchase_units?.[0]?.payments?.captures?.[0];
-    if (!capture) throw new PatientError('PayPal did not complete the payment.', 502, 'no_capture');
-    if (capture.status === 'PENDING') return { paymentId: null, pending: true };
-    if (capture.status !== 'COMPLETED') {
-      throw new PatientError('PayPal did not complete the payment.', 422, 'not_completed');
-    }
-    await applyPayPalPayment(ctx, {
-      invoiceId: invoice.id,
-      externalId: capture.id,
-      amountCents: fromPayPalMoney(capture.amount),
-      source: 'paypal-checkout',
-    });
-    markOrderCaptured(ctx, orderId, capture.id);
-    const paid = ctx.db.select().from(payments).where(eq(payments.externalId, capture.id)).get();
-    return { paymentId: paid?.id ?? null, pending: false };
-  });
+    if (err instanceof PayPalError) throw err;
+    throw new PatientError('PayPal did not complete the payment.', 502, 'not_completed');
+  }
 }
 
 // ── Payment plans (Subscriptions v1) ────────────────────────────────────────
@@ -575,7 +548,12 @@ async function planProduct(ctx: Ctx): Promise<string> {
  * balance doesn't split evenly, the first payment is larger; PayPal models that as a one-cycle
  * priced "trial" followed by the regular cycles.
  */
-async function billingPlan(ctx: Ctx, months: PlanMonths, firstCents: number, regularCents: number) {
+export async function billingPlan(
+  ctx: Ctx,
+  months: PlanMonths,
+  firstCents: number,
+  regularCents: number,
+) {
   const key = `paypal.${ctx.paypal.env}.plan.${months}.${firstCents}.${regularCents}`;
   const cached = setting(ctx, key);
   if (cached) return cached;

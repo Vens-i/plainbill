@@ -623,3 +623,169 @@
     display: none !important;
   }
 }
+
+/* ── Ask about your bill ── */
+.pay-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 16px;
+}
+.pay-ask-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pay-ai-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--teal-100);
+  color: var(--teal-800);
+}
+.pay-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pay-bubble {
+  max-width: 90%;
+  padding: 10px 14px;
+  font-size: 15px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.pay-bubble.is-patient {
+  align-self: flex-end;
+  max-width: 78%;
+  background: var(--teal-700);
+  color: #fff;
+  border-radius: 16px 16px 4px 16px;
+}
+.pay-bubble.is-helper {
+  align-self: flex-start;
+  background: var(--segment);
+  border-radius: 16px 16px 16px 4px;
+}
+.pay-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.pay-source {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 8px;
+}
+.pay-bubble.is-typing {
+  display: inline-flex;
+  gap: 4px;
+  padding: 14px;
+}
+.pay-bubble.is-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  animation: pay-typing 1s infinite ease-in-out;
+}
+.pay-bubble.is-typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.pay-bubble.is-typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes pay-typing {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pay-bubble.is-typing span {
+    animation: none;
+  }
+}
+.pay-action {
+  width: 90%;
+  border: 1.5px solid var(--teal-700);
+  background: var(--teal-50);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pay-action-title {
+  font-size: 16px;
+  font-weight: 800;
+}
+.pay-action-line {
+  font-size: 14px;
+  color: var(--ink-2);
+  margin: 0;
+}
+.pay-action-phone {
+  font-size: 17px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.pay-action-confirm {
+  height: 48px;
+  font-size: 15px;
+  margin-top: 8px;
+}
+.pay-action-paypal {
+  margin-top: 8px;
+}
+.pay-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pay-chip {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  cursor: pointer;
+}
+.pay-chip:hover {
+  border-color: var(--teal-700);
+}
+.pay-chip:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.pay-ask-form {
+  display: flex;
+  gap: 8px;
+}
+.pay-ask-form .pay-input {
+  height: 48px;
+  font-size: 15px;
+  border-radius: 12px;
+}
+.pay-send {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 0;
+  background: var(--teal-700);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+.pay-send:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

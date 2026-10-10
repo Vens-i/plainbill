@@ -267,6 +267,58 @@ export async function reconcilePlan(ctx: Ctx, planId: number): Promise<number> {
   return recorded;
 }
 
+export type OrderRow = typeof paypalOrders.$inferSelect;
+
+/**
+ * Capture an approved order and record the payment (idempotent). Call inside `ctx.queue.run`.
+ * PayPal's "already captured" is treated as success; a declined card throws the PayPalError.
+ */
+export async function captureApprovedOrder(
+  ctx: Ctx,
+  order: OrderRow,
+): Promise<{ paymentId: number | null; pending: boolean }> {
+  const api = ctx.paypal.api!;
+  const fresh = ctx.db.select().from(paypalOrders).where(eq(paypalOrders.id, order.id)).get();
+  if (fresh?.captureId) {
+    const paid = ctx.db
+      .select()
+      .from(payments)
+      .where(eq(payments.externalId, fresh.captureId))
+      .get();
+    return { paymentId: paid?.id ?? null, pending: !paid };
+  }
+  let result;
+  try {
+    result = await api.captureOrder(order.id, `pb-capture-${order.id}`);
+  } catch (err) {
+    if (!isAlreadyDone(err, 'ORDER_ALREADY_CAPTURED')) throw err;
+    result = await api.getOrder(order.id);
+  }
+  const capture = result.purchase_units?.[0]?.payments?.captures?.[0];
+  if (!capture) throw new Error(`PayPal order ${order.id} has no capture.`);
+  if (capture.status === 'PENDING') return { paymentId: null, pending: true };
+  if (capture.status !== 'COMPLETED') {
+    throw new Error(`PayPal capture ${capture.id} is ${capture.status}.`);
+  }
+  await applyPayPalPayment(ctx, {
+    invoiceId: order.invoiceId,
+    externalId: capture.id,
+    amountCents: fromPayPalMoney(capture.amount),
+    source: 'paypal-checkout',
+  });
+  markOrderCaptured(ctx, order.id, capture.id);
+  const paid = ctx.db.select().from(payments).where(eq(payments.externalId, capture.id)).get();
+  return { paymentId: paid?.id ?? null, pending: false };
+}
+
+/** Orders approved in PayPal but never captured (the page closed mid-way): capture them. */
+async function captureStrandedOrder(ctx: Ctx, order: OrderRow): Promise<number> {
+  const remote = await ctx.paypal.api!.getOrder(order.id);
+  if (remote.status !== 'APPROVED') return 0;
+  const { paymentId } = await captureApprovedOrder(ctx, order);
+  return paymentId ? 1 : 0;
+}
+
 /** One reconciliation pass over every open PayPal invoice and plan. */
 export async function syncOpenItems(ctx: Ctx): Promise<{ recorded: number; errors: number }> {
   if (!ctx.paypal.api) return { recorded: 0, errors: 0 };
@@ -295,7 +347,15 @@ export async function syncOpenItems(ctx: Ctx): Promise<{ recorded: number; error
       ),
     )
     .all();
+  // PayPal keeps an approved order capturable for a few hours.
+  const since = new Date(Date.now() - 3 * 3600_000).toISOString();
+  const stranded = ctx.db
+    .select()
+    .from(paypalOrders)
+    .where(and(eq(paypalOrders.status, 'created'), sql`${paypalOrders.createdAt} >= ${since}`))
+    .all();
   const jobs: Array<() => Promise<number | void>> = [
+    ...stranded.map((o) => () => captureStrandedOrder(ctx, o)),
     ...openInvoices.map(
       ({ id }) =>
         () =>

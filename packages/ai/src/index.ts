@@ -15,3 +15,6 @@ export * from './message/facts';
 export * from './message/guard';
 export * from './message/template';
 export * from './message/drafter';
+export * from './assistant/facts';
+export * from './assistant/assistant';
+export * from './suggest/suggest';

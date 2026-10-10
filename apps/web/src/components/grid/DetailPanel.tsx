@@ -24,6 +24,9 @@ function planNote(row: BalanceRow): string | null {
     : `Plan-eligible: ${formatMoneyShort(plan.firstCents)}, then ${plan.months - 1} × ${formatMoneyShort(plan.regularCents)}`;
 }
 
+/** Statuses whose button emails the patient a reminder. */
+const REMINDABLE: ReadonlyArray<BalanceRow['status']> = ['sent', 'partial'];
+
 const ACTION_LABEL: Record<BalanceRow['status'], string> = {
   review: 'Review & confirm →',
   ready: 'Review & send →',
@@ -109,9 +112,22 @@ export function DetailPanel({
         <button
           type="button"
           className={data.status === 'ready' ? 'btn btn-primary' : 'btn'}
-          disabled={!DRAWER_STATUSES.includes(data.status)}
-          onClick={() => context.openDrawer(data.id)}
-          title={DRAWER_STATUSES.includes(data.status) ? undefined : 'Arrives in a later phase'}
+          disabled={!DRAWER_STATUSES.includes(data.status) && !REMINDABLE.includes(data.status)}
+          onClick={(e) =>
+            REMINDABLE.includes(data.status)
+              ? context.runSuggestion(
+                  { ...data, aiAction: 'send_reminder', aiSuggestion: 'Send friendly reminder' },
+                  e.currentTarget,
+                )
+              : context.openDrawer(data.id)
+          }
+          title={
+            DRAWER_STATUSES.includes(data.status) || REMINDABLE.includes(data.status)
+              ? undefined
+              : data.status === 'denied'
+                ? 'Resubmitting to the payer is not built yet'
+                : undefined
+          }
         >
           {ACTION_LABEL[data.status]}
         </button>

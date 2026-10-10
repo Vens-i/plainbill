@@ -15,6 +15,7 @@ import {
   type IsoDate,
   type NormalizedClaim,
 } from '@plainbill/core';
+import { inferAction } from '@plainbill/ai';
 import type { BalanceRow, DisplayAdjustment } from '../contract';
 import type { DbLike } from '../db/client';
 import {
@@ -283,6 +284,10 @@ export function getBalanceRows(db: DbLike, today: IsoDate, ids?: number[]): Bala
       paidAt: paid ? (lastPayment?.receivedAt ?? null) : null,
       paidVia: paid && lastPayment ? (METHOD_LABEL[lastPayment.method] ?? null) : null,
       aiSuggestion: balance.aiSuggestion,
+      aiAction:
+        balance.aiAction ??
+        (balance.aiSuggestion ? inferAction(balance.status, balance.aiSuggestion) : null),
+      aiSuggestionBy: balance.aiSuggestionBy,
       reviewReason: balance.reviewReason,
       denialReason,
       lines: lines.map((l) => ({

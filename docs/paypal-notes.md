@@ -69,3 +69,17 @@ minimum_amount_due: { currency_code: "USD", value: "20.00" } }` is accepted and 
   `GET /v1/billing/subscriptions/{id}/transactions` after approval (the patient page waits up to
   ~8 seconds, then the poll or the `PAYMENT.SALE.COMPLETED` webhook records it).
 - Pay Later eligibility for sandbox buyers (amount range, buyer country).
+
+## Found while testing live (Phase 4)
+
+- **A bodiless POST needs `Content-Type: application/json`.** `POST /v2/checkout/orders/{id}/capture`
+  with no body and no content type answers `415 UNSUPPORTED_MEDIA_TYPE`. The client now sends the
+  JSON content type on every non-GET request. (The fake didn't model headers; a unit test pins it.)
+- **An approved order stays capturable after the page fails.** When that capture failed, the
+  payer had already approved; the reconciliation poll now looks for orders that are `APPROVED`
+  but not captured (created in the last 3 hours) and captures them, so a closed tab or a server
+  error can't strand a payment. Verified with the sandbox guest card form and PayPal's published
+  test Visa: capture `COMPLETED`, recorded on the PayPal invoice, invoice `MARKED_AS_PAID`.
+- **Agent Toolkit results are JSON strings inside text blocks** (sometimes double-encoded), and
+  fields outside its schema (`custom_id`) are dropped. Plainbill tracks toolkit-created orders
+  and subscriptions by PayPal's id instead.

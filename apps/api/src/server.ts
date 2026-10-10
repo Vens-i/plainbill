@@ -1,6 +1,8 @@
 import {
+  ClaudeBillAssistant,
   ClaudeEobExtractor,
   ClaudeMessageDrafter,
+  ClaudeSuggester,
   createClaudeClient,
   RecordedEobExtractor,
   RecordedThenLiveExtractor,
@@ -8,6 +10,7 @@ import {
 import { buildApp, NO_PAYPAL, offlineAi } from './app';
 import { openDatabase } from './db/client';
 import { loadConfig, type Config } from './env';
+import { ToolkitAgentTools } from './paypal/agent';
 import { PayPalClient } from './paypal/client';
 import type { AiServices, EmailServices, PayPalServices } from './routes/context';
 import { OutboxMailer, ResendMailer } from './services/email';
@@ -27,6 +30,8 @@ function aiServices(config: Config): AiServices {
         ? live
         : new RecordedThenLiveExtractor(new RecordedEobExtractor(recordingsDir), live),
     drafter: new ClaudeMessageDrafter({ client, model }),
+    assistant: new ClaudeBillAssistant({ client, model }),
+    suggester: new ClaudeSuggester({ client, model }),
     available: true,
     model,
   };
@@ -35,7 +40,14 @@ function aiServices(config: Config): AiServices {
 function paypalServices(config: Config): PayPalServices {
   const { clientId, clientSecret, env, webhookId } = config.paypal;
   if (!clientId || !clientSecret) return NO_PAYPAL;
-  return { api: new PayPalClient({ clientId, clientSecret, env }), clientId, env, webhookId };
+  return {
+    api: new PayPalClient({ clientId, clientSecret, env }),
+    // The bill helper's PayPal actions go through PayPal's Agent Toolkit.
+    agent: new ToolkitAgentTools({ clientId, clientSecret, env }),
+    clientId,
+    env,
+    webhookId,
+  };
 }
 
 function emailServices(config: Config): EmailServices {

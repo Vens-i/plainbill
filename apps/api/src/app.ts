@@ -2,7 +2,12 @@ import { join } from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
 import multipart from '@fastify/multipart';
 import { asc } from 'drizzle-orm';
-import { RecordedEobExtractor, TemplateMessageDrafter } from '@plainbill/ai';
+import {
+  RecordedEobExtractor,
+  RuleBillAssistant,
+  RuleSuggester,
+  TemplateMessageDrafter,
+} from '@plainbill/ai';
 import {
   claimsFrom835,
   InvalidTransitionError,
@@ -42,11 +47,13 @@ import { registerWebhookRoutes } from './routes/webhooks';
 export const DEFAULT_SAMPLE_DIR = join(REPO_ROOT, 'seed', 'data');
 export const DEFAULT_RECORDINGS_DIR = join(DEFAULT_SAMPLE_DIR, 'eob-recordings');
 
-/** Offline AI: recorded EOB extractions and template messages. */
+/** Offline AI: recorded EOB extractions, template messages, the rule-based bill helper. */
 export function offlineAi(recordingsDir = DEFAULT_RECORDINGS_DIR): AiServices {
   return {
     extractor: new RecordedEobExtractor(recordingsDir),
     drafter: new TemplateMessageDrafter(),
+    assistant: new RuleBillAssistant(),
+    suggester: new RuleSuggester(),
     available: false,
     model: null,
   };

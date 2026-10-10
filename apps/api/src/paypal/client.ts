@@ -151,7 +151,8 @@ export class PayPalClient implements PayPalApi {
       prefer: 'return=representation',
     };
     const body = opts.rawBody ?? (opts.body === undefined ? undefined : JSON.stringify(opts.body));
-    if (body !== undefined) headers['content-type'] = 'application/json';
+    // PayPal answers 415 to a POST without a JSON content type, even with no body (capture).
+    if (body !== undefined || method !== 'GET') headers['content-type'] = 'application/json';
     if (opts.requestId) headers['paypal-request-id'] = opts.requestId;
 
     const res = await this.fetchImpl(url, {

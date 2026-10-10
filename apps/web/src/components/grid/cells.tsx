@@ -13,7 +13,23 @@ import { StatusPill } from '../StatusPill';
 export interface BalancesGridContext {
   /** Open the Review & Send drawer (ready and review rows). */
   openDrawer: (balanceId: number) => void;
+  /** The ✦ button: run the suggestion's action (drawer, reminder, plan offer). */
+  runSuggestion: (row: BalanceRow, anchor: HTMLElement) => void;
 }
+
+/** Suggestions whose one-click action isn't built yet (resubmitting claims to payers). */
+const NOT_BUILT = new Set(['resubmit_with_auth', 'add_referral_resubmit', 'resubmit']);
+
+const ACTION_TITLE: Record<string, string> = {
+  send_invoice: 'Open Review & Send',
+  send_invoice_with_plan: 'Open Review & Send',
+  confirm_field: 'Open the review',
+  check_duplicate: 'Open the review',
+  apply_self_pay_rate: 'Open the review',
+  review: 'Open the review',
+  send_reminder: 'Email the patient a friendly reminder',
+  offer_plan: 'Email the patient a reminder offering a payment plan',
+};
 
 /** Statuses the Review & Send drawer handles in Phase 2. */
 export const DRAWER_STATUSES: ReadonlyArray<BalanceRow['status']> = ['ready', 'review'];
@@ -105,16 +121,27 @@ export function AiCell({ data, context }: Params) {
       </div>
     );
   }
-  const opens = DRAWER_STATUSES.includes(data.status);
+  const action = data.aiAction ?? '';
+  if (action === 'none') {
+    return (
+      <div className="pb-ai">
+        <span className="pb-muted">{data.aiSuggestion}</span>
+      </div>
+    );
+  }
+  const notBuilt = NOT_BUILT.has(action);
   return (
     <div className="pb-ai">
       <button
         type="button"
         className="ai-btn"
-        // Ready and review rows open the Review & Send drawer; other one-click actions
-        // (reminders, resubmissions) arrive in a later phase.
-        onClick={opens ? () => context.openDrawer(data.id) : undefined}
-        title={opens ? 'Open Review & Send' : 'One-click action arrives in a later phase'}
+        aria-disabled={notBuilt}
+        onClick={notBuilt ? undefined : (e) => context.runSuggestion(data, e.currentTarget)}
+        title={
+          notBuilt
+            ? 'Resubmitting to the payer is not built yet'
+            : (ACTION_TITLE[action] ?? 'Open Review & Send')
+        }
       >
         <span className="spark" aria-hidden="true">
           ✦

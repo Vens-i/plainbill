@@ -9,6 +9,7 @@ import type {
   DrawerData,
   EmailPreview,
   MessageVariant,
+  ReminderResult,
   PaymentOption,
   SendResult,
 } from '../contract';
@@ -21,7 +22,8 @@ import {
   saveDraft,
   type DraftInput,
 } from '../services/drawer';
-import { emailPreview, sendBalanceInvoice } from '../services/send';
+import { emailPreview, sendBalanceInvoice, sendReminder } from '../services/send';
+import { refreshSuggestions, type RefreshResult } from '../services/suggestions';
 import { publishChanged, type RouteContext } from './context';
 
 const VARIANTS: readonly MessageVariant[] = ['default', 'simpler', 'spanish'];
@@ -98,6 +100,23 @@ export function registerDrawerRoutes(api: FastifyInstance, ctx: RouteContext): v
     async (request): Promise<SendResult> => {
       const balanceId = id(request.params.id);
       const result = await sendBalanceInvoice(ctx, balanceId, parseDraft(request.body));
+      publishChanged(ctx, [balanceId]);
+      return result;
+    },
+  );
+
+  /** "✦ Refresh suggestions": rewrite the AI suggests column for every open row. */
+  api.post('/suggestions/refresh', async (): Promise<RefreshResult> => refreshSuggestions(ctx));
+
+  /** One-click reminder from AI suggests (optionally offering a plan). */
+  api.post<{ Params: { id: string }; Body: { offerPlanMonths?: unknown } }>(
+    '/balances/:id/remind',
+    async (request): Promise<ReminderResult> => {
+      const balanceId = id(request.params.id);
+      const months = request.body?.offerPlanMonths;
+      const result = await sendReminder(ctx, balanceId, {
+        ...(months === 3 || months === 6 ? { offerPlanMonths: months } : {}),
+      });
       publishChanged(ctx, [balanceId]);
       return result;
     },

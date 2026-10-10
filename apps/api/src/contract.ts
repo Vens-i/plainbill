@@ -64,6 +64,10 @@ export interface BalanceRow {
   paidAt: string | null;
   paidVia: string | null;
   aiSuggestion: string | null;
+  /** What the ✦ button does for this suggestion (send_invoice, send_reminder, offer_plan…). */
+  aiAction: string | null;
+  /** "claude" or "rules" after a refresh; null for seeded/intake suggestions. */
+  aiSuggestionBy: string | null;
   reviewReason: string | null;
   denialReason: string | null;
   lines: BalanceLine[];
@@ -274,6 +278,13 @@ export interface SendResult {
   };
 }
 
+export interface ReminderResult {
+  email: SendResult['email'];
+  payUrl: string;
+  /** Set when the reminder offered a payment plan. */
+  planMonths: 3 | 6 | null;
+}
+
 /** Staff email preview (/email-preview/:balanceId). */
 export interface EmailPreview {
   /** "sent" emails come from the outbox log; "draft" is rendered from the saved draft. */
@@ -324,6 +335,8 @@ export interface PatientBill {
     paidCents: number;
     remainingCents: number;
   };
+  /** How the patient's share breaks down (deductible, coinsurance, copay…). */
+  patientShare: PatientShare;
   waterfall: WaterfallStep[];
   /** Plain-language service names (never codes). */
   services: Array<{ name: string; chargeCents: number }>;
@@ -351,6 +364,37 @@ export interface PatientBill {
     schedule: Array<{ number: number; dueDate: IsoDate; amountCents: number; paid: boolean }>;
   } | null;
   paypal: { enabled: boolean; clientId: string | null; env: 'sandbox' | 'live' };
+}
+
+// ── Patient bill helper ─────────────────────────────────────────────────────
+
+export type AssistantActionKind = 'pay_in_full' | 'payment_plan' | 'partial_payment' | 'phone_call';
+
+/** A card under a helper answer. Amounts come from code; Confirm runs only what's stored. */
+export interface AssistantCard {
+  id: string | null;
+  kind: AssistantActionKind;
+  title: string;
+  detail: string[];
+  amountCents: number | null;
+  confirmLabel: string | null;
+}
+
+export interface AssistantAnswer {
+  text: string;
+  /** "Based on BlueCross's statement for your Oct 3 visit" */
+  source: string;
+  cards: AssistantCard[];
+  /** "claude" or "rules" (offline, or when the model's answer failed the checks). */
+  via: 'claude' | 'rules';
+}
+
+/** After Confirm: the PayPal order or subscription to approve with PayPal's button. */
+export interface AssistantConfirmResult {
+  kind: 'pay_in_full' | 'payment_plan' | 'partial_payment';
+  amountCents: number;
+  orderId: string | null;
+  subscriptionId: string | null;
 }
 
 /** After a capture or plan approval: the refreshed bill and the payment to confirm. */

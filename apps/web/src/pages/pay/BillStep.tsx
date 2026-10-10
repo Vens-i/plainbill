@@ -3,7 +3,8 @@ import { useState } from 'react';
 import type { PatientBill, PayResult } from '@plainbill/api/contract';
 import { formatLongDate, formatMoney, formatMonthDay } from '@plainbill/core';
 import type { Paid } from './PayPage';
-import { PayOptions } from './PayOptions';
+import { AskAboutBill } from './AskAboutBill';
+import { PayOptions, PayPalScope } from './PayOptions';
 import { Waterfall } from './Waterfall';
 
 interface Props {
@@ -97,7 +98,10 @@ export function BillStep({ token, bill, onPaid }: Props) {
         </section>
       )}
 
-      {!settled && <PayOptions token={token} bill={bill} onPaid={onPaid} />}
+      <PayPalScope bill={bill}>
+        <AskAboutBill token={token} bill={bill} onPaid={onPaid} />
+        {!settled && <PayOptions token={token} bill={bill} onPaid={onPaid} />}
+      </PayPalScope>
 
       {bill.payments.length > 0 && (
         <section className="pay-card">

@@ -316,7 +316,14 @@ export function markReady(
   }
   const status = nextStatus(r.status, { type: 'approve' });
   db.update(balances)
-    .set({ status, reviewReason: null, aiSuggestion: 'Send invoice', updatedAt: now })
+    .set({
+      status,
+      reviewReason: null,
+      aiSuggestion: 'Send invoice',
+      aiAction: 'send_invoice',
+      aiSuggestionBy: null,
+      updatedAt: now,
+    })
     .where(eq(balances.id, balanceId))
     .run();
 }

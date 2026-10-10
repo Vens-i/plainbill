@@ -22,6 +22,20 @@
       "when": 1791655392563,
       "tag": "0002_paypal_email_patient_pages",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1791658889151,
+      "tag": "0003_assistant_actions",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791660900378,
+      "tag": "0004_ai_suggestion_actions",
+      "breakpoints": true
     }
   ]
 }

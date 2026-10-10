@@ -69,6 +69,14 @@ describe('PayPalClient', () => {
     expect(create.headers['paypal-request-id']).toBe('req-1');
   });
 
+  it('sends a JSON content type on bodiless POSTs (PayPal answers 415 otherwise)', async () => {
+    const { impl, seen } = fakeFetch(() => ({ body: { id: 'ORDER-1', status: 'COMPLETED' } }));
+    await client(impl).captureOrder('ORDER-1', 'cap-1');
+    const capture = seen.find((s) => s.url.endsWith('/capture'))!;
+    expect(capture.body).toBeUndefined();
+    expect(capture.headers['content-type']).toBe('application/json');
+  });
+
   it('sends invoices with PayPal’s own emails turned off', async () => {
     const { impl, seen } = fakeFetch(() => ({
       body: { href: 'https://www.sandbox.paypal.com/invoice/p/#INV2-1', rel: 'payer-view' },

@@ -33,6 +33,8 @@ export interface BillEmailData {
   breakdownUrl: string;
   plansAvailable: boolean;
   partialMinimumCents: number | null;
+  /** A reminder for a bill sent earlier (changes the subject line). */
+  reminder?: boolean;
 }
 
 export interface RenderedEmail {
@@ -126,7 +128,9 @@ const paragraphs = (text: string) =>
     .map((p) => esc(p).replace(/\n/g, '<br>'));
 
 export function renderBillEmail(d: BillEmailData): RenderedEmail {
-  const subject = billSubject(d.visitDate, d.amountDueCents, d.dueDate);
+  const subject = d.reminder
+    ? `Reminder: your ${formatMonthDay(d.visitDate)} visit — ${formatMoney(d.amountDueCents)} balance`
+    : billSubject(d.visitDate, d.amountDueCents, d.dueDate);
   const segs = segments(d);
   const widths = barWidths(segs.map((s) => s.cents));
   const owes = formatMoney(d.amountDueCents);

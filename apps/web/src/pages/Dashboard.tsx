@@ -15,7 +15,9 @@ import {
   type View,
 } from '../components/BalancesGrid';
 import { KpiStrip } from '../components/KpiStrip';
+import { ReminderPopover } from '../components/ReminderPopover';
 import { ReviewDrawer } from '../components/ReviewDrawer';
+import { toast } from '../components/Toast';
 import { AgingChartCard, DenialsChartCard } from '../components/SideCharts';
 import { api, ApiError } from '../lib/api';
 import { greeting, todoSummary } from '../lib/dashboard';
@@ -33,6 +35,8 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [groupBy, setGroupBy] = useState<GroupBy>('status');
   const [drawerId, setDrawerId] = useState<number | null>(null);
+  const [reminder, setReminder] = useState<{ row: BalanceRow; anchor: HTMLElement } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [view, setView] = useState<View>('action');
 
   const refreshSummary = useCallback(async () => {
@@ -68,6 +72,31 @@ export function Dashboard() {
     onBalancesChanged: () => void refreshAll(),
     onOpen: () => void refreshAll(),
   });
+
+  /** The ✦ button: reminders and plan offers confirm in a popover; the rest open the drawer. */
+  const runSuggestion = (row: BalanceRow, anchor: HTMLElement) => {
+    if (row.aiAction === 'send_reminder' || row.aiAction === 'offer_plan') {
+      setReminder({ row, anchor });
+    } else {
+      setDrawerId(row.id);
+    }
+  };
+
+  const refreshSuggestions = async () => {
+    setRefreshing(true);
+    try {
+      const r = await api.refreshSuggestions();
+      toast(
+        r.via === 'claude'
+          ? `✦ ${r.updated} suggestions updated by Claude (${r.model})`
+          : `✦ ${r.updated} suggestions updated by the rules (AI offline)`,
+      );
+    } catch (err) {
+      toast(`Couldn’t refresh suggestions: ${err instanceof ApiError ? err.message : String(err)}`);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const startReview = () => {
     if (kpis?.review.firstBalanceId == null) return;
@@ -129,6 +158,15 @@ export function Dashboard() {
               </button>
             </div>
             <div style={{ flex: 1 }} />
+            <button
+              type="button"
+              className="ai-refresh"
+              onClick={refreshSuggestions}
+              disabled={refreshing}
+              title="Ask the AI for a fresh next step on every open balance"
+            >
+              <span aria-hidden="true">✦</span> {refreshing ? 'Thinking…' : 'Refresh suggestions'}
+            </button>
             <label className="group-by">
               Group by
               <select value={groupBy} onChange={(e) => setGroupBy(e.target.value as GroupBy)}>
@@ -155,6 +193,7 @@ export function Dashboard() {
               view={view}
               quickFilter={search}
               onOpenDrawer={setDrawerId}
+              onRunSuggestion={runSuggestion}
             />
           )}
         </section>
@@ -165,6 +204,13 @@ export function Dashboard() {
         </aside>
       </div>
       {drawerId !== null && <ReviewDrawer balanceId={drawerId} onClose={() => setDrawerId(null)} />}
+      {reminder && (
+        <ReminderPopover
+          row={reminder.row}
+          anchor={reminder.anchor}
+          onClose={() => setReminder(null)}
+        />
+      )}
     </main>
   );
 }

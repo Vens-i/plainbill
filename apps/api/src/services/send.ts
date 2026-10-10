@@ -12,9 +12,15 @@
  * stays sent and the failure is reported (the email can be viewed and resent).
  */
 import { asc, desc, eq } from 'drizzle-orm';
-import { formatLongDate, type IsoDate } from '@plainbill/core';
-import type { BalanceRow, EmailPreview, SendResult } from '../contract';
-import { balances, emails, invoices, patients, practices, visits } from '../db/schema';
+import {
+  formatLongDate,
+  formatMoneyShort,
+  formatMonthDay,
+  planOption,
+  type IsoDate,
+} from '@plainbill/core';
+import type { BalanceRow, EmailPreview, ReminderResult, SendResult } from '../contract';
+import { balances, emails, events, invoices, patients, practices, visits } from '../db/schema';
 import { PayPalError, toPayPalMoney } from '../paypal/client';
 import type { CreateInvoiceBody } from '../paypal/types';
 import { getBalanceRows } from '../queries/rows';
@@ -261,7 +267,7 @@ export async function sendBalanceInvoice(
   });
   // The suggestion ("Send invoice") is done; reminders get suggested later.
   db.update(balances)
-    .set({ aiSuggestion: null, updatedAt: now })
+    .set({ aiSuggestion: null, aiAction: null, aiSuggestionBy: null, updatedAt: now })
     .where(eq(balances.id, balanceId))
     .run();
 
@@ -352,5 +358,84 @@ export function emailPreview(
     patientName: r.patientName,
     payPath,
     paypalPayerUrl: invoice?.paypalPayerUrl ?? null,
+  };
+}
+
+/**
+ * The one-click "Send friendly reminder" / "Offer 3-month plan" from AI suggests: re-send the
+ * bill email with a short reminder (fixed wording, computed amounts). Offering a plan also turns
+ * plans on for the patient's page.
+ */
+export async function sendReminder(
+  ctx: Ctx,
+  balanceId: number,
+  input: { offerPlanMonths?: 3 | 6 },
+): Promise<ReminderResult> {
+  const { db } = ctx;
+  const r = balanceRow(db, balanceId, ctx.today());
+  if (r.status !== 'sent' && r.status !== 'partial') {
+    throw new DrawerError('Reminders are for bills that were sent and are still open.', 409);
+  }
+  const invoice = db
+    .select()
+    .from(invoices)
+    .where(eq(invoices.balanceId, balanceId))
+    .orderBy(desc(invoices.id))
+    .get();
+  if (!invoice?.payToken)
+    throw new DrawerError('This bill has no patient link to remind about.', 409);
+
+  let option = invoice.paymentOption ?? { type: 'full' as const };
+  let plan: { months: 3 | 6; firstCents: number; regularCents: number } | null = null;
+  if (input.offerPlanMonths) {
+    const p = planOption(r.remainingCents, input.offerPlanMonths);
+    if (!p.eligible) throw new DrawerError('This balance is too small for that plan.', 422);
+    plan = { months: p.months, firstCents: p.firstCents, regularCents: p.regularCents };
+    option = { type: 'plan', months: p.months };
+    db.update(invoices).set({ paymentOption: option }).where(eq(invoices.id, invoice.id)).run();
+  }
+
+  const practice = practiceRow(ctx);
+  const $ = formatMoneyShort;
+  const visit = `${formatMonthDay(r.visitDate)} visit${r.provider ? ` with ${r.provider}` : ''}`;
+  const message = [
+    `Hi ${r.patientFirstName}, this is a friendly reminder from ${practice.name} about your ${visit}.`,
+    `Your balance is ${$(r.remainingCents)}.`,
+    plan
+      ? plan.firstCents === plan.regularCents
+        ? `If it helps, you can split it into ${plan.months} payments of ${$(plan.regularCents)}, with no interest or fees.`
+        : `If it helps, you can split it into ${plan.months} monthly payments (${$(plan.firstCents)} first, then ${$(plan.regularCents)}), with no interest or fees.`
+      : 'You can pay online in a minute.',
+    'Thank you!',
+  ].join(' ');
+
+  const rendered = renderBillEmail({
+    ...billEmailData(ctx, r, {
+      message,
+      dueDate: invoice.dueDate,
+      payToken: invoice.payToken,
+      paypalPayerUrl: invoice.paypalPayerUrl,
+      paymentOption: option,
+    }),
+    reminder: true,
+  });
+  const email = await deliverEmail(ctx, invoice.id, rendered, patientFor(ctx, balanceId).email);
+  const now = new Date().toISOString();
+  db.insert(events)
+    .values({
+      type: 'invoice.reminded',
+      balanceId,
+      payload: { invoiceId: invoice.id, emailId: email.id, planMonths: plan?.months ?? null },
+      createdAt: now,
+    })
+    .run();
+  db.update(balances)
+    .set({ aiSuggestion: 'Reminder sent today', aiAction: 'none', updatedAt: now })
+    .where(eq(balances.id, balanceId))
+    .run();
+  return {
+    email,
+    payUrl: payUrl(ctx.appBaseUrl, invoice.payToken),
+    planMonths: plan?.months ?? null,
   };
 }

@@ -1,5 +1,7 @@
 import type {
   AgingChart,
+  AssistantAnswer,
+  AssistantConfirmResult,
   BalanceRow,
   DenialsChart,
   DraftMessageResult,
@@ -14,6 +16,7 @@ import type {
   PaymentOption,
   PayResult,
   PracticeInfo,
+  ReminderResult,
   SendResult,
 } from '@plainbill/api/contract';
 
@@ -99,6 +102,17 @@ export const api = {
     request<DrawerData>('POST', `/balances/${id}/review/resolve`, { path, value }),
   markReady: (id: number) => request<DrawerData>('POST', `/balances/${id}/review/ready`),
   emailPreview: (id: number) => get<EmailPreview>(`/balances/${id}/email`),
+  remind: (id: number, offerPlanMonths?: 3 | 6) =>
+    request<ReminderResult>(
+      'POST',
+      `/balances/${id}/remind`,
+      offerPlanMonths ? { offerPlanMonths } : {},
+    ),
+  refreshSuggestions: () =>
+    request<{ via: 'claude' | 'rules'; model: string | null; updated: number }>(
+      'POST',
+      '/suggestions/refresh',
+    ),
 };
 
 /** Patient pay page (/pay/:token). The session is an HttpOnly cookie set by verify. */
@@ -115,4 +129,14 @@ export const payApi = {
     request<{ subscriptionId: string }>('POST', `/pay/${token}/plan`, { months }),
   confirmPlan: (token: string, subscriptionId: string) =>
     request<PayResult>('POST', `/pay/${token}/plan/confirm`, { subscriptionId }),
+  ask: (
+    token: string,
+    message: string,
+    history: Array<{ role: 'patient' | 'assistant'; text: string }>,
+  ) => request<AssistantAnswer>('POST', `/pay/${token}/assistant`, { message, history }),
+  confirmAction: (token: string, actionId: string) =>
+    request<AssistantConfirmResult>(
+      'POST',
+      `/pay/${token}/assistant/actions/${encodeURIComponent(actionId)}/confirm`,
+    ),
 };

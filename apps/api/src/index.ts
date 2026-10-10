@@ -61,3 +61,4 @@ export {
   normalizeLastName,
 } from './services/sessions';
 export { syncOpenItems, handleWebhookEvent } from './services/paypal-sync';
+export { FakeAgentTools, ToolkitAgentTools, type AgentPayPalTools } from './paypal/agent';

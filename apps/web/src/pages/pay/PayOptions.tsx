@@ -3,7 +3,7 @@
  * server; the browser only says "full" or, when staff allowed it, how much to pay now.
  * Plans (when staff offered one) use PayPal Subscriptions: first payment today, no interest.
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   INSTANCE_LOADING_STATE,
   PayLaterOneTimePaymentButton,
@@ -70,7 +70,6 @@ export function PayOptions({ token, bill, onPaid }: Props) {
     );
   }
 
-  const sandbox = bill.paypal.env === 'sandbox';
   return (
     <section id="pay" className="pay-card pay-pay">
       <h2 className="pay-h2">Pay {formatMoney(amount)}</h2>
@@ -117,13 +116,7 @@ export function PayOptions({ token, bill, onPaid }: Props) {
         </div>
       )}
 
-      <PayPalProvider
-        clientId={bill.paypal.clientId}
-        environment={sandbox ? 'sandbox' : 'production'}
-        components={['paypal-payments', 'paypal-guest-payments', 'paypal-subscriptions']}
-        pageType="checkout"
-        {...(sandbox ? { testBuyerCountry: 'US' } : {})}
-      >
+      <>
         <WalletButtons
           token={token}
           amountCents={amount}
@@ -184,7 +177,7 @@ export function PayOptions({ token, bill, onPaid }: Props) {
             )}
           </div>
         )}
-      </PayPalProvider>
+      </>
 
       {error && (
         <p className="pay-error" role="alert">
@@ -192,6 +185,23 @@ export function PayOptions({ token, bill, onPaid }: Props) {
         </p>
       )}
     </section>
+  );
+}
+
+/** One PayPal SDK instance for the whole bill page (helper cards and the pay section). */
+export function PayPalScope({ bill, children }: { bill: PatientBill; children: ReactNode }) {
+  if (!bill.paypal.enabled || !bill.paypal.clientId) return <>{children}</>;
+  const sandbox = bill.paypal.env === 'sandbox';
+  return (
+    <PayPalProvider
+      clientId={bill.paypal.clientId}
+      environment={sandbox ? 'sandbox' : 'production'}
+      components={['paypal-payments', 'paypal-guest-payments', 'paypal-subscriptions']}
+      pageType="checkout"
+      {...(sandbox ? { testBuyerCountry: 'US' } : {})}
+    >
+      {children}
+    </PayPalProvider>
   );
 }
 

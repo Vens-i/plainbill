@@ -1,7 +1,8 @@
-import type { EobExtractor, MessageDrafter } from '@plainbill/ai';
+import type { BillAssistant, EobExtractor, MessageDrafter, Suggester } from '@plainbill/ai';
 import type { IsoDate } from '@plainbill/core';
 import type { Db } from '../db/client';
 import type { EventBus } from '../events';
+import type { AgentPayPalTools } from '../paypal/agent';
 import type { PayPalApi } from '../paypal/client';
 import type { Mailer } from '../services/email';
 import type { PatientSessions } from '../services/sessions';
@@ -10,6 +11,10 @@ import type { PatientSessions } from '../services/sessions';
 export interface AiServices {
   extractor: EobExtractor;
   drafter: MessageDrafter;
+  /** The patient's "Ask about your bill" helper. */
+  assistant: BillAssistant;
+  /** Writes the dashboard's "AI suggests" column. */
+  suggester: Suggester;
   /** True when a live model is configured. */
   available: boolean;
   model: string | null;
@@ -23,6 +28,8 @@ export interface PayPalServices {
   env: 'sandbox' | 'live';
   /** Webhooks are refused (not trusted) without it. */
   webhookId: string | null;
+  /** PayPal Agent Toolkit actions for the bill helper (create order / subscription). */
+  agent?: AgentPayPalTools | null;
 }
 
 export interface EmailServices {

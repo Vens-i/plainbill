@@ -55,6 +55,7 @@ interface Props {
   view: View;
   quickFilter: string;
   onOpenDrawer: (balanceId: number) => void;
+  onRunSuggestion: (row: BalanceRow, anchor: HTMLElement) => void;
   ref?: Ref<BalancesGridHandle>;
 }
 
@@ -76,14 +77,20 @@ export function BalancesGrid({
   view,
   quickFilter,
   onOpenDrawer,
+  onRunSuggestion,
   ref,
 }: Props) {
   const openDrawerRef = useRef(onOpenDrawer);
+  const runSuggestionRef = useRef(onRunSuggestion);
   useEffect(() => {
     openDrawerRef.current = onOpenDrawer;
+    runSuggestionRef.current = onRunSuggestion;
   });
   const gridContext = useMemo<BalancesGridContext>(
-    () => ({ openDrawer: (id) => openDrawerRef.current(id) }),
+    () => ({
+      openDrawer: (id) => openDrawerRef.current(id),
+      runSuggestion: (row, anchor) => runSuggestionRef.current(row, anchor),
+    }),
     [],
   );
   const apiRef = useRef<GridApi<BalanceRow> | null>(null);

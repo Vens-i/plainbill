@@ -780,3 +780,55 @@
   font-weight: 600;
   text-decoration: none;
 }
+
+/* ── AI suggests: refresh + reminder confirm ── */
+.ai-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--teal-200);
+  background: var(--teal-50);
+  color: var(--teal-800);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ai-refresh:hover {
+  border-color: var(--teal-700);
+}
+.ai-refresh:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.ai-btn[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+.reminder-pop {
+  width: 320px;
+  padding: 14px 16px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.reminder-pop p {
+  margin: 6px 0 0;
+}
+.reminder-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.reminder-error {
+  color: #9b2c24;
+  font-weight: 600;
+}
+.reminder-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}

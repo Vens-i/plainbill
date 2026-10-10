@@ -4,7 +4,15 @@
  * cookie only opens the one bill it was issued for.
  */
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import type { PayLinkInfo, PayResult, PatientBill } from '../contract';
+import type { ChatTurn } from '@plainbill/ai';
+import type {
+  AssistantAnswer,
+  AssistantConfirmResult,
+  PatientBill,
+  PayLinkInfo,
+  PayResult,
+} from '../contract';
+import { confirmAction, factsFor, proposalHandler, QuestionLimiter } from '../services/assistant';
 import {
   captureCheckoutOrder,
   confirmPlan,
@@ -23,7 +31,22 @@ type TokenParams = { Params: { token: string } };
 
 const int = (v: unknown) => (typeof v === 'string' && v.trim() !== '' ? Number(v) : v);
 
+function parseHistory(raw: unknown): ChatTurn[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (t): t is ChatTurn =>
+        !!t &&
+        typeof t === 'object' &&
+        ((t as ChatTurn).role === 'patient' || (t as ChatTurn).role === 'assistant') &&
+        typeof (t as ChatTurn).text === 'string',
+    )
+    .slice(-8)
+    .map((t) => ({ role: t.role, text: t.text.slice(0, 600) }));
+}
+
 export function registerPatientRoutes(api: FastifyInstance, ctx: RouteContext): void {
+  const limiter = new QuestionLimiter();
   api.register(
     async (pay) => {
       // Bills are personal: never cache them anywhere.
@@ -108,6 +131,39 @@ export function registerPatientRoutes(api: FastifyInstance, ctx: RouteContext): 
         }
         return startPlan(ctx, invoice, months);
       });
+
+      pay.post<TokenParams & { Body: { message?: unknown; history?: unknown } }>(
+        '/:token/assistant',
+        async (request): Promise<AssistantAnswer> => {
+          const invoice = verifiedInvoice(request, request.params.token);
+          const message =
+            typeof request.body?.message === 'string' ? request.body.message.trim() : '';
+          if (!message) throw new PatientError('Type a question first.', 400, 'empty');
+          if (!limiter.allow(invoice.id)) {
+            throw new PatientError(
+              'That’s a lot of questions for one bill. Please call the office for more help.',
+              429,
+              'too_many',
+            );
+          }
+          const reply = await ctx.ai.assistant.reply({
+            facts: factsFor(ctx, invoice),
+            history: parseHistory(request.body?.history),
+            message: message.slice(0, 600),
+            handler: proposalHandler(ctx, invoice),
+          });
+          if (reply.notes.length) ctx.log.info(`Bill helper notes: ${reply.notes.join(' | ')}`);
+          return { text: reply.text, source: reply.source, cards: reply.cards, via: reply.via };
+        },
+      );
+
+      pay.post<{ Params: { token: string; actionId: string } }>(
+        '/:token/assistant/actions/:actionId/confirm',
+        async (request): Promise<AssistantConfirmResult> => {
+          const invoice = verifiedInvoice(request, request.params.token);
+          return confirmAction(ctx, invoice, request.params.actionId);
+        },
+      );
 
       pay.post<TokenParams & { Body: { subscriptionId?: unknown } }>(
         '/:token/plan/confirm',
