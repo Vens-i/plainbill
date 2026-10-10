@@ -37,13 +37,23 @@ function aiServices(config: Config): AiServices {
   };
 }
 
+/** The toolkit is optional: if it can't start, the helper still answers but can't set up payments. */
+function agentTools(options: ConstructorParameters<typeof ToolkitAgentTools>[0]) {
+  try {
+    return new ToolkitAgentTools(options);
+  } catch (err) {
+    console.warn(`PayPal Agent Toolkit unavailable: ${(err as Error).message}`);
+    return null;
+  }
+}
+
 function paypalServices(config: Config): PayPalServices {
   const { clientId, clientSecret, env, webhookId } = config.paypal;
   if (!clientId || !clientSecret) return NO_PAYPAL;
   return {
     api: new PayPalClient({ clientId, clientSecret, env }),
     // The bill helper's PayPal actions go through PayPal's Agent Toolkit.
-    agent: new ToolkitAgentTools({ clientId, clientSecret, env }),
+    agent: agentTools({ clientId, clientSecret, env }),
     clientId,
     env,
     webhookId,

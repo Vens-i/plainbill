@@ -4,6 +4,8 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+packageExtensionsChecksum: sha256-wsoarz5+6T+xGo+YIzrdLT/Vl37ZWB3Y2DNwlBd4g70=
+
 importers:
 
   .:
@@ -3950,6 +3952,7 @@ snapshots:
       '@apimatic/core': 0.10.30
       '@apimatic/oauth-adapters': 0.4.18
       '@apimatic/schema': 0.7.21
+      tslib: 2.8.1
     transitivePeerDependencies:
       - debug
       - supports-color
