@@ -47,6 +47,8 @@ export interface Config {
   appBaseUrl: string;
   /** Signs patient-page sessions. A random one is generated per process when unset. */
   sessionSecret: string | null;
+  /** Built web app to serve from the API (one origin in production), or null. */
+  webDist: string | null;
 }
 
 const blank = (v: string | undefined) => v?.trim() || null;
@@ -81,7 +83,17 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       from: blank(env.EMAIL_FROM) ?? 'Harborview Family Medicine <onboarding@resend.dev>',
       toOverride: blank(env.EMAIL_TO_OVERRIDE),
     },
-    appBaseUrl: (blank(env.APP_BASE_URL) ?? 'http://localhost:5173').replace(/\/+$/, ''),
+    // Render sets RENDER_EXTERNAL_URL to the service's public https URL.
+    appBaseUrl: (
+      blank(env.APP_BASE_URL) ??
+      blank(env.RENDER_EXTERNAL_URL) ??
+      'http://localhost:5173'
+    ).replace(/\/+$/, ''),
     sessionSecret: blank(env.SESSION_SECRET),
+    webDist:
+      (env.SERVE_WEB ? env.SERVE_WEB === 'true' : production) &&
+      existsSync(resolve(REPO_ROOT, 'apps/web/dist/index.html'))
+        ? resolve(REPO_ROOT, 'apps/web/dist')
+        : null,
   };
 }

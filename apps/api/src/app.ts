@@ -1,6 +1,7 @@
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
 import multipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
 import { asc } from 'drizzle-orm';
 import {
   RecordedEobExtractor,
@@ -78,6 +79,8 @@ export interface AppOptions {
   appBaseUrl?: string;
   /** Patient session signing. Defaults to a random secret and non-Secure cookies. */
   sessions?: PatientSessions;
+  /** Serve this built web app (apps/web/dist) from the same origin, with an SPA fallback. */
+  webDist?: string | null;
 }
 
 export const NO_PAYPAL: PayPalServices = {
@@ -107,6 +110,14 @@ export function buildApp(options: AppOptions): {
   );
 
   app.register(multipart, { limits: { fileSize: MAX_UPLOAD_BYTES, files: 10 } });
+
+  app.addHook('onSend', async (_request, reply, payload) => {
+    reply.header('x-content-type-options', 'nosniff');
+    // Pay links carry a token: never send the full URL to other sites as a referrer.
+    reply.header('referrer-policy', 'strict-origin-when-cross-origin');
+    reply.header('x-frame-options', 'DENY');
+    return payload;
+  });
 
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof PatientError) {
@@ -298,6 +309,26 @@ export function buildApp(options: AppOptions): {
     },
     { prefix: '/api' },
   );
+
+  if (options.webDist) {
+    const webDist = options.webDist;
+    app.register(fastifyStatic, {
+      root: webDist,
+      wildcard: false,
+      setHeaders: (res, path) =>
+        res.header(
+          'cache-control',
+          path.includes(`${sep}assets${sep}`) ? 'public, max-age=31536000, immutable' : 'no-cache',
+        ),
+    });
+    // Client-side routes (/dashboard, /pay/:token…) get the app shell; unknown API paths 404.
+    app.setNotFoundHandler((request, reply) => {
+      if (request.method !== 'GET' || request.url.startsWith('/api/')) {
+        return reply.code(404).send({ error: 'not_found', message: 'Not found.' });
+      }
+      return reply.header('cache-control', 'no-cache').sendFile('index.html', webDist);
+    });
+  }
 
   return { app, bus, ctx };
 }

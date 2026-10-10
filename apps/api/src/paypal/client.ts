@@ -264,6 +264,27 @@ export class PayPalClient implements PayPalApi {
     return res.transactions ?? [];
   }
 
+  // ── Webhook registration (used by `pnpm paypal:webhook`, not by the running app) ──
+
+  async listWebhooks() {
+    const res = await this.request<{
+      webhooks?: Array<{ id: string; url: string; event_types: Array<{ name: string }> }>;
+    }>('GET', '/v1/notifications/webhooks');
+    return res.webhooks ?? [];
+  }
+
+  createWebhook(url: string, events: readonly string[]) {
+    return this.request<{ id: string; url: string }>('POST', '/v1/notifications/webhooks', {
+      body: { url, event_types: events.map((name) => ({ name })) },
+    });
+  }
+
+  updateWebhookEvents(id: string, events: readonly string[]) {
+    return this.request<{ id: string }>('PATCH', `/v1/notifications/webhooks/${enc(id)}`, {
+      body: [{ op: 'replace', path: '/event_types', value: events.map((name) => ({ name })) }],
+    });
+  }
+
   /**
    * Ask PayPal whether a webhook delivery is genuine. The event goes back byte-for-byte as it
    * arrived: re-serializing parsed JSON can change it and fail verification.

@@ -10,6 +10,7 @@
   },
   "scripts": {
     "dev": "pnpm --parallel --filter @plainbill/api --filter @plainbill/web dev",
+    "start": "pnpm --filter @plainbill/seed seed --if-empty && pnpm --filter @plainbill/api start",
     "build": "pnpm -r build",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -21,7 +22,8 @@
     "seed:generate": "pnpm --filter @plainbill/seed generate",
     "simulate:payment": "pnpm --filter @plainbill/api simulate:payment",
     "check:license": "pnpm --filter @plainbill/web check:license",
-    "ai:record": "pnpm --filter @plainbill/seed ai:record"
+    "ai:record": "pnpm --filter @plainbill/seed ai:record",
+    "paypal:webhook": "pnpm --filter @plainbill/api paypal:webhook"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

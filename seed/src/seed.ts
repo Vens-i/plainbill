@@ -1,11 +1,12 @@
 /**
  *   pnpm seed                          all 13 visits
  *   pnpm seed --scenario=intake-demo   leave out the Intake demo files' 5 visits (upload them live)
+ *   pnpm seed --if-empty               only when the database has no data yet (hosted demo start)
  *
  * Resets the SQLite database (rows only, so a running API keeps working) and loads the
  * Harborview seed world through the real parsers.
  */
-import { loadConfig, openDatabase } from '@plainbill/api';
+import { loadConfig, openDatabase, schema } from '@plainbill/api';
 import { formatSummary, loadSeed, type SeedScenario } from './load';
 import { DEMO_PAYMENT_KEY, INTAKE_DEMO_FILES, SEED_TODAY, VISITS } from './spec';
 
@@ -18,6 +19,11 @@ const scenario: SeedScenario = arg === 'intake-demo' ? 'intake-demo' : 'full';
 
 const config = loadConfig();
 const { db, close } = openDatabase(config.databasePath);
+if (process.argv.includes('--if-empty') && db.select().from(schema.practices).get()) {
+  console.log(`Database already has data (${config.databasePath}); not seeding.`);
+  close();
+  process.exit(0);
+}
 try {
   const rows = await loadSeed(db, { scenario });
   console.log(`Seeded ${rows.length} balances (${scenario}) into ${config.databasePath}\n`);

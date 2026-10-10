@@ -15,10 +15,12 @@
     "db:generate": "drizzle-kit generate",
     "simulate:payment": "tsx scripts/simulate-payment.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit -p ."
+    "typecheck": "tsc --noEmit -p .",
+    "paypal:webhook": "tsx scripts/paypal-webhook.ts"
   },
   "dependencies": {
     "@fastify/multipart": "^10.1.3",
+    "@fastify/static": "10.1.4",
     "@paypal/agent-toolkit": "1.11.0",
     "@plainbill/ai": "workspace:*",
     "@plainbill/core": "workspace:*",

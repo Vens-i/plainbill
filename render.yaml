@@ -1,0 +1,51 @@
+# Render Blueprint: one web service runs the API and serves the built web app from the same
+# origin (the patient page's session cookie is same-site). SQLite lives on the instance's disk;
+# the demo data is seeded on start when the database is empty, so every fresh instance (and a
+# free instance waking up) starts from the Harborview demo state.
+#
+# Secrets are `sync: false`: Render asks for them when the Blueprint is created.
+services:
+  - type: web
+    name: plainbill
+    runtime: node
+    plan: free
+    buildCommand: >-
+      npm install -g pnpm@10.27.0 &&
+      pnpm install --frozen-lockfile --prod=false &&
+      pnpm --filter @plainbill/web build
+    startCommand: pnpm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      # Pin "today" so aging, days-out and due dates match the demo script.
+      - key: DEMO_TODAY
+        value: '2026-10-10'
+      # Keeps "Use the sample files" (Intake) and the payment rehearsal available in the demo.
+      - key: ENABLE_DEV_ROUTES
+        value: 'true'
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-opus-5-5
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_ENV
+        value: sandbox
+      # From `pnpm paypal:webhook https://<this service>.onrender.com` after the first deploy.
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      # Read at build time by Vite.
+      - key: VITE_AG_GRID_LICENSE_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_TO_OVERRIDE
+        sync: false
+      # APP_BASE_URL defaults to Render's RENDER_EXTERNAL_URL.

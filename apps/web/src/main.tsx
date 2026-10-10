@@ -2,6 +2,7 @@ import './styles.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router';
+import { RouteError } from './components/RouteError';
 
 // Staff pages (AG Grid) and the patient page load separately, so patients never download the
 // grid bundle.
@@ -12,10 +13,12 @@ const router = createBrowserRouter([
   {
     path: '/pay/:token',
     HydrateFallback: Loading,
+    ErrorBoundary: RouteError,
     lazy: async () => ({ Component: (await import('./pages/pay/PayPage')).PayPage }),
   },
   {
     HydrateFallback: Loading,
+    ErrorBoundary: RouteError,
     lazy: async () => ({ Component: (await import('./components/AppShell')).AppShell }),
     children: [
       { path: '/', element: <Navigate to="/dashboard" replace /> },
