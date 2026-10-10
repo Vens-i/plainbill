@@ -17,15 +17,18 @@ import {
 import { loadSeed } from '../src/load';
 import { SEED_TODAY } from '../src/spec';
 
-function setup() {
+async function setup() {
   const { db, close } = openDatabase(':memory:');
-  loadSeed(db, { now: '2026-10-10T13:00:00.000Z' });
+  await loadSeed(db, { now: '2026-10-10T13:00:00.000Z' });
   const { app, bus } = buildApp({ db, demoToday: SEED_TODAY, devRoutes: true });
   return { db, close, app, bus };
 }
 
 describe('dashboard API on the seed world', () => {
-  const ctx = setup();
+  let ctx: Awaited<ReturnType<typeof setup>>;
+  beforeAll(async () => {
+    ctx = await setup();
+  });
   afterAll(async () => {
     await ctx.app.close();
     ctx.close();
@@ -185,9 +188,10 @@ describe('dashboard API on the seed world', () => {
 });
 
 describe('live payment over Server-Sent Events', () => {
-  const ctx = setup();
+  let ctx: Awaited<ReturnType<typeof setup>>;
   let base = '';
   beforeAll(async () => {
+    ctx = await setup();
     await ctx.app.listen({ port: 0, host: '127.0.0.1' });
     base = `http://127.0.0.1:${(ctx.app.server.address() as AddressInfo).port}`;
   });

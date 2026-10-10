@@ -30,6 +30,8 @@ export interface MessageFacts {
   partialMinimumCents: number | null;
   /** ISO due date, if known. */
   dueDate: string | null;
+  /** Other plan options staff may switch to; their amounts are allowed in a message too. */
+  otherPlans?: Array<{ firstCents: number; regularCents: number }>;
 }
 
 /** Every dollar amount a message is allowed to mention. */
@@ -47,6 +49,7 @@ export function allowedAmounts(f: MessageFacts): Set<number> {
     f.plan?.firstCents,
     f.plan?.regularCents,
     f.partialMinimumCents,
+    ...(f.otherPlans ?? []).flatMap((p) => [p.firstCents, p.regularCents]),
   ];
   return new Set(amounts.filter((a): a is number => typeof a === 'number' && a > 0));
 }

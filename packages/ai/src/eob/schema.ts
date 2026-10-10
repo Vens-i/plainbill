@@ -11,7 +11,8 @@ import * as z from 'zod/v4';
 
 const GROUP_CODES = ['CO', 'PR', 'OA', 'PI'] as const;
 type GroupCode = (typeof GROUP_CODES)[number];
-const money = (what: string) => z.string().describe(`${what}, decimal dollars as printed (e.g. "1480.00")`);
+const money = (what: string) =>
+  z.string().describe(`${what}, decimal dollars as printed (e.g. "1480.00")`);
 
 export const EobModelOutputSchema = z.object({
   document_kind: z.enum(['eob', 'not_an_eob']),
@@ -20,7 +21,10 @@ export const EobModelOutputSchema = z.object({
     z.object({
       patient_first_name: z.string(),
       patient_last_name: z.string(),
-      patient_account_number: z.string().nullable().describe("The provider's patient account number, if printed"),
+      patient_account_number: z
+        .string()
+        .nullable()
+        .describe("The provider's patient account number, if printed"),
       member_id: z.string().nullable(),
       payer_claim_number: z.string().nullable(),
       provider_name: z
@@ -47,7 +51,11 @@ export const EobModelOutputSchema = z.object({
   uncertain_fields: z
     .array(
       z.object({
-        path: z.string().describe('Dot path of the field, e.g. "claims.0.insurance_paid" or "claims.0.adjustments.1.reason_code"'),
+        path: z
+          .string()
+          .describe(
+            'Dot path of the field, e.g. "claims.0.insurance_paid" or "claims.0.adjustments.1.reason_code"',
+          ),
         confidence: z.number().describe('0 to 1'),
         note: z.string().describe('What is unclear, in a few words'),
         alternatives: z.array(z.string()).describe('Other plausible readings, most likely first'),
@@ -97,7 +105,12 @@ export interface EobExtraction {
 /** Confidence given to fields the model did not list as uncertain. */
 export const CLEAN_READ_CONFIDENCE = 0.97;
 
-const clean = <T>(value: T): ExtractedField<T> => ({ value, confidence: CLEAN_READ_CONFIDENCE, note: null, alternatives: [] });
+const clean = <T>(value: T): ExtractedField<T> => ({
+  value,
+  confidence: CLEAN_READ_CONFIDENCE,
+  note: null,
+  alternatives: [],
+});
 
 /** Model output → per-field extraction. Uncertainty entries for unknown paths are ignored. */
 export function toExtraction(raw: EobModelOutput): EobExtraction {
@@ -113,7 +126,10 @@ export function toExtraction(raw: EobModelOutput): EobExtraction {
       provider_name: clean(c.provider_name),
       service_date: clean(c.service_date),
       claim_status: clean(c.claim_status),
-      services: c.services.map((s) => ({ procedure_code: clean(s.procedure_code), billed: clean(s.billed) })),
+      services: c.services.map((s) => ({
+        procedure_code: clean(s.procedure_code),
+        billed: clean(s.billed),
+      })),
       billed_total: clean(c.billed_total),
       adjustments: c.adjustments.map((a) => ({
         group_code: clean(a.group_code),
@@ -130,16 +146,25 @@ export function toExtraction(raw: EobModelOutput): EobExtraction {
   for (const u of raw.uncertain_fields) {
     const target = u.path
       .split('.')
-      .reduce<unknown>((node, key) => (node as Record<string, unknown> | undefined)?.[key], extraction);
+      .reduce<unknown>(
+        (node, key) => (node as Record<string, unknown> | undefined)?.[key],
+        extraction,
+      );
     if (!target || typeof target !== 'object' || !('confidence' in target)) continue;
     const field = target as ExtractedField<unknown>;
     const isGroup = u.path.endsWith('.group_code');
     const isStatus = u.path.endsWith('.claim_status');
-    const alternatives = u.alternatives
+    let alternatives = u.alternatives
       .map((a) => a.trim())
       .filter((a) => a && a !== field.value)
       .filter((a) => !isGroup || (GROUP_CODES as readonly string[]).includes(a))
       .filter((a) => !isStatus || a === 'processed' || a === 'denied');
+    // Unreadable but with candidates: take the most likely one provisionally. It stays flagged
+    // (low confidence), so a human still confirms it.
+    if (typeof field.value === 'string' && field.value.trim() === '' && alternatives.length > 0) {
+      field.value = alternatives[0];
+      alternatives = alternatives.slice(1);
+    }
     Object.assign(field, {
       confidence: Math.min(1, Math.max(0, u.confidence)),
       note: u.note || null,

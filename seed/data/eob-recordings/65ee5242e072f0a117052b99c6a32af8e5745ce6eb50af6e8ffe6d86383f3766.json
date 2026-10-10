@@ -1,0 +1,74 @@
+{
+  "fileName": "uhc_eob_sept.pdf",
+  "sha256": "65ee5242e072f0a117052b99c6a32af8e5745ce6eb50af6e8ffe6d86383f3766",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-10-10T17:02:07.361Z",
+  "output": {
+    "document_kind": "eob",
+    "payer_name": "UNITEDHEALTHCARE",
+    "claims": [
+      {
+        "patient_first_name": "TOMAS",
+        "patient_last_name": "HERRERA",
+        "patient_account_number": "HFM1004",
+        "member_id": "921447803",
+        "payer_claim_number": "UH0921A55120",
+        "provider_name": "HELEN KIM",
+        "service_date": "2026-09-12",
+        "claim_status": "processed",
+        "services": [
+          {
+            "procedure_code": "99215",
+            "billed": "420.00"
+          },
+          {
+            "procedure_code": "73562",
+            "billed": "310.00"
+          },
+          {
+            "procedure_code": "20610",
+            "billed": "450.00"
+          },
+          {
+            "procedure_code": "85025",
+            "billed": "90.00"
+          },
+          {
+            "procedure_code": "80053",
+            "billed": "210.00"
+          }
+        ],
+        "billed_total": "1,480.00",
+        "adjustments": [
+          {
+            "group_code": "CO",
+            "reason_code": "45",
+            "amount": "300.00",
+            "printed_label": "Contractual adjustment"
+          },
+          {
+            "group_code": "PR",
+            "reason_code": "",
+            "amount": "368.00",
+            "printed_label": "Member responsibility"
+          }
+        ],
+        "insurance_paid": "812.00",
+        "patient_responsibility_total": "368.00",
+        "remark_codes": []
+      }
+    ],
+    "uncertain_fields": [
+      {
+        "path": "claims.0.adjustments.1.reason_code",
+        "confidence": 0.3,
+        "note": "PR reason code obscured by smudge",
+        "alternatives": [
+          "3",
+          "2",
+          "1"
+        ]
+      }
+    ]
+  }
+}

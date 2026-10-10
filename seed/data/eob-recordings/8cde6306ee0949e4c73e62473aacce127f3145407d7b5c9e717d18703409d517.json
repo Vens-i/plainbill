@@ -1,0 +1,71 @@
+{
+  "fileName": "aetna_eob_raman.pdf",
+  "sha256": "8cde6306ee0949e4c73e62473aacce127f3145407d7b5c9e717d18703409d517",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-10-10T17:02:03.674Z",
+  "output": {
+    "document_kind": "eob",
+    "payer_name": "AETNA",
+    "claims": [
+      {
+        "patient_first_name": "PRIYA",
+        "patient_last_name": "RAMAN",
+        "patient_account_number": "HFM1003",
+        "member_id": "W188420355",
+        "payer_claim_number": "AE2610080091",
+        "provider_name": "ANAND PATEL",
+        "service_date": "2026-10-01",
+        "claim_status": "processed",
+        "services": [
+          {
+            "procedure_code": "99214",
+            "billed": "320.00"
+          },
+          {
+            "procedure_code": "85025",
+            "billed": "90.00"
+          },
+          {
+            "procedure_code": "36415",
+            "billed": "30.00"
+          },
+          {
+            "procedure_code": "80061",
+            "billed": "80.00"
+          }
+        ],
+        "billed_total": "520.00",
+        "adjustments": [
+          {
+            "group_code": "CO",
+            "reason_code": "45",
+            "amount": "100.00",
+            "printed_label": "Contractual adjustment"
+          },
+          {
+            "group_code": "PR",
+            "reason_code": "3",
+            "amount": "160.00",
+            "printed_label": "Copay"
+          }
+        ],
+        "insurance_paid": "260.00",
+        "patient_responsibility_total": "160.00",
+        "remark_codes": []
+      }
+    ],
+    "uncertain_fields": [
+      {
+        "path": "claims.0.insurance_paid",
+        "confidence": 0.6,
+        "note": "middle digit obscured by smudge; printed as 2?0.00",
+        "alternatives": [
+          "260.00",
+          "250.00",
+          "240.00",
+          "200.00"
+        ]
+      }
+    ]
+  }
+}

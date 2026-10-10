@@ -21,6 +21,13 @@ export interface Config {
   demoToday: IsoDate | null;
   /** Dev-only routes such as /api/dev/simulate-payment. Off in production. */
   devRoutes: boolean;
+  ai: {
+    apiKeySet: boolean;
+    model: string | null;
+    /** auto: recorded extraction when one exists for the file, else live; live; recorded. */
+    eobMode: 'auto' | 'live' | 'recorded';
+    recordingsDir: string;
+  };
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -34,5 +41,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     databasePath: resolveFromRoot(env.DATABASE_PATH?.trim() || 'apps/api/data/plainbill.db'),
     demoToday,
     devRoutes: env.ENABLE_DEV_ROUTES ? env.ENABLE_DEV_ROUTES === 'true' : !production,
+    ai: {
+      apiKeySet: Boolean(env.ANTHROPIC_API_KEY?.trim()),
+      model: env.ANTHROPIC_MODEL?.trim() || null,
+      eobMode:
+        env.AI_EOB_MODE === 'live' || env.AI_EOB_MODE === 'recorded' ? env.AI_EOB_MODE : 'auto',
+      recordingsDir: resolveFromRoot(env.EOB_RECORDINGS_DIR?.trim() || 'seed/data/eob-recordings'),
+    },
   };
 }

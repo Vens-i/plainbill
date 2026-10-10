@@ -1,0 +1,3 @@
+visit_id,patient_first,patient_last,dob,provider,visit_date,cpt,charge,self_pay_rate_applied
+SP-0929-01,Kevin,Lam,1991-02-11,Dr. Helen Kim,2026-09-29,99213,175,Y
+SP-0929-01,Kevin,Lam,1991-02-11,Dr. Helen Kim,2026-09-29,87880,100,Y

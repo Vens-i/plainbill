@@ -4,6 +4,8 @@
  */
 import { sql } from 'drizzle-orm';
 import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import type { EobExtraction } from '@plainbill/ai';
+import type { NormalizedClaim } from '@plainbill/core';
 
 const createdAt = () =>
   text('created_at')
@@ -169,10 +171,17 @@ export const invoices = sqliteTable(
     openCount: integer('open_count').notNull().default(0),
     lastOpenedAt: text('last_opened_at'),
     paypalInvoiceId: text('paypal_invoice_id'),
+    /** The plain-language message staff approved (AI draft or template, possibly edited). */
+    message: text('message'),
+    messageSource: text('message_source', { enum: ['ai', 'template', 'edited'] }),
+    paymentOption: text('payment_option', { mode: 'json' }).$type<PaymentOptionJson>(),
     createdAt: createdAt(),
   },
   (t) => [index('invoices_balance_idx').on(t.balanceId)],
 );
+
+export type PaymentOptionJson =
+  { type: 'full' } | { type: 'partial'; minimumCents: number } | { type: 'plan'; months: 3 | 6 };
 
 export const payments = sqliteTable(
   'payments',
@@ -202,3 +211,70 @@ export const events = sqliteTable('events', {
   payload: text('payload', { mode: 'json' }).$type<Record<string, unknown>>().notNull(),
   createdAt: createdAt(),
 });
+
+// ── Intake staging: uploaded files wait here until staff approve them ────────
+
+export const intakeBatches = sqliteTable('intake_batches', {
+  id: integer('id').primaryKey(),
+  practiceId: integer('practice_id')
+    .notNull()
+    .references(() => practices.id),
+  status: text('status', { enum: ['open', 'approved', 'discarded'] }).notNull(),
+  createdAt: createdAt(),
+  closedAt: text('closed_at'),
+});
+
+export const intakeFiles = sqliteTable(
+  'intake_files',
+  {
+    id: integer('id').primaryKey(),
+    batchId: integer('batch_id')
+      .notNull()
+      .references(() => intakeBatches.id),
+    fileName: text('file_name').notNull(),
+    kind: text('kind', { enum: ['835', 'eob', 'self-pay-csv'] }).notNull(),
+    sha256: text('sha256').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    status: text('status', { enum: ['parsed', 'error'] }).notNull(),
+    error: text('error'),
+    /** Which EOB reader produced the extraction ("claude", "recorded"); null for 835/CSV. */
+    reader: text('reader'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('intake_files_batch_idx').on(t.batchId)],
+);
+
+export const intakeItems = sqliteTable(
+  'intake_items',
+  {
+    id: integer('id').primaryKey(),
+    batchId: integer('batch_id')
+      .notNull()
+      .references(() => intakeBatches.id),
+    fileId: integer('file_id')
+      .notNull()
+      .references(() => intakeFiles.id),
+    kind: text('kind', { enum: ['835', 'eob', 'self-pay-csv'] }).notNull(),
+    /** Parsed claim for 835/CSV items. EOB items rebuild their claim from `extraction`. */
+    claim: text('claim', { mode: 'json' }).$type<NormalizedClaim>(),
+    /** Single-claim EOB extraction (paths are "claims.0.…"), updated as staff resolve flags. */
+    extraction: text('extraction', { mode: 'json' }).$type<EobExtraction>(),
+    resolutions: text('resolutions', { mode: 'json' }).$type<IntakeResolution[]>().notNull(),
+    status: text('status', { enum: ['pending', 'approved', 'duplicate', 'discarded'] }).notNull(),
+    balanceId: integer('balance_id').references(() => balances.id),
+    createdAt: createdAt(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => [
+    index('intake_items_batch_idx').on(t.batchId),
+    index('intake_items_balance_idx').on(t.balanceId),
+  ],
+);
+
+export interface IntakeResolution {
+  path: string;
+  label: string;
+  from: string;
+  to: string;
+  at: string;
+}

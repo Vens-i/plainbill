@@ -3,8 +3,9 @@
  * claim number, NPI and member ID here is fictional.
  *
  * Each visit lists its service lines and how the payer adjudicated it. `generate.ts` turns the
- * insurance visits into 835 files and the self-pay visits into a CSV; `seed.ts` then reads those
- * files back through the real parsers. Visits are listed in the order of the CLAUDE.md seed
+ * insurance visits into 835 files or scanned EOB PDFs and the self-pay visits into CSVs; `seed.ts`
+ * then reads those files back through the real parsers (and, for EOBs, recorded Claude
+ * extractions). Visits are listed in the order of the CLAUDE.md seed
  * table, which is also the order rows appear within each dashboard group.
  */
 import type { BalanceStatus, GroupCode, IsoDate } from '@plainbill/core';
@@ -60,18 +61,21 @@ export interface SeedVisit {
   /** Insurance adjudication; absent for self-pay. */
   insurance?: {
     payer: PayerKey;
-    /** Which ERA file this claim arrives in. */
-    era: string;
+    /** The ERA (835) file this claim arrives in… */
+    era?: string;
+    /** …or the scanned EOB PDF, with the part of the scan that is hard to read. */
+    eob?: { file: string; obscure: 'insurance_paid' | 'patient_share_code' };
     payerClaimNumber: string;
     denied?: boolean;
     paid: number;
     adjustments: SeedAdjustment[];
     remarks?: string[];
   };
-  selfPay?: { rateApplied: boolean };
+  selfPay?: { rateApplied: boolean; csv: string };
   /** Where the row sits on the dashboard today. */
   status: BalanceStatus;
   reviewReason?: string;
+  /** Static "AI suggests" text; for EOB visits it is derived from the extraction flags instead. */
   aiSuggestion: string | null;
   invoice?: { sentOn: IsoDate; openCount: number };
   payments?: Array<{ on: IsoDate; amount: number; method: 'paypal' | 'card' | 'cash' }>;
@@ -86,17 +90,29 @@ export const ERAS: Record<
   bcbs_era_1008: { payer: 'BCBS', date: '2026-10-08', controlNumber: 1008, trace: 'BC1008120117' },
   aetna_era_0812: { payer: 'AETNA', date: '2026-08-12', controlNumber: 812, trace: 'AE0812553201' },
   aetna_era_0914: { payer: 'AETNA', date: '2026-09-14', controlNumber: 914, trace: 'AE0914553872' },
-  aetna_era_1008: {
-    payer: 'AETNA',
-    date: '2026-10-08',
-    controlNumber: 1009,
-    trace: 'AE1008554410',
-  },
   uhc_era_0826: { payer: 'UHC', date: '2026-08-26', controlNumber: 826, trace: 'UH0826907714' },
   uhc_era_0921: { payer: 'UHC', date: '2026-09-21', controlNumber: 921, trace: 'UH0921908305' },
 };
 
-export const SELF_PAY_CSV = 'selfpay_visits.csv';
+/** Scanned EOB PDFs (paper remittances), one claim each. */
+export const EOBS: Record<string, { payer: PayerKey; date: IsoDate }> = {
+  aetna_eob_raman: { payer: 'AETNA', date: '2026-10-08' },
+  uhc_eob_sept: { payer: 'UHC', date: '2026-09-21' },
+};
+
+/** Self-pay visit summary CSVs. */
+export const SELF_PAY_CSVS = ['selfpay_0929', 'selfpay_q3'] as const;
+
+/**
+ * The files the Intake demo uploads (artboard 1b). `pnpm seed --scenario=intake-demo` leaves
+ * their visits out so they can be added live.
+ */
+export const INTAKE_DEMO_FILES = [
+  'bcbs_era_1008.835',
+  'aetna_eob_raman.pdf',
+  'uhc_eob_sept.pdf',
+  'selfpay_0929.csv',
+];
 
 export const VISITS: SeedVisit[] = [
   {
@@ -145,7 +161,7 @@ export const VISITS: SeedVisit[] = [
       { cpt: '99213', charge: 175 },
       { cpt: '87880', charge: 100 },
     ],
-    selfPay: { rateApplied: true },
+    selfPay: { rateApplied: true, csv: 'selfpay_0929' },
     status: 'ready',
     aiSuggestion: 'Send invoice',
   },
@@ -169,7 +185,7 @@ export const VISITS: SeedVisit[] = [
     ],
     insurance: {
       payer: 'AETNA',
-      era: 'aetna_era_1008',
+      eob: { file: 'aetna_eob_raman', obscure: 'insurance_paid' },
       payerClaimNumber: 'AE2610080091',
       paid: 260,
       adjustments: [
@@ -177,9 +193,8 @@ export const VISITS: SeedVisit[] = [
         { group: 'PR', reason: '3', amount: 160 },
       ],
     },
-    status: 'review',
-    reviewReason: 'EOB scan blurry: insurance paid $260 or $280?',
-    aiSuggestion: 'Confirm insurance paid amount',
+    status: 'review', // from the EOB flags: "insurance paid $260 or $280?"
+    aiSuggestion: null,
   },
   {
     key: 'tomas',
@@ -202,7 +217,7 @@ export const VISITS: SeedVisit[] = [
     ],
     insurance: {
       payer: 'UHC',
-      era: 'uhc_era_0921',
+      eob: { file: 'uhc_eob_sept', obscure: 'patient_share_code' },
       payerClaimNumber: 'UH0921A55120',
       paid: 812,
       adjustments: [
@@ -210,9 +225,8 @@ export const VISITS: SeedVisit[] = [
         { group: 'PR', reason: '3', amount: 368 },
       ],
     },
-    status: 'review',
-    reviewReason: 'Code read as PR-3 (copay), may be PR-2 (coinsurance)',
-    aiSuggestion: 'Check copay vs. coinsurance',
+    status: 'review', // from the EOB flags: "PR-3 (copay), may be PR-2 (coinsurance)"
+    aiSuggestion: null,
   },
   {
     key: 'ellen',
@@ -226,7 +240,7 @@ export const VISITS: SeedVisit[] = [
     provider: 'patel',
     visitDate: '2026-09-30',
     lines: [{ cpt: '99214', charge: 310 }],
-    selfPay: { rateApplied: false },
+    selfPay: { rateApplied: false, csv: 'selfpay_q3' },
     status: 'review',
     reviewReason: 'Self-pay rate not applied yet',
     aiSuggestion: 'Apply self-pay rate',
@@ -395,7 +409,7 @@ export const VISITS: SeedVisit[] = [
       { cpt: '20610', charge: 380 },
       { cpt: '73562', charge: 400 },
     ],
-    selfPay: { rateApplied: true },
+    selfPay: { rateApplied: true, csv: 'selfpay_q3' },
     status: 'partial',
     aiSuggestion: 'Offer 6-month plan · $100/mo',
     invoice: { sentOn: '2026-06-24', openCount: 3 },

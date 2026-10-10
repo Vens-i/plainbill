@@ -1,33 +1,26 @@
 /**
- * Every seed row, end to end: committed 835/CSV files → real parsers → balance math, checked
- * against the literal CLAUDE.md table, with the invariant asserted on each row.
+ * Every seed row, end to end: committed 835/CSV files → real parsers, scanned EOB PDFs → recorded
+ * Claude extractions → eobToClaims, then balance math — checked against the literal CLAUDE.md
+ * table, with the invariant asserted on each row.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { eobToClaims, RecordedEobExtractor } from '@plainbill/ai';
 import {
-  claimsFrom835,
   computePatientBalance,
   dollars,
   formatShortDate,
   parse835,
-  parseSelfPayCsv,
   type NormalizedClaim,
 } from '@plainbill/core';
 import { EXPECTED_TABLE } from '../src/expected';
-import { buildSeedFiles, DATA_DIR } from '../src/files';
+import { buildSeedFiles, DATA_DIR, eobFileNames, readSeedFile, RECORDINGS_DIR } from '../src/files';
+import { readSeedClaims } from '../src/load';
 import { VISITS } from '../src/spec';
 
 const files = buildSeedFiles();
-
-function parseCommittedFiles(): NormalizedClaim[] {
-  return files.flatMap((f) => {
-    const text = readFileSync(join(DATA_DIR, f.fileName), 'utf8');
-    return f.kind === '835'
-      ? claimsFrom835(text, { fileName: f.fileName })
-      : parseSelfPayCsv(text, { fileName: f.fileName });
-  });
-}
+const recorded = new RecordedEobExtractor(RECORDINGS_DIR);
 
 describe('seed files', () => {
   it.each(files.map((f) => [f.fileName, f] as const))(
@@ -52,14 +45,55 @@ describe('seed files', () => {
   });
 });
 
-describe('seed rows reconcile', () => {
-  const claims = parseCommittedFiles();
-  const byName = new Map(
-    VISITS.map((v) => [
-      `${v.patient.firstName} ${v.patient.lastName}`,
-      { visit: v, claim: claims.find((c) => c.patientControlNumber === v.claimId) },
-    ]),
+describe('scanned EOBs', () => {
+  it.each(eobFileNames().map((f) => [f]))(
+    '%s has a recorded extraction for this exact PDF',
+    (fileName) => {
+      expect(recorded.has(readSeedFile(fileName)), 'run `pnpm ai:record`').toBe(true);
+    },
   );
+
+  it('flag the smudged spots, and only the true reading adds up for the paid amount', async () => {
+    const priya = eobToClaims(
+      (await recorded.extract(readSeedFile('aetna_eob_raman.pdf'), 'aetna_eob_raman.pdf'))
+        .extraction,
+      {
+        fileName: 'aetna_eob_raman.pdf',
+      },
+    )[0]!;
+    const paid = priya.flags.find((f) => f.path === 'claims.0.insurance_paid')!;
+    expect(paid.current).toMatchObject({ value: '260.00', reconciles: true });
+    expect(paid.alternatives.length).toBeGreaterThan(0);
+    expect(paid.alternatives.every((a) => !a.reconciles)).toBe(true);
+
+    const tomas = eobToClaims(
+      (await recorded.extract(readSeedFile('uhc_eob_sept.pdf'), 'uhc_eob_sept.pdf')).extraction,
+      {
+        fileName: 'uhc_eob_sept.pdf',
+      },
+    )[0]!;
+    const code = tomas.flags.find((f) => /adjustments\.\d+\.reason_code$/.test(f.path))!;
+    expect(code.current.display).toBe('PR-3 → Copay');
+    expect(code.alternatives.map((a) => a.display.split(' ')[0])).toContain('PR-2');
+    expect([code.current, ...code.alternatives].every((o) => o.reconciles)).toBe(true);
+  });
+});
+
+describe('seed rows reconcile', () => {
+  let claims: NormalizedClaim[] = [];
+  const byName = new Map<
+    string,
+    { visit: (typeof VISITS)[number]; claim: NormalizedClaim | undefined }
+  >();
+  beforeAll(async () => {
+    claims = await readSeedClaims(recorded);
+    for (const v of VISITS) {
+      byName.set(`${v.patient.firstName} ${v.patient.lastName}`, {
+        visit: v,
+        claim: claims.find((c) => c.patientControlNumber === v.claimId),
+      });
+    }
+  });
 
   it('produces exactly one claim per table row', () => {
     expect(claims).toHaveLength(EXPECTED_TABLE.length);

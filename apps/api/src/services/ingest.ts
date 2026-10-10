@@ -151,49 +151,7 @@ export function ingestClaim(db: DbLike, options: IngestOptions): IngestResult {
       .returning({ id: visits.id })
       .get().id;
 
-    for (const adj of claim.claimAdjustments) {
-      tx.insert(adjustments)
-        .values({
-          visitId,
-          claimLineId: null,
-          groupCode: adj.group,
-          reasonCode: adj.reason,
-          amountCents: adj.amountCents,
-          quantity: adj.quantity ?? null,
-        })
-        .run();
-    }
-    for (const line of claim.lines) {
-      const lineId = tx
-        .insert(claimLines)
-        .values({
-          visitId,
-          lineNumber: line.lineNumber,
-          codeQualifier: line.codeQualifier,
-          procedureCode: line.procedureCode,
-          modifiers: line.modifiers,
-          chargeCents: line.chargeCents,
-          paidCents: line.paidCents,
-          allowedCents: line.allowedCents ?? null,
-          units: line.units ?? null,
-          serviceDate: line.serviceDate ?? null,
-          remarks: line.remarks,
-        })
-        .returning({ id: claimLines.id })
-        .get().id;
-      for (const adj of line.adjustments) {
-        tx.insert(adjustments)
-          .values({
-            visitId,
-            claimLineId: lineId,
-            groupCode: adj.group,
-            reasonCode: adj.reason,
-            amountCents: adj.amountCents,
-            quantity: adj.quantity ?? null,
-          })
-          .run();
-      }
-    }
+    insertClaimDetail(tx, visitId, claim);
 
     const status = initialStatus({
       denied: balance.denied,
@@ -224,6 +182,102 @@ export function ingestClaim(db: DbLike, options: IngestOptions): IngestResult {
       .get().id;
 
     return { balanceId, visitId, patientId, status, patientOwesCents: balance.patientOwesCents };
+  });
+}
+
+/** Lines and adjustments (claim- and line-level) for a visit. */
+function insertClaimDetail(tx: DbLike, visitId: number, claim: NormalizedClaim): void {
+  for (const adj of claim.claimAdjustments) {
+    tx.insert(adjustments)
+      .values({
+        visitId,
+        claimLineId: null,
+        groupCode: adj.group,
+        reasonCode: adj.reason,
+        amountCents: adj.amountCents,
+        quantity: adj.quantity ?? null,
+      })
+      .run();
+  }
+  for (const line of claim.lines) {
+    const lineId = tx
+      .insert(claimLines)
+      .values({
+        visitId,
+        lineNumber: line.lineNumber,
+        codeQualifier: line.codeQualifier,
+        procedureCode: line.procedureCode,
+        modifiers: line.modifiers,
+        chargeCents: line.chargeCents,
+        paidCents: line.paidCents,
+        allowedCents: line.allowedCents ?? null,
+        units: line.units ?? null,
+        serviceDate: line.serviceDate ?? null,
+        remarks: line.remarks,
+      })
+      .returning({ id: claimLines.id })
+      .get().id;
+    for (const adj of line.adjustments) {
+      tx.insert(adjustments)
+        .values({
+          visitId,
+          claimLineId: lineId,
+          groupCode: adj.group,
+          reasonCode: adj.reason,
+          amountCents: adj.amountCents,
+          quantity: adj.quantity ?? null,
+        })
+        .run();
+    }
+  }
+}
+
+/**
+ * Replace a balance's claim figures after staff corrected an extracted field. Only allowed
+ * before any patient payment; the new claim is reconciled by core first.
+ */
+export function replaceVisitClaim(
+  db: Db,
+  balanceId: number,
+  claim: NormalizedClaim,
+  now = new Date().toISOString(),
+): void {
+  const balance = computePatientBalance(claim);
+  db.transaction((tx) => {
+    const current = tx.select().from(balances).where(eq(balances.id, balanceId)).get();
+    if (!current) throw new Error(`Balance ${balanceId} does not exist.`);
+    if (current.patientPaidCents > 0)
+      throw new Error('A balance with patient payments cannot be re-adjudicated.');
+    tx.delete(adjustments).where(eq(adjustments.visitId, current.visitId)).run();
+    tx.delete(claimLines).where(eq(claimLines.visitId, current.visitId)).run();
+    insertClaimDetail(tx, current.visitId, claim);
+    tx.update(visits)
+      .set({
+        serviceDate: claim.serviceDate,
+        claimStatusCode: claim.claimStatusCode,
+        denied: claim.denied,
+        remarks: claim.remarks,
+        billedCents: claim.chargeCents,
+        insurancePaidCents: claim.paidCents,
+        reportedPatientResponsibilityCents: claim.patientResponsibilityCents,
+      })
+      .where(eq(visits.id, current.visitId))
+      .run();
+    tx.update(balances)
+      .set({
+        billedCents: balance.billedCents,
+        contractualCents: balance.contractualCents,
+        insurancePaidCents: balance.insurancePaidCents,
+        patientResponsibilityCents: balance.patientOwesCents,
+        deductibleCents: balance.patientShare.deductibleCents,
+        coinsuranceCents: balance.patientShare.coinsuranceCents,
+        copayCents: balance.patientShare.copayCents,
+        otherPatientCents: balance.patientShare.otherCents,
+        selfPayCents: balance.patientShare.selfPayCents,
+        updatedAt: now,
+      })
+      .where(eq(balances.id, balanceId))
+      .run();
   });
 }
 

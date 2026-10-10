@@ -9,7 +9,8 @@
     "generate": "tsx src/generate.ts",
     "seed": "tsx src/seed.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit -p ."
+    "typecheck": "tsc --noEmit -p .",
+    "ai:record": "tsx src/record-eobs.ts"
   },
   "dependencies": {
     "@plainbill/api": "workspace:*",

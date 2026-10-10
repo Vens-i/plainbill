@@ -6,7 +6,7 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { addDays, nextStatus, type BalanceStatus, type IsoDate } from '@plainbill/core';
 import type { Db, DbLike } from '../db/client';
-import { balances, events, invoices, payments, visits } from '../db/schema';
+import { balances, events, invoices, payments, visits, type PaymentOptionJson } from '../db/schema';
 
 export class PaymentError extends Error {
   override name = 'PaymentError';
@@ -125,6 +125,9 @@ export interface SendInvoiceInput {
   /** Defaults to 30 days after the visit. */
   dueDate?: IsoDate;
   openCount?: number;
+  message?: string;
+  messageSource?: 'ai' | 'template' | 'edited';
+  paymentOption?: PaymentOptionJson;
   now: string;
 }
 
@@ -141,18 +144,26 @@ export function markInvoiceSent(
     const balance = loadBalance(tx, balanceId);
     const status = nextStatus(balance.status, { type: 'send' });
     const visit = tx.select().from(visits).where(eq(visits.id, balance.visitId)).get()!;
-    const invoiceId = tx
-      .insert(invoices)
-      .values({
-        balanceId,
-        status: 'sent',
-        amountCents: balance.patientResponsibilityCents - balance.patientPaidCents,
-        sentOn: input.sentOn,
-        dueDate: input.dueDate ?? addDays(visit.serviceDate, 30),
-        openCount: input.openCount ?? 0,
-      })
-      .returning({ id: invoices.id })
-      .get().id;
+    const values = {
+      balanceId,
+      status: 'sent' as const,
+      amountCents: balance.patientResponsibilityCents - balance.patientPaidCents,
+      sentOn: input.sentOn,
+      dueDate: input.dueDate ?? addDays(visit.serviceDate, 30),
+      openCount: input.openCount ?? 0,
+      message: input.message ?? null,
+      messageSource: input.messageSource ?? null,
+      paymentOption: input.paymentOption ?? null,
+    };
+    // A saved draft becomes the sent invoice; otherwise create one.
+    const draft = tx
+      .select()
+      .from(invoices)
+      .where(and(eq(invoices.balanceId, balanceId), eq(invoices.status, 'draft')))
+      .get();
+    const invoiceId = draft
+      ? (tx.update(invoices).set(values).where(eq(invoices.id, draft.id)).run(), draft.id)
+      : tx.insert(invoices).values(values).returning({ id: invoices.id }).get().id;
     tx.update(balances)
       .set({ status, updatedAt: input.now })
       .where(eq(balances.id, balanceId))

@@ -144,7 +144,7 @@ function fieldKind(path: string): {
 }
 
 /** Display a value the way staff read it: "$260.00", "PR-3 → Copay". */
-function displayValue(extraction: EobExtraction, path: string, value: string): string {
+export function displayFieldValue(extraction: EobExtraction, path: string, value: string): string {
   const { kind } = fieldKind(path);
   if (kind === 'money') return moneyDisplay(value);
   if (path.endsWith('.reason_code') || path.endsWith('.group_code')) {
@@ -270,7 +270,7 @@ export function eobToClaims(extraction: EobExtraction, options: ToClaimsOptions)
       const candidate = withFieldValue(extraction, path, value);
       return {
         value,
-        display: displayValue(candidate, path, value),
+        display: displayFieldValue(candidate, path, value),
         reconciles: tryReconcile(candidate, index, options.fileName).claim !== null,
       };
     };

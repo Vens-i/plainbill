@@ -8,12 +8,20 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
-import { EobModelOutputSchema, toExtraction, type EobExtraction, type EobModelOutput } from './schema';
+import {
+  EobModelOutputSchema,
+  toExtraction,
+  type EobExtraction,
+  type EobModelOutput,
+} from './schema';
 
 export interface EobExtractor {
   readonly name: string;
   /** Returns the per-field extraction plus the raw model output it came from. */
-  extract(pdf: Uint8Array, fileName: string): Promise<{ extraction: EobExtraction; raw: EobModelOutput }>;
+  extract(
+    pdf: Uint8Array,
+    fileName: string,
+  ): Promise<{ extraction: EobExtraction; raw: EobModelOutput }>;
 }
 
 export class AiExtractionError extends Error {
@@ -40,7 +48,10 @@ export class ClaudeEobExtractor implements EobExtractor {
 
   constructor(private readonly options: ClaudeEobExtractorOptions) {}
 
-  async extract(pdf: Uint8Array, fileName: string): Promise<{ extraction: EobExtraction; raw: EobModelOutput }> {
+  async extract(
+    pdf: Uint8Array,
+    fileName: string,
+  ): Promise<{ extraction: EobExtraction; raw: EobModelOutput }> {
     const response = await this.options.client.beta.messages.parse({
       model: this.options.model,
       max_tokens: 16000,
@@ -104,7 +115,10 @@ export class RecordedEobExtractor implements EobExtractor {
     return existsSync(this.path(pdf));
   }
 
-  async extract(pdf: Uint8Array, fileName: string): Promise<{ extraction: EobExtraction; raw: EobModelOutput }> {
+  async extract(
+    pdf: Uint8Array,
+    fileName: string,
+  ): Promise<{ extraction: EobExtraction; raw: EobModelOutput }> {
     const file = this.path(pdf);
     if (!existsSync(file)) {
       throw new AiExtractionError(
@@ -126,7 +140,10 @@ export class RecordedThenLiveExtractor implements EobExtractor {
     private readonly live: EobExtractor | null,
   ) {}
 
-  extract(pdf: Uint8Array, fileName: string): Promise<{ extraction: EobExtraction; raw: EobModelOutput }> {
+  extract(
+    pdf: Uint8Array,
+    fileName: string,
+  ): Promise<{ extraction: EobExtraction; raw: EobModelOutput }> {
     if (this.recorded.has(pdf) || !this.live) return this.recorded.extract(pdf, fileName);
     return this.live.extract(pdf, fileName);
   }

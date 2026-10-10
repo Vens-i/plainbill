@@ -1,5 +1,8 @@
+import { join } from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
+import multipart from '@fastify/multipart';
 import { asc } from 'drizzle-orm';
+import { RecordedEobExtractor, TemplateMessageDrafter } from '@plainbill/ai';
 import {
   claimsFrom835,
   InvalidTransitionError,
@@ -11,11 +14,30 @@ import {
 import type { IntakeResult, PracticeInfo } from './contract';
 import type { Db } from './db/client';
 import { practices } from './db/schema';
+import { REPO_ROOT } from './env';
 import { EventBus, streamEvents } from './events';
 import { computeAgingChart, computeDenialsChart, computeKpis } from './queries/dashboard';
 import { getBalanceRows } from './queries/rows';
 import { DuplicateClaimError, ingestClaim } from './services/ingest';
 import { PaymentError, recordPayment } from './services/payments';
+import { DrawerError } from './services/drawer';
+import { IntakeError } from './services/intake';
+import type { AiServices, RouteContext } from './routes/context';
+import { registerDrawerRoutes } from './routes/drawer';
+import { registerIntakeRoutes } from './routes/intake';
+
+export const DEFAULT_SAMPLE_DIR = join(REPO_ROOT, 'seed', 'data');
+export const DEFAULT_RECORDINGS_DIR = join(DEFAULT_SAMPLE_DIR, 'eob-recordings');
+
+/** Offline AI: recorded EOB extractions and template messages. */
+export function offlineAi(recordingsDir = DEFAULT_RECORDINGS_DIR): AiServices {
+  return {
+    extractor: new RecordedEobExtractor(recordingsDir),
+    drafter: new TemplateMessageDrafter(),
+    available: false,
+    model: null,
+  };
+}
 
 export interface AppOptions {
   db: Db;
@@ -24,9 +46,13 @@ export interface AppOptions {
   devRoutes?: boolean;
   bus?: EventBus;
   logger?: boolean;
+  /** Defaults to offline AI (recorded extractions + templates). */
+  ai?: AiServices;
+  /** Where dev routes read sample files (defaults to seed/data). */
+  sampleDir?: string;
 }
 
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 export function buildApp(options: AppOptions): { app: FastifyInstance; bus: EventBus } {
   const { db } = options;
@@ -41,7 +67,16 @@ export function buildApp(options: AppOptions): { app: FastifyInstance; bus: Even
     (_req, body, done) => done(null, body),
   );
 
+  app.register(multipart, { limits: { fileSize: MAX_UPLOAD_BYTES, files: 10 } });
+
   app.setErrorHandler((error, _request, reply) => {
+    if (error instanceof IntakeError || error instanceof DrawerError) {
+      return reply.code(error.status).send({
+        error: error instanceof IntakeError ? 'intake' : 'drawer',
+        message: error.message,
+        ...(error instanceof DrawerError && error.details ? { details: error.details } : {}),
+      });
+    }
     if (error instanceof X12ParseError)
       return reply.code(400).send({ error: 'invalid_835', message: error.message });
     if (error instanceof ReconciliationError) {
@@ -59,6 +94,14 @@ export function buildApp(options: AppOptions): { app: FastifyInstance; bus: Even
   });
 
   const practice = () => db.select().from(practices).orderBy(asc(practices.id)).get();
+  const ctx: RouteContext = {
+    db,
+    bus,
+    ai: options.ai ?? offlineAi(),
+    today,
+    practiceId: () => practice()!.id,
+    sampleDir: options.sampleDir ?? DEFAULT_SAMPLE_DIR,
+  };
 
   app.register(
     async (api) => {
@@ -98,6 +141,9 @@ export function buildApp(options: AppOptions): { app: FastifyInstance; bus: Even
       );
 
       api.get('/events', (request, reply) => streamEvents(bus, request, reply));
+
+      registerIntakeRoutes(api, ctx, options.devRoutes ?? false);
+      registerDrawerRoutes(api, ctx);
 
       api.post<{ Querystring: { fileName?: string }; Body: string }>(
         '/intake/835',

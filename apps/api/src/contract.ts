@@ -139,3 +139,115 @@ export interface BalancesChangedEvent {
 export type ServerEvent =
   | { type: 'payment'; data: PaymentEvent }
   | { type: 'balances.changed'; data: BalancesChangedEvent };
+
+// ── Intake ──────────────────────────────────────────────────────────────────
+
+export type IntakeKind = '835' | 'eob' | 'self-pay-csv';
+
+/** A field the AI was unsure about, with every reading checked against the claim's math. */
+export interface IntakeFlagView {
+  path: string;
+  kind: 'money' | 'code' | 'date' | 'text';
+  label: string;
+  column: 'insurancePaid' | 'adjustments' | 'billed' | 'patient' | 'visit' | 'payer' | 'other';
+  current: { value: string; display: string; reconciles: boolean };
+  alternatives: Array<{ value: string; display: string; reconciles: boolean }>;
+  confidence: number;
+  note: string | null;
+  problem?: string;
+}
+
+export interface IntakeItemView {
+  id: number;
+  fileId: number;
+  fileName: string;
+  kind: IntakeKind;
+  /** "835 · bcbs_era_1008", "EOB · aetna_eob_raman", "Self-pay · selfpay_0929" */
+  sourceLabel: string;
+  claimId: string;
+  patientName: string;
+  visitDate: string | null;
+  payerName: string;
+  billedCents: number | null;
+  /** Null for self-pay. */
+  insurancePaidCents: number | null;
+  owesCents: number | null;
+  /** "Insurance discount · Deductible · Coinsurance" */
+  adjustmentsSummary: string;
+  flags: IntakeFlagView[];
+  resolved: Array<{ path: string; label: string; from: string; to: string }>;
+  reconciles: boolean;
+  error: string | null;
+  status: 'pending' | 'approved' | 'duplicate' | 'discarded';
+  balanceId: number | null;
+}
+
+export interface IntakeFileView {
+  id: number;
+  fileName: string;
+  kind: IntakeKind;
+  status: 'parsed' | 'error';
+  error: string | null;
+  visitCount: number;
+  reader: string | null;
+}
+
+export interface IntakeBatchView {
+  id: number;
+  status: 'open' | 'approved' | 'discarded';
+  files: IntakeFileView[];
+  items: IntakeItemView[];
+  /** Open flags across pending items. */
+  openFlagCount: number;
+  /** Pending items that reconcile and can be approved. */
+  approvableCount: number;
+}
+
+export interface IntakeApproveResult {
+  approved: Array<{ itemId: number; balanceId: number; status: BalanceStatus }>;
+  skipped: Array<{ itemId: number; reason: string }>;
+  batch: IntakeBatchView;
+}
+
+// ── Review & Send drawer ────────────────────────────────────────────────────
+
+export type PaymentOption =
+  { type: 'full' } | { type: 'partial'; minimumCents: number } | { type: 'plan'; months: 3 | 6 };
+
+export type MessageVariant = 'default' | 'simpler' | 'spanish';
+
+export interface DrawerData {
+  balance: BalanceRow;
+  /** Open AI flags still blocking a review row (from Intake), with resolutions so far. */
+  review: {
+    flags: IntakeFlagView[];
+    resolved: Array<{ path: string; label: string; from: string; to: string }>;
+    reason: string | null;
+    canMarkReady: boolean;
+  } | null;
+  draft: {
+    message: string;
+    messageSource: 'ai' | 'template' | 'edited';
+    variant: MessageVariant;
+    paymentOption: PaymentOption;
+    saved: boolean;
+  };
+  /** "Written from the 835 remittance." */
+  messageProvenance: string;
+  plans: Array<{ months: 3 | 6; firstCents: number; regularCents: number; eligible: boolean }>;
+  partialMinimumCents: number;
+  email: { to: string; subject: string; dueDate: string };
+  ai: { available: boolean; model: string | null };
+}
+
+export interface DraftMessageResult {
+  text: string;
+  variant: MessageVariant;
+  source: 'ai' | 'template';
+  notes: string[];
+}
+
+export interface SendResult {
+  balance: BalanceRow;
+  invoiceId: number;
+}
