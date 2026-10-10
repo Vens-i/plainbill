@@ -34,7 +34,7 @@ export interface PayPalServices {
 
 export interface EmailServices {
   mailer: Mailer;
-  /** Demo safety: deliver every patient email here instead of the address on file. */
+  /** For testing: deliver every patient email here instead of the address on file. */
   toOverride: string | null;
 }
 

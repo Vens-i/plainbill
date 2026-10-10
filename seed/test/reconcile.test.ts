@@ -1,7 +1,7 @@
 /**
  * Every seed row, end to end: committed 835/CSV files → real parsers, scanned EOB PDFs → recorded
- * Claude extractions → eobToClaims, then balance math — checked against the literal CLAUDE.md
- * table, with the invariant asserted on each row.
+ * Claude extractions → eobToClaims, then balance math — checked against the literal seed
+ * table (expected.ts), with the invariant asserted on each row.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

@@ -1,6 +1,6 @@
 /**
  * The only facts a patient message may draw on. Built from @plainbill/core's computed balance.
- * Deliberately minimal (CLAUDE.md): first name, provider, visit date and amounts — no service
+ * Deliberately minimal: first name, provider, visit date and amounts — no service
  * descriptions, procedure or diagnosis codes, or insurance IDs, so the model cannot leak them.
  */
 export type MessageVariant = 'default' | 'simpler' | 'spanish';

@@ -1,7 +1,7 @@
 # Render Blueprint: one web service runs the API and serves the built web app from the same
 # origin (the patient page's session cookie is same-site). SQLite lives on the instance's disk;
-# the demo data is seeded on start when the database is empty, so every fresh instance (and a
-# free instance waking up) starts from the Harborview demo state.
+# the sample data is seeded on start when the database is empty, so every fresh instance (and a
+# free instance waking up) starts from the Harborview sample data.
 #
 # Secrets are `sync: false`: Render asks for them when the Blueprint is created.
 services:
@@ -20,10 +20,10 @@ services:
         value: '22'
       - key: NODE_ENV
         value: production
-      # Pin "today" so aging, days-out and due dates match the demo script.
+      # Pin "today" so aging, days-out and due dates match the sample data.
       - key: DEMO_TODAY
         value: '2026-10-10'
-      # Keeps "Use the sample files" (Intake) and the payment rehearsal available in the demo.
+      # Keeps "Use the sample files" (Intake) and the simulated payment available.
       - key: ENABLE_DEV_ROUTES
         value: 'true'
       - key: SESSION_SECRET

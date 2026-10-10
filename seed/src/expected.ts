@@ -1,5 +1,5 @@
 /**
- * The CLAUDE.md seed table, copied verbatim as data (dollars; null = "–" in the table).
+ * The seed table (13 fictional visits), copied verbatim as data (dollars; null = "–" in the table).
  * Deliberately independent of spec.ts: the reconciliation test parses the generated files and
  * checks the results against these literals, so a typo in either place fails the build.
  */

@@ -42,7 +42,7 @@ export const gridTheme = themeQuartz.withParams({
   valueChangeValueHighlightBackgroundColor: '#B9DDC0',
 });
 
-/** fg / bg / border per status (CLAUDE.md status table). */
+/** fg / bg / border per status (from the design reference). */
 export const STATUS_COLORS: Record<BalanceStatus, { fg: string; bg: string; border: string }> = {
   review: { fg: '#7A4E00', bg: '#FAEFD6', border: '#EFD9A0' },
   denied: { fg: '#9B2C24', bg: '#FAE5E1', border: '#F0C4BD' },

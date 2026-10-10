@@ -1,5 +1,5 @@
 /**
- * @plainbill/ai — the only package that talks to a model. Two rules from CLAUDE.md shape it:
+ * @plainbill/ai — the only package that talks to a model. Two rules shape it:
  *
  * - The model never does money math. Extraction returns transcribed fields with confidence;
  *   every amount is parsed and reconciled by @plainbill/core. Drafted messages are checked so

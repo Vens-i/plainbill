@@ -400,7 +400,7 @@ export function startPayPalSync(ctx: Ctx, seconds: number): () => void {
 
 // ── Webhooks ────────────────────────────────────────────────────────────────
 
-/** Events we act on (CLAUDE.md's list plus subscription lifecycle). */
+/** Events we act on: invoice and capture payments, plan activation, plan installments and lifecycle. */
 export const HANDLED_EVENTS = [
   'INVOICING.INVOICE.PAID',
   'INVOICING.INVOICE.UPDATED',

@@ -6,17 +6,13 @@ Plainbill takes in insurance responses (835 remittance files, PDF EOBs) and self
 out exactly what each patient owes, and lets front-desk staff send a short, visual bill by email
 with a PayPal payment link. No phone calls, no paper statements.
 
-Built for the PayPal AI Hackathon. All patients, claims and amounts in this repo are synthetic.
+All patients, claims and amounts in this repo are synthetic.
 
-- **Hosted demo:** _add the Render URL here after deploying_ (sandbox PayPal; staff pages need no
-  login in this demo)
-- **Demo video:** _add the YouTube link here_ · shot list in [docs/demo-script.md](docs/demo-script.md)
-
-## The loop
+## How it works
 
 1. **Intake.** Drop an 835 remittance, a scanned PDF EOB or a self-pay CSV. Code parses the 835s
    and CSVs; Claude reads the EOB and says which fields it isn't sure of. Each uncertain reading
-   is checked against the claim's math: Priya's smudged "2?0.00" comes back as "$260 ✓ adds up,
+   is checked against the claim's math: a smudged "2?0.00" comes back as "$260 ✓ adds up,
    $250 ✗ doesn't".
 2. **Dashboard** (AG Grid Enterprise): balances grouped by status, plain-English adjustment codes,
    aging, charts, and an **AI suggests** column whose ✦ button does the next step in one click.
@@ -32,7 +28,7 @@ Built for the PayPal AI Hackathon. All patients, claims and amounts in this repo
 5. **The payment lands** (capture, verified webhook, or the reconciliation poll) and the
    dashboard row **flashes green live**.
 
-## Why it holds up
+## Design principles
 
 - **Money is code, never the model.** Integer cents end to end; every claim must satisfy
   `billed − contractual − insurancePaid = patientOwes` or it is refused. The model extracts,
@@ -59,60 +55,28 @@ pnpm dev                    # API on :3001, dashboard on http://localhost:5173
 
 Open <http://localhost:5173/dashboard>.
 
-### Rehearse the live payment
+### Try it with the sample data
 
-With `pnpm dev` running, in another terminal:
+The seed is a fictional practice, Harborview Family Medicine, with 13 visits in every state
+(review, denied, ready, sent, partially paid, paid). "Today" is pinned to 2026-10-10
+(`DEMO_TODAY`) so aging and due dates line up with the data.
 
-```bash
-pnpm simulate:payment "Samuel Ortiz"
-```
+- **Send a bill:** with sandbox `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` set, open Maria Delgado's
+  **Send invoice + 3-month plan** and click **Send invoice**. The email preview (**Email ↗** in
+  the row's detail panel) links to her patient page.
+- **Be the patient:** verify as `Delgado`, date of birth `04 / 17 / 1984`. Tap the bars, ask the
+  helper "Why do I owe $240?", then pay with a PayPal sandbox buyer account or PayPal's sandbox
+  test card (`4012888888881881`, any future expiry, any CVV), or start a plan.
+- **Intake:** `pnpm seed --scenario=intake-demo` leaves out five visits; on **Intake**, click
+  "Use the sample files" (or drop `bcbs_era_1008.835`, `aetna_eob_raman.pdf`, `uhc_eob_sept.pdf`
+  and `selfpay_0929.csv` from `seed/data`) to see two AI-flagged fields.
+- **A payment without PayPal:** `pnpm simulate:payment "Samuel Ortiz"` marks a sent bill paid
+  and the dashboard row flashes green. `pnpm seed` resets everything.
+- **AI suggests:** **✦ Refresh suggestions** above the grid; the ✦ button on a sent row emails a
+  reminder or a plan offer.
 
-Samuel's row moves from **Sent** to **Paid**, flashes green, and shows "✓ Paid via PayPal · just
-now"; the KPIs and group totals update live. Under the hood this calls the dev-only endpoint
-`POST /api/dev/simulate-payment/12`, which records the payment and pushes a Server-Sent Event, the
-same path the PayPal webhook will use. Run `pnpm seed` again to reset (safe while the API runs).
-
-### Rehearse the whole loop: send → email → patient pays
-
-With `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` (sandbox) in `.env`:
-
-1. On the dashboard, open Maria Delgado's **Send invoice + 3-month plan** and click **Send invoice**.
-   Plainbill creates a PayPal sandbox invoice (name, visit date and provider only, no email
-   address), sends it with PayPal's own emails off, and emails Maria our breakdown. Without
-   `RESEND_API_KEY` the email is kept in the outbox.
-2. In the drawer (before sending) or the row's detail panel (after), open the email preview
-   (**Open full preview** / **Email ↗**). It's artboard 1d with PayPal's own button image.
-3. Click **See full breakdown** (or **Patient page ↗**). Verify as `Delgado`, `04 / 17 / 1984`.
-4. Pay with the PayPal, Pay Later or Debit or Credit Card button (a sandbox buyer account from
-   developer.paypal.com → Sandbox accounts, or PayPal's sandbox test cards), or pick a plan and
-   **Subscribe**. The confirmation screen shows the receipt, and the dashboard row flashes green
-   the moment the capture lands.
-
-Payments made on PayPal's own invoice page (the email's PayPal button) are picked up by the
-reconciliation poll within `PAYPAL_SYNC_SECONDS` (or instantly by the webhook once deployed).
-
-### Rehearse the AI parts
-
-- **Bill helper:** on a patient page, tap "Why do I owe $240?" or ask "Can I pay over time?".
-  With `ANTHROPIC_API_KEY` set, Claude answers (with a source line) and may show a plan card;
-  **Confirm plan** creates the PayPal subscription through the Agent Toolkit and shows PayPal's
-  Subscribe button. Without a key, a rule-based helper answers the same questions.
-- **AI suggests:** click **✦ Refresh suggestions** above the grid. Claude picks one next step per
-  open row; each is checked against the row (status, figures) or replaced by the rule. The ✦
-  button on a sent row emails a friendly reminder, or a reminder that offers a plan.
-
-### Rehearse Intake → Review & Send
-
-```bash
-pnpm seed --scenario=intake-demo    # leaves out the 5 visits in the Intake demo files
-```
-
-Open **Intake** and drop `seed/data/bcbs_era_1008.835`, `aetna_eob_raman.pdf`, `uhc_eob_sept.pdf`
-and `selfpay_0929.csv` (or click "Use the sample files"). Plainbill finds 5 visits and flags 2
-fields: Priya's smudged paid amount (only $260 makes her EOB add up) and Tomás's smudged
-patient-share code. Confirm Priya's, then **Approve all 5**. On the dashboard, open Tomás's
-"Check copay vs. coinsurance", pick the code, **Mark ready**, and send. Open Maria's
-"Review & send" for the design's hero bill.
+Without `ANTHROPIC_API_KEY`, the AI parts run offline: recorded EOB reads, template messages and
+a rule-based bill helper.
 
 ### Scripts
 
@@ -122,7 +86,7 @@ patient-share code. Confirm Priya's, then **Approve all 5**. On the dashboard, o
 | `pnpm start`                         | Production: seed if the database is empty, then the API serving the built web app     |
 | `pnpm paypal:webhook <https url>`    | Register the PayPal webhook for a deployed URL; prints `PAYPAL_WEBHOOK_ID`            |
 | `pnpm seed`                          | Reset the database and load the seed data through the real parsers                    |
-| `pnpm seed --scenario=intake-demo`   | Same, minus the Intake demo files' visits (upload them live)                          |
+| `pnpm seed --scenario=intake-demo`   | Same, minus the five visits in the Intake sample files (upload them yourself)         |
 | `pnpm seed:generate [--pdfs]`        | Regenerate `seed/data` 835s and CSVs (and the scanned EOB PDFs) from `spec.ts`        |
 | `pnpm ai:record`                     | Read the EOB PDFs with Claude, save the recordings, check them against ground truth   |
 | `pnpm test`                          | All Vitest suites (core, seed reconciliation, API, web helpers)                       |
@@ -199,7 +163,7 @@ docs/           design-reference.html (visual source of truth), paypal-notes.md
   and the computed amounts — no services, codes or insurance IDs. A guard rejects any dollar
   figure the core didn't compute (or anything that looks like a medical code); one retry, then a
   deterministic template. "Send" refuses an edited message with an unknown figure.
-- **Offline / demo mode**: without `ANTHROPIC_API_KEY`, EOBs are read from recordings of Claude's
+- **Offline mode**: without `ANTHROPIC_API_KEY`, EOBs are read from recordings of Claude's
   output for those exact PDFs (keyed by SHA-256) and messages come from templates. Live requests
   use server-side refusal fallbacks (`fallbacks: "default"`).
 
@@ -264,16 +228,17 @@ and PLB. Errors name the segment position (`segment 23 (SVC): SVC02 is not a val
 
 ### Seed data
 
-`seed/src/spec.ts` describes the 13 visits from the brief. `pnpm seed:generate` writes six 835
+`seed/src/spec.ts` describes the 13 fictional visits. `pnpm seed:generate` writes six 835
 ERAs (one per payer payment) and two self-pay CSVs to `seed/data/`; `--pdfs` also renders the two
 scanned EOBs (Priya's and Tomás's), each with one deliberately smudged character. `pnpm seed`
 parses everything with the real parsers (EOBs via the recorded Claude reads), stages the Intake
-demo files exactly like an upload, and loads them through the API's own services. Tests check
-every row against a literal copy of the brief's table and assert the invariant per row.
+sample files exactly like an upload, and loads them through the API's own services. Tests check
+every row against a literal copy of the expected table (`seed/src/expected.ts`) and assert the
+invariant per row.
 
-Samuel Ortiz is seeded as **Sent** rather than Paid so the live payment can be demoed: paying
-him on Oct 10 yields the table's "paid in 18 days". "Today" is pinned with `DEMO_TODAY=2026-10-10`
-so days-out and aging match the design.
+Samuel Ortiz is seeded as **Sent**, so there is always a bill to pay: paying him on Oct 10 makes
+him "paid in 18 days". "Today" is pinned with `DEMO_TODAY=2026-10-10` so days-out and aging match
+the data.
 
 ## API
 
@@ -320,40 +285,38 @@ All routes are under `/api`.
 Copy `.env.example` to `.env` (gitignored). Both the API and Vite read the repo-root file; only
 `VITE_*` values reach the browser.
 
-| Variable                                   | Used by           | Phase | Notes                                                 |
-| ------------------------------------------ | ----------------- | ----- | ----------------------------------------------------- |
-| `ANTHROPIC_API_KEY`                        | api / packages/ai | 2     | EOB extraction, messages; unset = offline mode        |
-| `ANTHROPIC_MODEL`                          | api / packages/ai | 2     | `claude-opus-5-5` (or `claude-sonnet-5-5`)            |
-| `AI_EOB_MODE`                              | api               | 2     | `auto` (recording if one exists), `live`, `recorded`  |
-| `EOB_RECORDINGS_DIR`                       | api               | 2     | Default `seed/data/eob-recordings`                    |
-| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | api               | 3     | Sandbox REST app                                      |
-| `PAYPAL_ENV`                               | api               | 3     | `sandbox`                                             |
-| `PAYPAL_WEBHOOK_ID`                        | api               | 3     | Webhook signature check; webhooks refused when unset  |
-| `PAYPAL_SYNC_SECONDS`                      | api               | 3     | Reconciliation poll interval (default 20, 0 = off)    |
-| `VITE_PAYPAL_CLIENT_ID`                    | web               | 3     | Optional: the API hands the page `PAYPAL_CLIENT_ID`   |
-| `VITE_AG_GRID_LICENSE_KEY`                 | web               | 1     | Without it the grid runs in trial mode                |
-| `RESEND_API_KEY`                           | api               | 3     | Patient emails; unset = outbox + preview page         |
-| `EMAIL_FROM`                               | api               | 3     | Sender (default `onboarding@resend.dev`)              |
-| `EMAIL_TO_OVERRIDE`                        | api               | 3     | Demo safety: send every patient email here instead    |
-| `APP_BASE_URL`                             | api               | 3     | Base for pay links; https makes cookies `Secure`      |
-| `SESSION_SECRET`                           | api               | 3     | Signs patient sessions (random per process if unset)  |
-| `SERVE_WEB`                                | api               | 4     | Serve `apps/web/dist` from the API (default: in prod) |
-| `API_PORT`                                 | api, Vite proxy   | 1     | Default 3001. In production the API listens on `PORT` |
-| `DATABASE_PATH`                            | api, seed         | 1     | Default `apps/api/data/plainbill.db`                  |
-| `DEMO_TODAY`                               | api               | 1     | Pin "today" (seed assumes `2026-10-10`)               |
+| Variable                                   | Used by           | Notes                                                 |
+| ------------------------------------------ | ----------------- | ----------------------------------------------------- |
+| `ANTHROPIC_API_KEY`                        | api / packages/ai | EOB extraction, messages; unset = offline mode        |
+| `ANTHROPIC_MODEL`                          | api / packages/ai | `claude-opus-5-5` (or `claude-sonnet-5-5`)            |
+| `AI_EOB_MODE`                              | api               | `auto` (recording if one exists), `live`, `recorded`  |
+| `EOB_RECORDINGS_DIR`                       | api               | Default `seed/data/eob-recordings`                    |
+| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | api               | Sandbox REST app                                      |
+| `PAYPAL_ENV`                               | api               | `sandbox`                                             |
+| `PAYPAL_WEBHOOK_ID`                        | api               | Webhook signature check; webhooks refused when unset  |
+| `PAYPAL_SYNC_SECONDS`                      | api               | Reconciliation poll interval (default 20, 0 = off)    |
+| `VITE_PAYPAL_CLIENT_ID`                    | web               | Optional: the API hands the page `PAYPAL_CLIENT_ID`   |
+| `VITE_AG_GRID_LICENSE_KEY`                 | web               | Without it the grid runs in trial mode                |
+| `RESEND_API_KEY`                           | api               | Patient emails; unset = outbox + preview page         |
+| `EMAIL_FROM`                               | api               | Sender (default `onboarding@resend.dev`)              |
+| `EMAIL_TO_OVERRIDE`                        | api               | Send every patient email here instead (testing)       |
+| `APP_BASE_URL`                             | api               | Base for pay links; https makes cookies `Secure`      |
+| `SESSION_SECRET`                           | api               | Signs patient sessions (random per process if unset)  |
+| `SERVE_WEB`                                | api               | Serve `apps/web/dist` from the API (default: in prod) |
+| `API_PORT`                                 | api, Vite proxy   | Default 3001. In production the API listens on `PORT` |
+| `DATABASE_PATH`                            | api, seed         | Default `apps/api/data/plainbill.db`                  |
+| `DEMO_TODAY`                               | api               | Pin "today" (seed assumes `2026-10-10`)               |
 
 ## AI and PayPal
 
-- **Anthropic API** (`packages/ai`, done): Messages API with PDF document input and structured
+- **Anthropic API** (`packages/ai`): Messages API with PDF document input and structured
   outputs for EOB extraction; plain text for patient messages (default / simpler / Spanish).
   835 files are parsed by code, not AI. Also: the patient's bill helper (tool use, grounded in
   one bill) and "AI suggests" (structured output), both checked by code.
-- **PayPal** (done): Invoicing v2 (draft + send with PayPal's emails off, partial payments with
-  a $20 minimum), Orders v2 with the v6 JS SDK buttons (PayPal, Pay Later, guest card),
-  Subscriptions v1 for 3/6-month interest-free plans, and verified webhooks plus a
-  reconciliation poll driving the live dashboard update. Next: `@paypal/agent-toolkit` so the
-  patient's AI helper can set up a plan after confirming. Sandbox findings are in
-  [docs/paypal-notes.md](docs/paypal-notes.md).
+- **PayPal**: Invoicing v2 (draft + send with PayPal's emails off, partial payments with a $20
+  minimum), Orders v2 with the v6 JS SDK buttons (PayPal, Pay Later, guest card), Subscriptions v1
+  for 3/6-month interest-free plans, and verified webhooks plus a reconciliation poll driving the
+  live dashboard update. Sandbox findings are in [docs/paypal-notes.md](docs/paypal-notes.md).
 - **PayPal Agent Toolkit** (`@paypal/agent-toolkit`, Bedrock-style adapter driven from Claude's
   tool calls): `create_order` and `create_subscription` for the patient helper's confirmed actions.
 - **Email**: Resend's REST API, or an outbox viewable at `/email-preview/:balanceId` when no key
@@ -362,11 +325,11 @@ Copy `.env.example` to `.env` (gitignored). Both the API and Vite read the repo-
 ## Deploy (Render)
 
 `render.yaml` is a Blueprint for one free web service: it builds the web app, and `pnpm start`
-seeds the demo data when the database is empty and runs the API, which also serves the web app
+seeds the sample data when the database is empty and runs the API, which also serves the web app
 (one origin, so the patient session cookie works). SQLite is on the instance disk, so a fresh or
-re-woken instance starts from the demo state.
+re-woken instance starts from the sample data.
 
-1. Push the repo to GitHub, then in Render: **New → Blueprint** → pick the repo. Fill in the
+1. In Render: **New → Blueprint** → pick the repo. Fill in the
    secrets it asks for (`ANTHROPIC_API_KEY`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`,
    `VITE_AG_GRID_LICENSE_KEY`; optionally `RESEND_API_KEY` + `EMAIL_TO_OVERRIDE`).
 2. After the first deploy: `pnpm paypal:webhook https://<service>.onrender.com` (locally, with the
@@ -381,7 +344,7 @@ re-woken instance starts from the demo state.
   Oct 3, 2026 with Dr. Patel"), never the email address, services, codes or insurance IDs.
   Emails carry the amounts and the staff-approved message (checked for codes); the services
   list sits behind the verification page, which locks after 5 wrong tries.
-- Staff pages have no login yet (single front-desk user in this demo); don't deploy real data.
+- Staff pages have no login yet (a single front-desk user); don't deploy with real data.
 - **Production use would require a Business Associate Agreement (BAA) with the AI provider**
   (and with the email provider), plus the usual HIPAA safeguards.
 

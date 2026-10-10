@@ -1,7 +1,7 @@
 /**
  * Plain-language names for the procedure codes Plainbill shows staff. These are our own short
- * descriptions, not the official CPT descriptors. Patients never see codes; CLAUDE.md keeps CPT
- * descriptions out of emails and PayPal invoices entirely.
+ * descriptions, not the official CPT descriptors. Patients never see codes, and CPT
+ * descriptions stay out of emails and PayPal invoices entirely.
  */
 export interface ProcedureDescription {
   code: string;

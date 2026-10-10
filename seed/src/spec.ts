@@ -5,8 +5,8 @@
  * Each visit lists its service lines and how the payer adjudicated it. `generate.ts` turns the
  * insurance visits into 835 files or scanned EOB PDFs and the self-pay visits into CSVs; `seed.ts`
  * then reads those files back through the real parsers (and, for EOBs, recorded Claude
- * extractions). Visits are listed in the order of the CLAUDE.md seed
- * table, which is also the order rows appear within each dashboard group.
+ * extractions). Visits are listed in the order of the seed table
+ * (expected.ts), which is also the order rows appear within each dashboard group.
  */
 import type { BalanceStatus, GroupCode, IsoDate } from '@plainbill/core';
 

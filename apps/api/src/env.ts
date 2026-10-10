@@ -40,7 +40,7 @@ export interface Config {
   email: {
     resendApiKey: string | null;
     from: string;
-    /** Demo safety: every patient email goes to this address instead of the one on file. */
+    /** For testing: every patient email goes to this address instead of the one on file. */
     toOverride: string | null;
   };
   /** Public base URL for patient links in emails ("http://localhost:5173"). */
