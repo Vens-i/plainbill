@@ -4,11 +4,15 @@ import type {
   DenialsChart,
   DraftMessageResult,
   DrawerData,
+  EmailPreview,
   IntakeApproveResult,
   IntakeBatchView,
   Kpis,
   MessageVariant,
+  PatientBill,
+  PayLinkInfo,
   PaymentOption,
+  PayResult,
   PracticeInfo,
   SendResult,
 } from '@plainbill/api/contract';
@@ -19,6 +23,8 @@ export class ApiError extends Error {
     readonly code: string,
     message: string,
     readonly details: string[] = [],
+    /** Any other fields in the error body (e.g. attemptsLeft). */
+    readonly extra: Record<string, unknown> = {},
   ) {
     super(message);
   }
@@ -37,12 +43,15 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
       error?: string;
       message?: string;
       details?: string[];
+      [key: string]: unknown;
     };
+    const { error, message, details, ...extra } = err;
     throw new ApiError(
       res.status,
-      err.error ?? 'error',
-      err.message ?? `Request failed (${res.status})`,
-      err.details ?? [],
+      error ?? 'error',
+      message ?? `Request failed (${res.status})`,
+      details ?? [],
+      extra,
     );
   }
   return (await res.json()) as T;
@@ -89,4 +98,21 @@ export const api = {
   resolveReviewFlag: (id: number, path: string, value: string) =>
     request<DrawerData>('POST', `/balances/${id}/review/resolve`, { path, value }),
   markReady: (id: number) => request<DrawerData>('POST', `/balances/${id}/review/ready`),
+  emailPreview: (id: number) => get<EmailPreview>(`/balances/${id}/email`),
+};
+
+/** Patient pay page (/pay/:token). The session is an HttpOnly cookie set by verify. */
+export const payApi = {
+  link: (token: string) => get<PayLinkInfo>(`/pay/${token}`),
+  verify: (token: string, body: { lastName: string; month: string; day: string; year: string }) =>
+    request<PatientBill>('POST', `/pay/${token}/verify`, body),
+  bill: (token: string) => get<PatientBill>(`/pay/${token}/bill`),
+  createOrder: (token: string, body: { amountCents?: number; fundingSource: string }) =>
+    request<{ orderId: string; amountCents: number }>('POST', `/pay/${token}/orders`, body),
+  captureOrder: (token: string, orderId: string) =>
+    request<PayResult>('POST', `/pay/${token}/orders/${encodeURIComponent(orderId)}/capture`),
+  startPlan: (token: string, months: 3 | 6) =>
+    request<{ subscriptionId: string }>('POST', `/pay/${token}/plan`, { months }),
+  confirmPlan: (token: string, subscriptionId: string) =>
+    request<PayResult>('POST', `/pay/${token}/plan/confirm`, { subscriptionId }),
 };

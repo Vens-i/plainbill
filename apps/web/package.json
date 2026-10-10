@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
+    "@paypal/react-paypal-js": "10.5.1",
     "@plainbill/core": "workspace:*",
     "ag-charts-community": "14.2.0",
     "ag-charts-enterprise": "14.2.0",

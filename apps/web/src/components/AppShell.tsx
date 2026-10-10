@@ -1,3 +1,6 @@
+// AG Grid modules + license must be set up before any staff grid renders.
+import '../agGrid';
+import '../components.css';
 import { NavLink, Outlet, useOutletContext } from 'react-router';
 import { useEffect, useState } from 'react';
 import type { PracticeInfo } from '@plainbill/api/contract';

@@ -24,7 +24,7 @@ observations. Field names are from PayPal's OpenAPI specs
 - **Invoice numbers auto-increment** (`0001`, `0002`, …) when `detail.invoice_number` is omitted,
   so reseeding the local database never collides with numbers already used in the sandbox.
 - **Partial payments.** `configuration.partial_payment = { allow_partial_payment: true,
-  minimum_amount_due: { currency_code: "USD", value: "20.00" } }` is accepted and echoed back
+minimum_amount_due: { currency_code: "USD", value: "20.00" } }` is accepted and echoed back
   (not available to merchants in India, Brazil or Israel).
 - **Recorded payments.** `POST …/payments` with `{ method: "PAYPAL", payment_date, amount }`
   returns `{ payment_id: "EXTR-…" }`; the transaction appears with `type: "EXTERNAL"` and the

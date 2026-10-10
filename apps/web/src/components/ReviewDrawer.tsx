@@ -3,11 +3,17 @@
  * get an AI-drafted message, payment options and "Send invoice". Every figure shown comes from
  * the server (computed by @plainbill/core); the AI only words the message.
  *
- * Phase 2: "Send invoice" marks the balance Sent. PayPal Invoicing + email arrive in Phase 3.
+ * "Send invoice" creates and sends the PayPal invoice (PayPal's own emails off), then emails the
+ * patient our breakdown with PayPal's button and the secure pay link.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatLongDate, formatMoney, formatMoneyShort } from '@plainbill/core';
-import type { DrawerData, MessageVariant, PaymentOption } from '@plainbill/api/contract';
+import type {
+  DrawerData,
+  MessageVariant,
+  PaymentOption,
+  SendResult,
+} from '@plainbill/api/contract';
 import { api, ApiError } from '../lib/api';
 import { FlagChoices } from './FlagChoices';
 import { StatusPill } from './StatusPill';
@@ -22,6 +28,21 @@ type Source = 'ai' | 'template' | 'edited';
 
 const sameOption = (a: PaymentOption, b: PaymentOption) =>
   a.type === b.type && (a.type !== 'plan' || (b.type === 'plan' && a.months === b.months));
+
+/** What happened, in one toast line. */
+function sentToast(r: SendResult): string {
+  const who = r.balance.patientFirstName;
+  const invoice = r.paypal
+    ? `PayPal invoice #${r.paypal.number ?? r.paypal.invoiceId}`
+    : 'Invoice (PayPal not configured)';
+  const email =
+    r.email.status === 'sent'
+      ? `bill emailed${r.email.deliveredTo ? ` to ${r.email.deliveredTo}` : ''}`
+      : r.email.status === 'outbox'
+        ? 'email kept in the outbox (no email provider set)'
+        : `email failed: ${r.email.error ?? 'unknown error'}`;
+  return `✓ Sent to ${who} · ${invoice} · ${email}`;
+}
 
 function shareLine(d: DrawerData): string {
   const s = d.balance.patientShare;
@@ -153,10 +174,21 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
         messageSource: source,
         paymentOption: option,
       });
-      toast(
-        `✓ Invoice for ${r.balance.patientName} marked as sent · PayPal & email sending arrive in Phase 3`,
-      );
+      toast(sentToast(r));
       onClose();
+    });
+
+  // The full preview renders the saved draft, so save what's on screen first.
+  const openPreview = () =>
+    run(async () => {
+      const tab = window.open('', '_blank');
+      const d = await api.saveDraft(balanceId, {
+        message,
+        messageSource: source,
+        paymentOption: option,
+      });
+      setData(d);
+      if (tab) tab.location.href = `/email-preview/${balanceId}`;
     });
 
   const b = data?.balance;
@@ -411,7 +443,9 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
                       <div>Subject: {data.email.subject}</div>
                       <div>
                         To {data.email.to} ·{' '}
-                        <span className="pb-muted">Full preview arrives with email (Phase 3)</span>
+                        <button type="button" className="link-button" onClick={openPreview}>
+                          Open full preview
+                        </button>
                       </div>
                     </div>
                   </section>

@@ -13,6 +13,9 @@ function adjustmentAmount(a: DisplayAdjustment): string {
 }
 
 function planNote(row: BalanceRow): string | null {
+  if (row.activePlan?.status === 'active') {
+    return `PayPal plan: ${row.activePlan.paidCount} of ${row.activePlan.months} paid · auto-pay`;
+  }
   const plan = row.plan;
   if (!plan) return null;
   if (!plan.eligible) return 'Too small for a payment plan';
@@ -89,6 +92,19 @@ export function DetailPanel({
           <div className="pb-owes-label">{owesLabel}</div>
           <div className="pb-owes-value">{owesValue}</div>
           {note && <div className="pb-owes-note">{note}</div>}
+          {data.invoice?.payPath && (
+            <div className="pb-owes-links">
+              {data.invoice.paypalInvoiceNumber && (
+                <span>PayPal invoice #{data.invoice.paypalInvoiceNumber}</span>
+              )}
+              <a href={data.invoice.payPath} target="_blank" rel="noreferrer">
+                Patient page ↗
+              </a>
+              <a href={`/email-preview/${data.id}`} target="_blank" rel="noreferrer">
+                Email ↗
+              </a>
+            </div>
+          )}
         </div>
         <button
           type="button"
