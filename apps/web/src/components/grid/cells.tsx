@@ -9,7 +9,16 @@ import { groupMeta, isPaidNow, plainGroupMeta, relativeTime } from '../../lib/da
 import { AGING_COLORS } from '../../theme';
 import { StatusPill } from '../StatusPill';
 
-type Params = ICellRendererParams<BalanceRow>;
+/** Shared with the grid through AG Grid's `context`. */
+export interface BalancesGridContext {
+  /** Open the Review & Send drawer (ready and review rows). */
+  openDrawer: (balanceId: number) => void;
+}
+
+/** Statuses the Review & Send drawer handles in Phase 2. */
+export const DRAWER_STATUSES: ReadonlyArray<BalanceRow['status']> = ['ready', 'review'];
+
+type Params = ICellRendererParams<BalanceRow, unknown, BalancesGridContext>;
 
 /** Re-render when a node is expanded or collapsed. */
 function useExpanded(node: IRowNode): boolean {
@@ -78,7 +87,7 @@ export function DaysCell({ data }: Params) {
   );
 }
 
-export function AiCell({ data }: Params) {
+export function AiCell({ data, context }: Params) {
   if (!data) return null;
   if (isPaidNow(data)) {
     return (
@@ -96,13 +105,16 @@ export function AiCell({ data }: Params) {
       </div>
     );
   }
+  const opens = DRAWER_STATUSES.includes(data.status);
   return (
     <div className="pb-ai">
       <button
         type="button"
         className="ai-btn"
-        // One-click AI actions arrive with packages/ai in a later phase; for now this is a no-op.
-        title="AI suggestion — one-click actions arrive in a later phase"
+        // Ready and review rows open the Review & Send drawer; other one-click actions
+        // (reminders, resubmissions) arrive in a later phase.
+        onClick={opens ? () => context.openDrawer(data.id) : undefined}
+        title={opens ? 'Open Review & Send' : 'One-click action arrives in a later phase'}
       >
         <span className="spark" aria-hidden="true">
           ✦

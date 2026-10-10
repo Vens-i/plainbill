@@ -2,6 +2,7 @@ import { NavLink, Outlet, useOutletContext } from 'react-router';
 import { useEffect, useState } from 'react';
 import type { PracticeInfo } from '@plainbill/api/contract';
 import { api } from '../lib/api';
+import { Toaster } from './Toast';
 
 export interface ShellContext {
   practice: PracticeInfo | null;
@@ -70,6 +71,7 @@ export function AppShell() {
         </div>
       </header>
       <Outlet context={{ practice, search, setSearch } satisfies ShellContext} />
+      <Toaster />
     </>
   );
 }

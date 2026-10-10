@@ -14,6 +14,7 @@ import type {
   IRowNode,
   RowClassRules,
   RowClickedEvent,
+  RowDataUpdatedEvent,
   RowHeightParams,
   ValueFormatterParams,
 } from 'ag-grid-community';
@@ -27,7 +28,14 @@ import {
 import type { BalanceRow } from '@plainbill/api/contract';
 import { isPaidNow, needsAction } from '../lib/dashboard';
 import { gridTheme } from '../theme';
-import { AiCell, CaretCell, DaysCell, GroupRow, PatientCell } from './grid/cells';
+import {
+  AiCell,
+  CaretCell,
+  DaysCell,
+  GroupRow,
+  PatientCell,
+  type BalancesGridContext,
+} from './grid/cells';
 import { DetailPanel } from './grid/DetailPanel';
 
 export type GroupBy = 'status' | 'payer' | 'provider';
@@ -46,6 +54,7 @@ interface Props {
   groupBy: GroupBy;
   view: View;
   quickFilter: string;
+  onOpenDrawer: (balanceId: number) => void;
   ref?: Ref<BalancesGridHandle>;
 }
 
@@ -60,7 +69,23 @@ function statusRank(key: string | null): number {
   return i === -1 ? STATUS_ORDER.length : i;
 }
 
-export function BalancesGrid({ rows, today, groupBy, view, quickFilter, ref }: Props) {
+export function BalancesGrid({
+  rows,
+  today,
+  groupBy,
+  view,
+  quickFilter,
+  onOpenDrawer,
+  ref,
+}: Props) {
+  const openDrawerRef = useRef(onOpenDrawer);
+  useEffect(() => {
+    openDrawerRef.current = onOpenDrawer;
+  });
+  const gridContext = useMemo<BalancesGridContext>(
+    () => ({ openDrawer: (id) => openDrawerRef.current(id) }),
+    [],
+  );
   const apiRef = useRef<GridApi<BalanceRow> | null>(null);
   const viewRef = useRef(view);
   const todayRef = useRef(today);
@@ -260,6 +285,16 @@ export function BalancesGrid({ rows, today, groupBy, view, quickFilter, ref }: P
     },
   }));
 
+  // Fresh data (intake approvals, sends) can move rows between groups; group rows show counts
+  // and totals from their children, so redraw them.
+  const onRowDataUpdated = useCallback((e: RowDataUpdatedEvent<BalanceRow>) => {
+    const groups: IRowNode<BalanceRow>[] = [];
+    e.api.forEachNode((n) => {
+      if (n.group) groups.push(n);
+    });
+    e.api.redrawRows({ rowNodes: groups });
+  }, []);
+
   const onGridReady = useCallback((e: GridReadyEvent<BalanceRow>) => {
     apiRef.current = e.api;
   }, []);
@@ -307,6 +342,8 @@ export function BalancesGrid({ rows, today, groupBy, view, quickFilter, ref }: P
       enableCharts
       onGridReady={onGridReady}
       onRowClicked={onRowClicked}
+      onRowDataUpdated={onRowDataUpdated}
+      context={gridContext}
       overlayNoRowsTemplate='<span class="pb-muted">No balances match.</span>'
     />
   );

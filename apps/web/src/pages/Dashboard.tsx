@@ -15,6 +15,7 @@ import {
   type View,
 } from '../components/BalancesGrid';
 import { KpiStrip } from '../components/KpiStrip';
+import { ReviewDrawer } from '../components/ReviewDrawer';
 import { AgingChartCard, DenialsChartCard } from '../components/SideCharts';
 import { api, ApiError } from '../lib/api';
 import { greeting, todoSummary } from '../lib/dashboard';
@@ -31,6 +32,7 @@ export function Dashboard() {
   const [denials, setDenials] = useState<DenialsChart | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [groupBy, setGroupBy] = useState<GroupBy>('status');
+  const [drawerId, setDrawerId] = useState<number | null>(null);
   const [view, setView] = useState<View>('action');
 
   const refreshSummary = useCallback(async () => {
@@ -68,7 +70,9 @@ export function Dashboard() {
   });
 
   const startReview = () => {
-    if (kpis?.review.firstBalanceId != null) grid.current?.reveal(kpis.review.firstBalanceId);
+    if (kpis?.review.firstBalanceId == null) return;
+    grid.current?.reveal(kpis.review.firstBalanceId);
+    setDrawerId(kpis.review.firstBalanceId);
   };
 
   const firstName = practice?.user.firstName ?? 'Rosa';
@@ -150,6 +154,7 @@ export function Dashboard() {
               groupBy={groupBy}
               view={view}
               quickFilter={search}
+              onOpenDrawer={setDrawerId}
             />
           )}
         </section>
@@ -159,6 +164,7 @@ export function Dashboard() {
           <DenialsChartCard chart={denials} />
         </aside>
       </div>
+      {drawerId !== null && <ReviewDrawer balanceId={drawerId} onClose={() => setDrawerId(null)} />}
     </main>
   );
 }

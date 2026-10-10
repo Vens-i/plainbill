@@ -46,7 +46,8 @@ const VARIANT_INSTRUCTIONS: Record<MessageVariant, string> = {
   default: 'Write the message in English.',
   simpler:
     'Write the message in very simple English: short sentences, everyday words, under 50 words.',
-  spanish: 'Write the message in warm, natural Spanish (Latin American), with the same rules.',
+  spanish:
+    'Write the message in warm, natural Spanish (Latin American), with the same rules. Write the provider exactly as given in FACTS (for example "Dr. Kim"): do not change the title or guess their gender.',
 };
 
 function factsBlock(f: MessageFacts): string {

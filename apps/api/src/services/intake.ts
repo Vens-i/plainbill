@@ -146,7 +146,7 @@ export async function addFileToBatch(
       });
     } else {
       const result = await extractor.extract(input.bytes, input.fileName);
-      reader = extractor.name;
+      reader = result.reader;
       extraction = result.extraction;
       if (extraction.document_kind === 'not_an_eob')
         error = "This PDF doesn't look like an Explanation of Benefits.";

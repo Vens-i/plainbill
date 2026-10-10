@@ -18,10 +18,14 @@ import {
 export interface EobExtractor {
   readonly name: string;
   /** Returns the per-field extraction plus the raw model output it came from. */
-  extract(
-    pdf: Uint8Array,
-    fileName: string,
-  ): Promise<{ extraction: EobExtraction; raw: EobModelOutput }>;
+  extract(pdf: Uint8Array, fileName: string): Promise<EobReadResult>;
+}
+
+export interface EobReadResult {
+  extraction: EobExtraction;
+  raw: EobModelOutput;
+  /** Which reader actually produced it: "claude" (live) or "recorded" (a saved Claude read). */
+  reader: 'claude' | 'recorded';
 }
 
 export class AiExtractionError extends Error {
@@ -48,10 +52,7 @@ export class ClaudeEobExtractor implements EobExtractor {
 
   constructor(private readonly options: ClaudeEobExtractorOptions) {}
 
-  async extract(
-    pdf: Uint8Array,
-    fileName: string,
-  ): Promise<{ extraction: EobExtraction; raw: EobModelOutput }> {
+  async extract(pdf: Uint8Array, fileName: string): Promise<EobReadResult> {
     const response = await this.options.client.beta.messages.parse({
       model: this.options.model,
       max_tokens: 16000,
@@ -89,7 +90,11 @@ export class ClaudeEobExtractor implements EobExtractor {
         `The model's answer for ${fileName} did not match the extraction schema.`,
       );
     }
-    return { extraction: toExtraction(response.parsed_output), raw: response.parsed_output };
+    return {
+      extraction: toExtraction(response.parsed_output),
+      raw: response.parsed_output,
+      reader: 'claude',
+    };
   }
 }
 
@@ -115,10 +120,7 @@ export class RecordedEobExtractor implements EobExtractor {
     return existsSync(this.path(pdf));
   }
 
-  async extract(
-    pdf: Uint8Array,
-    fileName: string,
-  ): Promise<{ extraction: EobExtraction; raw: EobModelOutput }> {
+  async extract(pdf: Uint8Array, fileName: string): Promise<EobReadResult> {
     const file = this.path(pdf);
     if (!existsSync(file)) {
       throw new AiExtractionError(
@@ -127,7 +129,7 @@ export class RecordedEobExtractor implements EobExtractor {
     }
     const recording = JSON.parse(readFileSync(file, 'utf8')) as EobRecording;
     const raw = EobModelOutputSchema.parse(recording.output);
-    return { extraction: toExtraction(raw), raw };
+    return { extraction: toExtraction(raw), raw, reader: 'recorded' };
   }
 }
 
@@ -140,10 +142,7 @@ export class RecordedThenLiveExtractor implements EobExtractor {
     private readonly live: EobExtractor | null,
   ) {}
 
-  extract(
-    pdf: Uint8Array,
-    fileName: string,
-  ): Promise<{ extraction: EobExtraction; raw: EobModelOutput }> {
+  extract(pdf: Uint8Array, fileName: string): Promise<EobReadResult> {
     if (this.recorded.has(pdf) || !this.live) return this.recorded.extract(pdf, fileName);
     return this.live.extract(pdf, fileName);
   }

@@ -26,9 +26,9 @@ function spanishDate(iso: string): string {
   return `${Number(iso.slice(8, 10))} de ${SPANISH_MONTHS[Number(iso.slice(5, 7)) - 1]}`;
 }
 
-/** " el Dr. Patel" for Spanish sentences; empty when no provider is named. */
+/** " (Dr. Patel)" — the name as given, so the Spanish doesn't guess the provider's gender. */
 function spanishProvider(f: MessageFacts): string {
-  return f.providerName ? ` ${f.providerName.replace(/^Dr\./, 'el Dr.')}` : '';
+  return f.providerName ? ` (${f.providerName})` : '';
 }
 
 function planEnglish(f: MessageFacts): string {
@@ -71,7 +71,7 @@ export function templateMessage(f: MessageFacts, variant: MessageVariant): strin
 
   if (variant === 'spanish') {
     const provider = spanishProvider(f);
-    const intro = `Hola ${name}, gracias por su visita${provider ? ` con${provider}` : ''} el ${spanishDate(f.visitDate)}.`;
+    const intro = `Hola ${name}, gracias por su visita del ${spanishDate(f.visitDate)}${provider}.`;
     if (f.selfPay) {
       return `${intro} Su visita costó ${m(f.owesCents)} con nuestra tarifa sin seguro. ${planSpanish(f)}`;
     }

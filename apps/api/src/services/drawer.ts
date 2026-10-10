@@ -276,7 +276,7 @@ export function sendInvoice(
     );
   validateOption(r, input.paymentOption);
   checkAmounts(db, r, input.message);
-  return markInvoiceSent(db, balanceId, {
+  const result = markInvoiceSent(db, balanceId, {
     sentOn: today,
     dueDate: dueDateFor(r, today),
     message: input.message.trim(),
@@ -284,6 +284,12 @@ export function sendInvoice(
     paymentOption: input.paymentOption,
     now,
   });
+  // The suggestion ("Send invoice") is done; reminders get suggested later.
+  db.update(balances)
+    .set({ aiSuggestion: null, updatedAt: now })
+    .where(eq(balances.id, balanceId))
+    .run();
+  return result;
 }
 
 /** Resolve an AI flag on a balance that is already on the dashboard (status "review"). */

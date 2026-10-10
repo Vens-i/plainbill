@@ -64,7 +64,7 @@ describe('templateMessage', () => {
       expect(checkMessage(templateMessage(maria, variant), maria), variant).toEqual([]);
     }
     expect(templateMessage(maria, 'spanish')).toMatch(
-      /^Hola Maria, gracias por su visita con el Dr\. Patel el 3 de octubre\./,
+      /^Hola Maria, gracias por su visita del 3 de octubre \(Dr\. Patel\)\./,
     );
     expect(templateMessage(maria, 'simpler')).toBe(
       'Hi Maria. You owe $240 for your Oct 3 visit with Dr. Patel. Your insurance already covered the rest. You can pay it all at once or in 3 payments of $80.',

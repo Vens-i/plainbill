@@ -5,6 +5,7 @@
 import type { ICellRendererParams } from 'ag-grid-community';
 import { formatMoney, formatMoneyShort } from '@plainbill/core';
 import type { BalanceRow, DisplayAdjustment } from '@plainbill/api/contract';
+import { DRAWER_STATUSES, type BalancesGridContext } from './cells';
 
 function adjustmentAmount(a: DisplayAdjustment): string {
   if (a.amountCents == null) return '';
@@ -29,7 +30,10 @@ const ACTION_LABEL: Record<BalanceRow['status'], string> = {
   paid: 'View receipt →',
 };
 
-export function DetailPanel({ data }: ICellRendererParams<BalanceRow>) {
+export function DetailPanel({
+  data,
+  context,
+}: ICellRendererParams<BalanceRow, unknown, BalancesGridContext>) {
   if (!data) return null;
   const owesLabel = data.status === 'paid' ? 'Patient paid' : 'Patient owes';
   const owesValue =
@@ -89,8 +93,9 @@ export function DetailPanel({ data }: ICellRendererParams<BalanceRow>) {
         <button
           type="button"
           className={data.status === 'ready' ? 'btn btn-primary' : 'btn'}
-          // The Review & Send drawer is Phase 2.
-          title="Arrives in Phase 2"
+          disabled={!DRAWER_STATUSES.includes(data.status)}
+          onClick={() => context.openDrawer(data.id)}
+          title={DRAWER_STATUSES.includes(data.status) ? undefined : 'Arrives in a later phase'}
         >
           {ACTION_LABEL[data.status]}
         </button>
