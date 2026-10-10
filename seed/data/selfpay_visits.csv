@@ -1,0 +1,7 @@
+visit_id,patient_first,patient_last,dob,provider,visit_date,cpt,charge,self_pay_rate_applied
+SP-0929-01,Kevin,Lam,1991-02-11,Dr. Helen Kim,2026-09-29,99213,175,Y
+SP-0929-01,Kevin,Lam,1991-02-11,Dr. Helen Kim,2026-09-29,87880,100,Y
+SP-0930-01,Ellen,Brooks,1978-07-30,Dr. Anand Patel,2026-09-30,99214,310,N
+SP-0620-01,Aisha,Bello,1995-08-21,Dr. Helen Kim,2026-06-20,99204,420,Y
+SP-0620-01,Aisha,Bello,1995-08-21,Dr. Helen Kim,2026-06-20,20610,380,Y
+SP-0620-01,Aisha,Bello,1995-08-21,Dr. Helen Kim,2026-06-20,73562,400,Y
