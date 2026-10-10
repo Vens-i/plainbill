@@ -164,6 +164,50 @@ describe('computePatientBalance', () => {
   });
 });
 
+describe('computePatientBalance — EOB claims', () => {
+  // A paper EOB lists services and charges, then the adjudication for the whole claim.
+  const eobClaim = (paidCents: number): NormalizedClaim => ({
+    source: { kind: 'eob', fileName: 'aetna_eob_raman.pdf' },
+    payer: { name: 'Aetna' },
+    patientControlNumber: 'HFM1003',
+    claimStatusCode: '1',
+    denied: false,
+    patient: { firstName: 'Priya', lastName: 'Raman' },
+    serviceDate: '2026-10-01',
+    chargeCents: 52000,
+    paidCents,
+    patientResponsibilityCents: 16000,
+    claimAdjustments: [
+      { group: 'CO', reason: '45', amountCents: 10000 },
+      { group: 'PR', reason: '3', amountCents: 16000 },
+    ],
+    remarks: [],
+    lines: [line(1, '99214', 32000, 0, []), line(2, '85025', 20000, 0, [])],
+  });
+
+  it('reconciles at claim level without per-line adjudication', () => {
+    expect(computePatientBalance(eobClaim(26000))).toMatchObject({
+      billedCents: 52000,
+      contractualCents: 10000,
+      insurancePaidCents: 26000,
+      patientOwesCents: 16000,
+      patientShare: { copayCents: 16000 },
+    });
+  });
+
+  it('still refuses figures that do not add up (paid read as $280 instead of $260)', () => {
+    expect(() => computePatientBalance(eobClaim(28000))).toThrow(
+      /billed \$520\.00 − contractual \$100\.00 − insurance paid \$280\.00 = \$140\.00, not \$160\.00/,
+    );
+  });
+
+  it('still checks that service charges add up to the billed total', () => {
+    const claim = eobClaim(26000);
+    claim.lines[1]!.chargeCents = 19000;
+    expect(() => computePatientBalance(claim)).toThrow(/service lines add up to \$510\.00/);
+  });
+});
+
 describe('computePatientBalance — refuses data that does not reconcile', () => {
   const catchError = (fn: () => unknown): ReconciliationError => {
     try {

@@ -1,48 +1,17 @@
 /**
- * @plainbill/ai — Phase 1 placeholder. Phase 2 adds the Anthropic SDK and implements these
- * contracts. Two rules from CLAUDE.md shape them:
+ * @plainbill/ai — the only package that talks to a model. Two rules from CLAUDE.md shape it:
  *
- * - The model never does money math. Extraction returns raw fields with confidence; every
- *   amount a patient sees is recomputed by @plainbill/core.
- * - Uncertainty is surfaced: any field below CONFIDENCE_THRESHOLD is flagged for a human.
+ * - The model never does money math. Extraction returns transcribed fields with confidence;
+ *   every amount is parsed and reconciled by @plainbill/core. Drafted messages are checked so
+ *   they only mention figures the core computed.
+ * - Uncertainty is surfaced: fields below CONFIDENCE_THRESHOLD become flags for a human, each
+ *   with the readings that do (and don't) make the claim add up.
  */
-
-/** Fields extracted below this confidence are flagged on the Intake screen. */
-export const CONFIDENCE_THRESHOLD = 0.85;
-
-export interface ExtractedField<T> {
-  value: T;
-  /** 0–1, from the model's structured output. */
-  confidence: number;
-  /** Why the model is unsure ("scan blurry: $260 or $280?"), and alternatives it considered. */
-  note?: string;
-  alternatives?: T[];
-}
-
-export interface EobExtraction {
-  payerName: ExtractedField<string>;
-  patientName: ExtractedField<string>;
-  serviceDate: ExtractedField<string>;
-  lines: Array<{
-    procedureCode: ExtractedField<string>;
-    billed: ExtractedField<string>;
-    allowed: ExtractedField<string>;
-    paid: ExtractedField<string>;
-    adjustments: Array<{
-      group: ExtractedField<string>;
-      reason: ExtractedField<string>;
-      amount: ExtractedField<string>;
-    }>;
-  }>;
-}
-
-export function isFlagged(field: ExtractedField<unknown>): boolean {
-  return field.confidence < CONFIDENCE_THRESHOLD;
-}
-
-/** Model id from ANTHROPIC_MODEL (read by the API at startup and passed in). */
-export function resolveModel(env: Record<string, string | undefined>): string {
-  const model = env.ANTHROPIC_MODEL?.trim();
-  if (!model) throw new Error('ANTHROPIC_MODEL is not set.');
-  return model;
-}
+export { CONFIDENCE_THRESHOLD, resolveModel } from './config';
+export * from './eob/schema';
+export * from './eob/extractor';
+export * from './eob/to-claims';
+export * from './message/facts';
+export * from './message/guard';
+export * from './message/template';
+export * from './message/drafter';

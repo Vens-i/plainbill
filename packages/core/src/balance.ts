@@ -106,10 +106,12 @@ export function computePatientBalance(claim: NormalizedClaim): PatientBalance {
   const id = claim.patientControlNumber;
   const ctx = `Claim ${id}`;
   const selfPay = claim.source.kind === 'self-pay-csv';
+  // Only 835s adjudicate each service line. EOBs report the outcome at claim level (their lines
+  // are just the services and charges), and a self-pay line is simply owed by the patient.
+  const lineAdjudicated = claim.source.kind === '835';
 
-  // X12 line balancing (charge − paid = line adjustments) applies to insurance claims only;
-  // a self-pay line is simply owed by the patient.
-  for (const line of selfPay ? [] : claim.lines) {
+  // X12 line balancing: charge − paid = line adjustments.
+  for (const line of lineAdjudicated ? claim.lines : []) {
     const adjusted = sumCents(line.adjustments.map((a) => a.amountCents));
     if (line.chargeCents - line.paidCents !== adjusted) {
       throw new ReconciliationError(
@@ -128,7 +130,7 @@ export function computePatientBalance(claim: NormalizedClaim): PatientBalance {
       );
     }
     const linePaid = sumCents(claim.lines.map((l) => l.paidCents));
-    if (linePaid !== claim.paidCents) {
+    if (lineAdjudicated && linePaid !== claim.paidCents) {
       throw new ReconciliationError(
         `${ctx}: line payments add up to ${fm(linePaid)} but the claim says ${fm(claim.paidCents)}.`,
         id,

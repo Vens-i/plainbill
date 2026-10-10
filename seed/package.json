@@ -13,6 +13,11 @@
   },
   "dependencies": {
     "@plainbill/api": "workspace:*",
-    "@plainbill/core": "workspace:*"
+    "@plainbill/core": "workspace:*",
+    "@plainbill/ai": "workspace:*"
+  },
+  "devDependencies": {
+    "pdf-lib": "^1.17.1",
+    "@napi-rs/canvas": "^1.0.10"
   }
 }

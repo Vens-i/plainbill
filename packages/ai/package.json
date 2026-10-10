@@ -9,6 +9,12 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit -p ."
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
+    "@plainbill/core": "workspace:*",
+    "zod": "^4.1.0"
   }
 }
