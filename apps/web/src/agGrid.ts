@@ -45,7 +45,11 @@ function checkLicense(key: string | undefined): LicenseStatus {
       reason: `license type "${details.suppliedLicenseType ?? 'unknown'}" is not accepted (needs ${details.currentLicenseType})`,
     };
   }
-  return { state: 'invalid', reason: 'not a valid AG Grid Enterprise key' };
+  return {
+    state: 'invalid',
+    reason:
+      'not an AG Grid Enterprise key (unknown license type or bad signature — run `pnpm check:license`)',
+  };
 }
 
 if (licenseKey) LicenseManager.setLicenseKey(licenseKey);

@@ -27,14 +27,24 @@ console.log(
   `Key length: ${key.length} characters; bracketed tags: ${bracketed.join(', ') || 'none'}`,
 );
 console.log(`Product named in the key: ${product ?? '(not stated)'}`);
-console.log(`Supplied license type: ${d.suppliedLicenseType ?? '(none — legacy/v2 key)'}`);
+
+// ag-grid-enterprise only knows these type codes; anything else (e.g. AG Studio's) is rejected.
+const KNOWN_TYPE_CODES: Record<string, string> = { '01': 'GRID', '02': 'CHARTS', '0102': 'BOTH' };
+const typeCode = bracketed.find((t) => /^\d{2}/.test(t));
+console.log(
+  `License type: ${d.suppliedLicenseType ?? (typeCode ? `unrecognized code "${typeCode}"` : 'none (legacy/v2 key)')}`,
+);
 
 if (!d.valid) {
-  console.log(
-    d.incorrectLicenseType
-      ? `✗ Rejected: license type "${d.suppliedLicenseType ?? 'unknown'}" is not accepted by ag-grid-enterprise (accepts GRID or BOTH).`
-      : '✗ Rejected: not a valid AG Grid Enterprise key (signature check failed).',
-  );
+  let reason: string;
+  if (d.incorrectLicenseType) {
+    reason = `license type "${d.suppliedLicenseType ?? 'unknown'}" is not accepted by ag-grid-enterprise (accepts GRID or BOTH).`;
+  } else if (bracketed.includes('v3') && typeCode && !KNOWN_TYPE_CODES[typeCode]) {
+    reason = `license type code "${typeCode}" is not an AG Grid/AG Charts type (01, 02 or 0102) — likely a key for another AG product.`;
+  } else {
+    reason = 'not a valid AG Grid Enterprise key (signature check failed or the key is malformed).';
+  }
+  console.log(`✗ Rejected: ${reason}`);
   process.exit(1);
 }
 
