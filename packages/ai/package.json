@@ -1,0 +1,14 @@
+{
+  "name": "@plainbill/ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Anthropic SDK wrappers: EOB extraction with confidence, patient messages, grounded Q&A, staff suggestions. Implemented in Phase 2.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  }
+}

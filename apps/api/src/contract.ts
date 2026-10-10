@@ -58,6 +58,8 @@ export interface BalanceRow {
   agingBucket: AgingBucket | null;
   /** Visit → final payment, for paid rows. */
   paidInDays: number | null;
+  /** Calendar date the balance was settled (demo-aware). */
+  paidOn: IsoDate | null;
   /** Wall-clock time of the final payment (for "just now"). */
   paidAt: string | null;
   paidVia: string | null;

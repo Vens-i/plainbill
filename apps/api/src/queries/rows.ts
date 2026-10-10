@@ -257,6 +257,7 @@ export function getBalanceRows(db: DbLike, today: IsoDate, ids?: number[]): Bala
       daysOut,
       agingBucket: daysOut == null ? null : agingBucket(daysOut),
       paidInDays: paid && balance.paidOn ? daysBetween(visit.serviceDate, balance.paidOn) : null,
+      paidOn: paid ? balance.paidOn : null,
       paidAt: paid ? (lastPayment?.receivedAt ?? null) : null,
       paidVia: paid && lastPayment ? (METHOD_LABEL[lastPayment.method] ?? null) : null,
       aiSuggestion: balance.aiSuggestion,

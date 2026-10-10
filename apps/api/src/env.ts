@@ -28,7 +28,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const demoToday = env.DEMO_TODAY?.trim() || null;
   if (demoToday) todayIso(demoToday); // validates the format
   return {
-    port: Number(env.PORT ?? 3001),
+    // API_PORT locally (PORT belongs to the web dev server); hosts like Render inject PORT in production.
+    port: Number(env.API_PORT || (production ? env.PORT : undefined) || 3001),
     host: env.HOST ?? (production ? '0.0.0.0' : '127.0.0.1'),
     databasePath: resolveFromRoot(env.DATABASE_PATH?.trim() || 'apps/api/data/plainbill.db'),
     demoToday,

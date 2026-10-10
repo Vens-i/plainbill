@@ -103,12 +103,10 @@ export function buildApp(options: AppOptions): { app: FastifyInstance; bus: Even
         '/intake/835',
         async (request, reply) => {
           if (typeof request.body !== 'string' || request.body.trim() === '') {
-            return reply
-              .code(400)
-              .send({
-                error: 'empty_body',
-                message: 'Send the 835 file as the request body (text/plain).',
-              });
+            return reply.code(400).send({
+              error: 'empty_body',
+              message: 'Send the 835 file as the request body (text/plain).',
+            });
           }
           const fileName = request.query.fileName ?? 'upload.835';
           const claims = claimsFrom835(request.body, { fileName });
