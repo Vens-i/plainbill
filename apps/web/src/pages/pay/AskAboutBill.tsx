@@ -98,7 +98,7 @@ export function AskAboutBill({ token, bill, onPaid }: Props) {
             ) : (
               <div key={i} className="pay-answer">
                 <div className="pay-bubble is-helper">
-                  {t.text}
+                  {t.text.replace(/^[-*] /gm, '• ')}
                   {t.source && <div className="pay-source">{t.source}</div>}
                 </div>
                 {t.cards?.map((card, j) => (

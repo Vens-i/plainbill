@@ -189,6 +189,26 @@ describe('Claude bill assistant', () => {
     expect(JSON.stringify(calls[1]!.messages)).toContain('The patient must tap Confirm.');
   });
 
+  it('keeps both plan cards when the model offers 3 and 6 months', async () => {
+    const h = handler();
+    const original = h.propose.bind(h);
+    h.propose = async (input) => {
+      const out = await original(input);
+      if (out.ok && input.kind === 'payment_plan') out.card.title = `${input.months} payments`;
+      return out;
+    };
+    const { r } = await ask(
+      'Can I pay over time?',
+      [
+        { tool: 'propose_payment_plan', input: { months: 3 } },
+        { tool: 'propose_payment_plan', input: { months: 6 } },
+        { text: 'You can pick 3 payments of $80 or 6 payments of $40 below.' },
+      ],
+      h,
+    );
+    expect(r.cards.map((c) => c.title)).toEqual(['3 payments', '6 payments']);
+  });
+
   it('retries once when the answer invents a figure, then falls back to the deterministic answer', async () => {
     const { r } = await ask('Why do I owe this?', [
       { text: 'You owe $245 because of your deductible.' },

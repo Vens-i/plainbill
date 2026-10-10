@@ -14,7 +14,6 @@ import {
   shortName,
   sourceLine,
   type AnswerIssue,
-  type AssistantActionKind,
   type BillFacts,
   type ProposalCard,
 } from './facts';
@@ -348,9 +347,9 @@ export class ClaudeBillAssistant implements BillAssistant {
   }
 }
 
-/** One card per kind (the latest), so a retried tool call doesn't show two. */
+/** Drop repeated cards (a retried tool call), keeping distinct offers such as 3- and 6-month plans. */
 function dedupeCards(cards: ProposalCard[]): ProposalCard[] {
-  const byKind = new Map<AssistantActionKind, ProposalCard>();
-  for (const c of cards) byKind.set(c.kind, c);
-  return [...byKind.values()];
+  const seen = new Map<string, ProposalCard>();
+  for (const c of cards) seen.set(`${c.kind}:${c.title}`, c);
+  return [...seen.values()];
 }
