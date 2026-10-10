@@ -50,7 +50,8 @@ function barOptions<T extends object>(params: {
     data: params.data,
     height: params.data.length * ROW_HEIGHT + 8,
     background: { visible: false },
-    padding: { top: 0, right: 4, bottom: 0, left: 4 },
+    // AG Charts measures the bold category labels a little narrow; the left padding absorbs it.
+    padding: { top: 0, right: 4, bottom: 0, left: 14 },
     legend: { enabled: false },
     animation: { enabled: true },
     series: [
