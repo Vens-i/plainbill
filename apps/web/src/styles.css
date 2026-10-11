@@ -1,5 +1,6 @@
-/* Plainbill design tokens — from docs/design-reference.html. Deep teal is the only
-   brand color; everything else is warm neutral. */
+/* Plainbill design tokens — from docs/design-reference.html. Deep teal is the brand color on
+   warm neutrals; each balance status has its own hue (theme.ts). Surfaces are flat, lifted by
+   soft shadows; the Outstanding KPI card is the one gradient. */
 :root {
   --teal-700: #1d5c5c;
   --teal-800: #134545;
@@ -10,7 +11,7 @@
   --ink-2: #3e4a4b;
   --ink-3: #5c6766;
   --canvas: #eae6df;
-  --page: #f7f5f1;
+  --page: #f5f2ec;
   --surface: #ffffff;
   --surface-2: #fbfaf8;
   --surface-3: #fbfaf7;
@@ -27,7 +28,10 @@
   --radius-sm: 6px;
   --radius: 8px;
   --radius-lg: 12px;
+  --radius-card: 14px;
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 1px 2px rgba(28, 43, 45, 0.05), 0 12px 28px -18px rgba(28, 43, 45, 0.3);
+  --shadow-raised: 0 1px 2px rgba(28, 43, 45, 0.05), 0 16px 36px -20px rgba(28, 43, 45, 0.3);
 
   --font-ui: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
@@ -85,6 +89,7 @@ button {
   height: 64px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
+  box-shadow: 0 6px 18px -12px rgba(28, 43, 45, 0.25);
   display: flex;
   align-items: center;
   gap: 32px;
@@ -101,10 +106,13 @@ button {
   color: inherit;
 }
 .brand-mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
   background: var(--teal-700);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 3px 8px -2px rgba(19, 69, 69, 0.5);
   color: #fff;
   display: flex;
   align-items: center;
@@ -140,9 +148,10 @@ button {
   color: var(--ink);
 }
 .nav a.active {
-  background: var(--teal-100);
+  background: #ddedea;
   color: var(--teal-800);
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px #c3dcd7;
 }
 .topbar-spacer {
   flex: 1;
@@ -156,6 +165,7 @@ button {
   padding: 0 12px;
   font-size: 13px;
   color: var(--ink);
+  box-shadow: inset 0 1px 2px rgba(28, 43, 45, 0.06);
 }
 .search::placeholder {
   color: var(--ink-3);
@@ -164,13 +174,17 @@ button {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--chip);
+  background: #efd3a0;
+  color: #5a3a00;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   flex: none;
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 2px 6px rgba(28, 43, 45, 0.18);
 }
 
 .page {
@@ -193,6 +207,7 @@ button {
   font-weight: 600;
   color: var(--ink);
   white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(28, 43, 45, 0.08);
 }
 .btn:hover {
   background: var(--surface-2);
@@ -202,6 +217,10 @@ button {
   background: var(--teal-700);
   color: #fff;
   padding: 0 18px;
+  font-weight: 700;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 6px 14px -6px rgba(19, 69, 69, 0.6);
 }
 .btn-primary:hover {
   background: var(--teal-800);
@@ -209,6 +228,7 @@ button {
 .btn[disabled] {
   opacity: 0.55;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* ── Greeting + KPIs ───────────────────────────────────────────────────── */
@@ -219,9 +239,9 @@ button {
   gap: 24px;
 }
 .greeting {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   margin: 0;
 }
 .greeting-sub {
@@ -242,18 +262,36 @@ button {
 .kpi {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: 18px 20px;
+  border-radius: var(--radius-card);
+  padding: 18px 20px 16px;
+  box-shadow: var(--shadow-card);
+}
+.kpi-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.kpi-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: #fff;
+  background: var(--ink-3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 .kpi-label {
   font-size: 13px;
-  color: var(--ink-3);
-  font-weight: 500;
+  color: var(--ink-2);
+  font-weight: 600;
 }
 .kpi-value {
-  font-size: 30px;
-  font-weight: 700;
-  margin-top: 6px;
+  font-size: 34px;
+  font-weight: 800;
+  margin-top: 12px;
   letter-spacing: -0.02em;
 }
 .kpi-note {
@@ -261,34 +299,130 @@ button {
   color: var(--ink-2);
   margin-top: 4px;
 }
+.kpi-note.good,
+.kpi-note.bad {
+  display: inline-flex;
+  margin-top: 6px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 12.5px;
+  font-weight: 700;
+}
 .kpi-note.good {
-  color: var(--green);
-  font-weight: 500;
+  color: #1e5631;
+  background: #ddf0e1;
+  border-color: #bce0c4;
 }
 .kpi-note.bad {
   color: #9b2c24;
-  font-weight: 500;
+  background: #fae5e1;
+  border-color: #f0c4bd;
 }
-.kpi.review {
-  background: #faefd6;
-  border-color: #efd9a0;
+
+/* Outstanding: the hero card, and the dashboard's one gradient. */
+.kpi-outstanding {
+  border: 0;
+  color: #fff;
+  background:
+    radial-gradient(140% 120% at 100% 0%, rgba(111, 190, 176, 0.45) 0%, rgba(111, 190, 176, 0) 55%),
+    linear-gradient(140deg, #22696a 0%, var(--teal-700) 45%, #123f40 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 14px 30px -14px rgba(19, 69, 69, 0.65);
 }
-.kpi.review .kpi-label {
-  color: #7a4e00;
-  font-weight: 600;
+.kpi-outstanding .kpi-icon {
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
-.kpi.review .kpi-value {
-  color: #5a3a00;
+.kpi-outstanding .kpi-label,
+.kpi-outstanding .kpi-note {
+  color: rgba(255, 255, 255, 0.85);
+}
+.kpi-agebar {
+  display: flex;
+  gap: 3px;
+  height: 6px;
+  margin-top: 14px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.kpi-agenote {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.78);
+  margin-top: 6px;
+}
+
+.kpi-collected {
+  background: #f1f9f2;
+  border-color: #cfe6d4;
+  box-shadow:
+    0 1px 2px rgba(28, 43, 45, 0.05),
+    0 10px 24px -14px rgba(36, 99, 58, 0.35);
+}
+.kpi-collected .kpi-icon {
+  background: var(--green);
+}
+.kpi-collected .kpi-label {
+  color: #2e4f38;
+}
+.kpi-collected .kpi-value {
+  color: #173f26;
+}
+
+.kpi-days {
+  background: #f1f5fc;
+  border-color: #ccdaf0;
+  box-shadow:
+    0 1px 2px rgba(28, 43, 45, 0.05),
+    0 10px 24px -14px rgba(35, 81, 140, 0.35);
+}
+.kpi-days .kpi-icon {
+  background: #23518c;
+}
+.kpi-days .kpi-label {
+  color: #2b3f5c;
+}
+.kpi-days .kpi-value {
+  color: #182f52;
+}
+
+.kpi-review {
+  background: #fae8bc;
+  border-color: #eacb80;
+  box-shadow:
+    0 1px 2px rgba(28, 43, 45, 0.05),
+    0 12px 26px -14px rgba(154, 100, 0, 0.5);
+}
+.kpi-review .kpi-icon {
+  background: #9a6400;
+}
+.kpi-review .kpi-label {
+  color: #6b4400;
+  font-weight: 700;
+}
+.kpi-review .kpi-value {
+  color: #4f3300;
+}
+.kpi-review .kpi-note {
+  color: #6b4400;
 }
 .kpi-link {
-  font-size: 13px;
-  color: #7a4e00;
-  margin-top: 4px;
-  font-weight: 600;
-  text-decoration: underline;
-  background: none;
-  border: 0;
-  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  margin-top: 6px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #e0b85e;
+  background: rgba(255, 255, 255, 0.75);
+  color: #5a3a00;
+  font-size: 12.5px;
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(143, 93, 0, 0.15);
+}
+.kpi-link:hover {
+  background: #fff;
 }
 .skeleton {
   display: inline-block;
@@ -315,16 +449,19 @@ button {
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
 .grid-card {
   overflow: hidden;
+  box-shadow: var(--shadow-raised);
 }
 .grid-toolbar {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
+  background: #faf8f4;
   border-bottom: 1px solid var(--line-soft);
 }
 .grid-title {
@@ -334,11 +471,12 @@ button {
 }
 .segmented {
   display: flex;
-  background: var(--segment);
+  background: #efebe4;
   border-radius: var(--radius);
   padding: 3px;
   font-size: 13px;
   font-weight: 500;
+  box-shadow: inset 0 1px 2px rgba(28, 43, 45, 0.08);
 }
 .segmented button {
   padding: 5px 12px;
@@ -351,7 +489,8 @@ button {
 .segmented button[aria-pressed='true'] {
   background: var(--surface);
   color: var(--ink);
-  box-shadow: var(--shadow-soft);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(28, 43, 45, 0.16);
 }
 .group-by {
   font-size: 13px;
@@ -380,6 +519,7 @@ button {
   font-size: 13px;
   padding: 0 10px;
   color: var(--ink);
+  box-shadow: inset 0 1px 2px rgba(28, 43, 45, 0.06);
 }
 .quick-filter::placeholder {
   color: var(--ink-3);
@@ -388,6 +528,10 @@ button {
 /* ── Grid cells (AG Grid renderers) ───────────────────────────────────── */
 .ag-root-wrapper {
   font-variant-numeric: tabular-nums;
+}
+.grid-card .ag-header-cell-text {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 .pb-patient {
   display: flex;
@@ -470,6 +614,9 @@ button {
   line-height: 1.25;
   text-align: left;
   white-space: normal;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 1px 2px rgba(19, 69, 69, 0.1);
 }
 .ai-btn:hover {
   background: #d6e8e5;
@@ -480,14 +627,46 @@ button {
 .paid-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
+  gap: 7px;
+  padding: 5px 11px 5px 6px;
   border-radius: var(--radius);
   background: var(--green);
   color: #fff;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.25;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 4px 10px -4px rgba(30, 86, 49, 0.6);
+}
+.paid-badge-check {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  flex: none;
+}
+/* Paid through PayPal: PayPal's navy and blue. */
+.paid-badge.paypal {
+  background: #003087;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 4px 10px -4px rgba(0, 48, 135, 0.6);
+}
+.paid-badge.paypal .paid-badge-check {
+  background: #009cde;
+}
+.paypal-word b {
+  font-weight: 800;
+  font-style: italic;
+}
+.paypal-word .paypal-pal {
+  color: #7fd3f7;
 }
 
 /* Status pill: icon + label + color, never color alone. */
@@ -524,37 +703,75 @@ button {
   padding-right: 10px;
 }
 
-/* Full-width group row */
+/* Full-width group row: a band in the status's color (custom properties set by GroupRow), so
+   each section of the grid reads apart. Payer/provider groups use the neutral defaults. */
 .pb-group {
+  --group-band: #f3f0ea;
+  --group-line: var(--line-strong);
+  --group-ink: var(--ink);
+  --group-fg: var(--ink-2);
   display: flex;
   align-items: center;
   gap: 10px;
   height: 100%;
-  padding: 0 16px;
+  padding: 0 16px 0 12px;
   font-size: 13px;
   cursor: pointer;
   user-select: none;
   width: 100%;
   border: 0;
-  background: transparent;
+  background: var(--group-band);
+  box-shadow:
+    inset 0 1px 0 var(--group-line),
+    inset 0 -1px 0 var(--group-line);
   text-align: left;
-  color: var(--ink);
+  color: var(--group-fg);
 }
 .pb-group-caret {
-  color: var(--ink-3);
   font-size: 10px;
   width: 12px;
 }
-.pb-group-meta {
-  color: var(--ink-3);
+.pb-group-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--group-solid);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  flex: none;
+  box-shadow: 0 2px 5px -1px color-mix(in srgb, var(--group-solid) 55%, transparent);
 }
-.pb-group-plain {
+.pb-group-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--group-ink);
+}
+.pb-group-count {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: inset 0 0 0 1px var(--group-line);
+  white-space: nowrap;
+}
+.pb-group-total {
+  margin-left: auto;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.pb-group-total b {
+  font-size: 14px;
   font-weight: 700;
 }
 
 /* Rows */
 .ag-row.pb-row-group {
-  background: var(--surface-3);
+  background: var(--surface);
 }
 /* AG Grid marks an open master row with ag-row-group-expanded; group rows have pb-row-group. */
 .ag-row.ag-row-group-expanded:not(.pb-row-group) {
@@ -675,16 +892,19 @@ button {
   color: var(--ink-3);
   margin: 0 0 8px;
 }
+/* An informational hint under a chart: info blue, not alarm red. */
 .chart-foot {
   margin-top: 12px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line-soft);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #eaf1fb;
+  border: 1px solid #c3d4ec;
   font-size: 13px;
   color: var(--ink-2);
   line-height: 1.45;
 }
 .chart-foot b {
-  color: var(--ink);
+  color: #23518c;
 }
 .chart-empty {
   font-size: 13px;

@@ -137,7 +137,7 @@ export function Dashboard() {
         </div>
       )}
 
-      <KpiStrip kpis={kpis} onStartReview={startReview} />
+      <KpiStrip kpis={kpis} aging={aging} onStartReview={startReview} />
 
       <div className="main-split">
         <section className="card grid-card" aria-labelledby="balances-title">

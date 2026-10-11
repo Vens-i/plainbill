@@ -790,11 +790,12 @@
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--teal-200);
-  background: var(--teal-50);
+  background: #eaf4f2;
   color: var(--teal-800);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 1px 2px rgba(19, 69, 69, 0.1);
 }
 .ai-refresh:hover {
   border-color: var(--teal-700);

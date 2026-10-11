@@ -211,7 +211,7 @@ export function BalancesGrid({
 
   const getRowId = useCallback((p: GetRowIdParams<BalanceRow>) => String(p.data.id), []);
   const getRowHeight = useCallback((p: RowHeightParams<BalanceRow>) => {
-    if (p.node.group) return 42;
+    if (p.node.group) return 48;
     if (p.node.detail) return undefined; // detailRowAutoHeight sizes the panel
     return 54;
   }, []);
