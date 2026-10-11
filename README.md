@@ -15,7 +15,9 @@ All patients, claims and amounts in this repo are synthetic.
    is checked against the claim's math: a smudged "2?0.00" comes back as "$260 ✓ adds up,
    $250 ✗ doesn't".
 2. **Dashboard** (AG Grid Enterprise): balances grouped by status, plain-English adjustment codes,
-   aging, charts, and an **AI suggests** column whose ✦ button does the next step in one click.
+   aging, a **Breakdown** sparkline per row (discount / insurance paid / patient paid / still owed),
+   **Chart this** (a live integrated chart of the rows on screen, by the current grouping), and an
+   **AI suggests** column whose ✦ button does the next step in one click.
 3. **Review & Send.** Claude drafts a warm, plain-language message (also simpler, or Spanish)
    from the computed numbers; a guard refuses any figure the code didn't compute. **Send invoice**
    creates a PayPal invoice (name, visit date, provider and amount only) and emails the patient
@@ -103,7 +105,7 @@ reconciliation pass immediately.
 ```
                  ┌──────────────────────────── apps/web (Vite + React) ───────────────────────────┐
                  │  /dashboard: AG Grid Enterprise (grouping, master/detail, quick filter,        │
-                 │  integrated charts, flashCells) + AG Charts · Review & Send drawer             │
+                 │  sparklines, integrated charts, flashCells) + AG Charts · Review & Send drawer │
                  │  /intake: drop files → AG Grid preview with AI flags → approve                 │
                  │  /pay/:token (patient, mobile): verify → bill → PayPal v6 SDK buttons / plans  │
                  │  /email-preview/:id: the bill email as sent                                    │

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { BalanceRow, Kpis } from '@plainbill/api/contract';
 import {
+  billBreakdown,
   collectedDelta,
   greeting,
   groupMeta,
@@ -114,5 +115,47 @@ describe('live payment helpers', () => {
       text: 'Same as September',
       tone: 'neutral',
     });
+  });
+});
+
+describe('billBreakdown', () => {
+  it('splits the bill into four bars that add up to it (Maria Delgado)', () => {
+    const bars = billBreakdown(
+      row({
+        payerKind: 'insurance',
+        billedCents: 85000,
+        contractualCents: 40000,
+        insurancePaidCents: 21000,
+        patientPaidCents: 0,
+        remainingCents: 24000,
+      }),
+    )!;
+    expect(bars.map((b) => [b.part, b.cents])).toEqual([
+      ['discount', 40000],
+      ['insurance', 21000],
+      ['patientPaid', 0],
+      ['owed', 24000],
+    ]);
+    expect(bars.reduce((t, b) => t + b.cents, 0)).toBe(85000);
+    expect(bars.reduce((t, b) => t + b.share, 0)).toBeCloseTo(1);
+  });
+
+  it('shows self-pay with no insurance bar', () => {
+    const bars = billBreakdown(
+      row({
+        payerKind: 'self-pay',
+        billedCents: 120000,
+        contractualCents: 0,
+        insurancePaidCents: null,
+        patientPaidCents: 60000,
+        remainingCents: 60000,
+      }),
+    )!;
+    expect(bars[0]!.label).toBe('Self-pay discount');
+    expect(bars.map((b) => b.cents)).toEqual([0, 0, 60000, 60000]);
+  });
+
+  it('has nothing to show for denied visits', () => {
+    expect(billBreakdown(row({ status: 'denied', billedCents: 240000 }))).toBeNull();
   });
 });

@@ -1,11 +1,14 @@
 /**
  * The patient balances grid: AG Grid Enterprise with row grouping (by status by default),
- * master/detail, quick filter, custom renderers, integrated charts on cell ranges, and a live
- * payment flash driven by Server-Sent Events.
+ * master/detail, quick filter, custom renderers, a Breakdown sparkline per row, integrated charts
+ * ("Chart this", or select cells and right-click → Chart Range), and a live payment flash driven
+ * by Server-Sent Events.
  */
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, type Ref } from 'react';
 import { AgGridReact } from 'ag-grid-react';
+import type { AgChartTheme, AgSparklineOptions } from 'ag-charts-community';
 import type {
+  ChartRef,
   ColDef,
   GetRowIdParams,
   GridApi,
@@ -20,14 +23,16 @@ import type {
 } from 'ag-grid-community';
 import {
   formatMoney,
+  formatMoneyShort,
   formatShortDate,
+  STATUS_META,
   STATUS_ORDER,
   type BalanceStatus,
   type IsoDate,
 } from '@plainbill/core';
 import type { BalanceRow } from '@plainbill/api/contract';
-import { isPaidNow, needsAction } from '../lib/dashboard';
-import { gridTheme } from '../theme';
+import { billBreakdown, isPaidNow, needsAction, type BreakdownBar } from '../lib/dashboard';
+import { BREAKDOWN_COLORS, CHART_COLORS, gridTheme } from '../theme';
 import {
   AiCell,
   CaretCell,
@@ -46,6 +51,11 @@ export interface BalancesGridHandle {
   applyPayment(row: BalanceRow): void;
   /** Expand a row's details and scroll to it. */
   reveal(id: number): void;
+  /**
+   * Draw an integrated chart of the rows that pass the filters, by the current grouping, into
+   * `container`. Destroy it through the returned ref.
+   */
+  chart(container: HTMLElement): ChartRef | undefined;
 }
 
 interface Props {
@@ -64,6 +74,72 @@ const FLASH = { flashDuration: 1600, fadeDuration: 2400 };
 const money = (p: ValueFormatterParams<BalanceRow, number | null>) =>
   p.value == null ? '—' : formatMoney(p.value);
 const mutedWhenEmpty = { 'pb-muted': (p: { value: unknown }) => p.value == null };
+
+/** Breakdown sparkline: four bars, each as tall as its share of the bill. */
+const BREAKDOWN_SPARKLINE: AgSparklineOptions<BreakdownBar> = {
+  type: 'bar',
+  direction: 'vertical',
+  xKey: 'label',
+  yKey: 'share',
+  min: 0,
+  max: 1,
+  padding: { top: 10, bottom: 10, left: 0, right: 0 },
+  cornerRadius: 2,
+  itemStyler: ({ datum }) => ({ fill: BREAKDOWN_COLORS[datum.part] }),
+  axis: { type: 'category', visible: true, stroke: '#D9D3C8', paddingInner: 0.2 },
+  tooltip: {
+    renderer: ({ datum }) => ({
+      title: datum.label,
+      content: `${formatMoney(datum.cents)} · ${Math.round(datum.share * 100)}% of the bill`,
+    }),
+  },
+};
+
+/** "Chart this": the category column for each grouping; the series are the money columns. */
+const CHART_CATEGORY: Record<GroupBy, string> = {
+  status: 'statusLabel',
+  payer: 'payer',
+  provider: 'groupProvider',
+};
+const CHART_SERIES = ['billed', 'insurancePaid', 'owes'];
+
+/** Integrated charts in the Plainbill palette and font. Money columns hold cents. */
+const PLAINBILL_CHART_THEME: AgChartTheme = {
+  baseTheme: 'ag-default',
+  palette: {
+    fills: [BREAKDOWN_COLORS.billed, BREAKDOWN_COLORS.insurance, BREAKDOWN_COLORS.owed],
+    strokes: [BREAKDOWN_COLORS.billed, BREAKDOWN_COLORS.insurance, BREAKDOWN_COLORS.owed],
+  },
+  overrides: {
+    common: {
+      title: { fontFamily: 'Figtree', fontWeight: 700, fontSize: 15, color: CHART_COLORS.ink },
+      legend: { item: { label: { fontFamily: 'Figtree', color: CHART_COLORS.ink } } },
+      axes: {
+        number: {
+          label: {
+            fontFamily: 'Figtree',
+            color: CHART_COLORS.muted,
+            formatter: ({ value }) => formatMoneyShort(Number(value)),
+          },
+        },
+        category: { label: { fontFamily: 'Figtree', color: CHART_COLORS.ink } },
+      },
+    },
+    bar: {
+      series: {
+        cornerRadius: 3,
+        tooltip: {
+          renderer: ({ datum, yKey, yName }) => ({
+            title: yName,
+            content: formatMoney(Number((datum as Record<string, unknown>)[yKey]) || 0),
+          }),
+        },
+      },
+    },
+  },
+};
+const CUSTOM_CHART_THEMES = { plainbill: PLAINBILL_CHART_THEME };
+const CHART_THEMES = ['plainbill', 'ag-default', 'ag-vivid'];
 
 function statusRank(key: string | null): number {
   const i = STATUS_ORDER.indexOf(key as BalanceStatus);
@@ -100,17 +176,28 @@ export function BalancesGrid({
   const columnDefs = useMemo<ColDef<BalanceRow>[]>(
     () => [
       { colId: 'status', field: 'status', hide: true, rowGroup: groupBy === 'status' },
+      // The status's label ("Needs review"), as the category for "Chart this".
+      {
+        colId: 'statusLabel',
+        headerName: 'Status',
+        valueGetter: (p) => (p.data ? STATUS_META[p.data.status].label : null),
+        hide: true,
+        chartDataType: 'category',
+      },
       {
         colId: 'groupPayer',
         valueGetter: (p) => p.data?.payerName,
         hide: true,
         rowGroup: groupBy === 'payer',
+        chartDataType: 'excluded',
       },
       {
         colId: 'groupProvider',
+        headerName: 'Provider',
         valueGetter: (p) => p.data?.providerFullName ?? 'No provider on file',
         hide: true,
         rowGroup: groupBy === 'provider',
+        chartDataType: 'category',
       },
       {
         colId: 'caret',
@@ -123,12 +210,13 @@ export function BalancesGrid({
         cellRenderer: CaretCell,
         cellClass: 'pb-cell-caret',
         suppressNavigable: true,
+        chartDataType: 'excluded',
       },
       {
         colId: 'patient',
         headerName: 'Patient',
         field: 'patientName',
-        width: 176,
+        width: 160,
         cellRenderer: PatientCell,
         getQuickFilterText: (p) =>
           p.data ? `${p.data.patientName} ${p.data.claimId} ${p.data.sub}` : '',
@@ -140,12 +228,19 @@ export function BalancesGrid({
         width: 80,
         valueFormatter: (p) => (p.value ? formatShortDate(p.value as string) : ''),
       },
-      { colId: 'payer', headerName: 'Payer', field: 'payerName', width: 144 },
+      {
+        colId: 'payer',
+        headerName: 'Payer',
+        field: 'payerShortName',
+        tooltipField: 'payerName',
+        width: 116,
+        getQuickFilterText: (p) => p.data?.payerName ?? '',
+      },
       {
         colId: 'billed',
         headerName: 'Billed',
         field: 'billedCents',
-        width: 92,
+        width: 88,
         type: 'rightAligned',
         valueFormatter: money,
       },
@@ -169,10 +264,33 @@ export function BalancesGrid({
         cellClassRules: mutedWhenEmpty,
       },
       {
+        colId: 'breakdown',
+        headerName: 'Breakdown',
+        headerTooltip:
+          'Where the bill went: discount, insurance paid, patient paid, still owed. Hover a bar for the amount.',
+        width: 90,
+        sortable: false,
+        headerClass: 'pb-header-breakdown',
+        cellClass: 'pb-cell-breakdown',
+        valueGetter: (p) => (p.data ? billBreakdown(p.data) : null),
+        // Denied visits aren't billed to the patient, so they get a dash instead of bars.
+        cellRendererSelector: (p) =>
+          p.value
+            ? {
+                component: 'agSparklineCellRenderer',
+                params: { sparklineOptions: BREAKDOWN_SPARKLINE },
+              }
+            : undefined,
+        valueFormatter: () => '—',
+        cellClassRules: mutedWhenEmpty,
+        getQuickFilterText: () => '',
+        chartDataType: 'excluded',
+      },
+      {
         colId: 'days',
         headerName: 'Days out',
         field: 'daysOut',
-        width: 104,
+        width: 96,
         cellRenderer: DaysCell,
         getQuickFilterText: (p) =>
           p.data?.agingBucket ? `${p.data.daysOut}d ${p.data.agingBucket}` : '',
@@ -182,10 +300,11 @@ export function BalancesGrid({
         headerName: 'AI suggests',
         field: 'aiSuggestion',
         flex: 1,
-        minWidth: 172,
+        minWidth: 160,
         sortable: false,
         cellRenderer: AiCell,
         cellClass: 'pb-cell-ai',
+        chartDataType: 'excluded',
       },
     ],
     [groupBy],
@@ -290,6 +409,26 @@ export function BalancesGrid({
       node.setExpanded(true);
       scrollToRow(id);
     },
+    chart(container) {
+      // Rows that pass the filters, summed per category. The chart stays linked to the grid, so
+      // a live payment moves its bars too.
+      return apiRef.current?.createRangeChart({
+        cellRange: { columns: [CHART_CATEGORY[groupBy], ...CHART_SERIES] },
+        chartContainer: container,
+        chartType: 'groupedColumn',
+        aggFunc: 'sum',
+        suppressChartRanges: true,
+        chartThemeName: 'plainbill',
+        chartThemeOverrides: {
+          common: {
+            title: {
+              enabled: true,
+              text: `Billed, insurance paid and patient owes, by ${groupBy}`,
+            },
+          },
+        },
+      });
+    },
   }));
 
   // Fresh data (intake approvals, sends) can move rows between groups; group rows show counts
@@ -347,6 +486,8 @@ export function BalancesGrid({
       // Integrated charts: select a range of cells and right-click → Chart Range.
       cellSelection
       enableCharts
+      customChartThemes={CUSTOM_CHART_THEMES}
+      chartThemes={CHART_THEMES}
       onGridReady={onGridReady}
       onRowClicked={onRowClicked}
       onRowDataUpdated={onRowDataUpdated}

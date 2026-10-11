@@ -123,7 +123,7 @@ export function AiCell({ data, context }: Params) {
             ) : (
               via
             )}{' '}
-            · {relativeTime(data.paidAt!)}
+            <span className="paid-badge-time">· {relativeTime(data.paidAt!)}</span>
           </span>
         </span>
       </div>
