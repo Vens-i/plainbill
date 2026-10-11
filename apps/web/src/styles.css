@@ -629,9 +629,15 @@ button {
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.25;
+  /* Grid cells don't wrap; let the badge break onto two lines in a narrow column. */
+  white-space: normal;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     0 4px 10px -4px rgba(30, 86, 49, 0.6);
+}
+.paypal-word,
+.paid-badge-time {
+  white-space: nowrap;
 }
 .paid-badge-check {
   width: 18px;
