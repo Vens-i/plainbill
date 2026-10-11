@@ -168,7 +168,7 @@ export function AiCell({ data, context }: Params) {
 }
 
 /**
- * Full-width group row: a band tinted in the status's color, with caret + icon + label, a
+ * Full-width group row: white, underlined in the status's color, with caret + icon + label, a
  * "4 visits" chip, and the group total on the right ("$1,078 to confirm").
  */
 export function GroupRow({ node }: ICellRendererParams<BalanceRow>) {
@@ -182,7 +182,7 @@ export function GroupRow({ node }: ICellRendererParams<BalanceRow>) {
   const c = status ? STATUS_COLORS[status] : null;
   const style = c
     ? ({
-        '--group-band': c.band,
+        '--group-rule': c.rule,
         '--group-line': c.line,
         '--group-solid': c.solid,
         '--group-ink': c.ink,

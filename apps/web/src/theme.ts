@@ -43,15 +43,15 @@ export const gridTheme = themeQuartz.withParams({
 });
 
 /**
- * Per status: the pill (fg / bg / border), and the grid's group header — a tinted `band` with
- * `line` borders, a `solid` icon disc and an `ink` label. Each status has its own hue so the
- * grid's sections read apart at a glance.
+ * Per status: the pill (fg / bg / border), and the grid's group header — a white row underlined
+ * in `rule`, with a `solid` icon disc, an `ink` label and a count chip ringed in `line`. Each
+ * status has its own hue so the grid's sections read apart at a glance.
  */
 export interface StatusColors {
   fg: string;
   bg: string;
   border: string;
-  band: string;
+  rule: string;
   line: string;
   solid: string;
   ink: string;
@@ -62,7 +62,7 @@ export const STATUS_COLORS: Record<BalanceStatus, StatusColors> = {
     fg: '#7A4E00',
     bg: '#FAEFD6',
     border: '#EFD9A0',
-    band: '#FAEBC6',
+    rule: '#D9A53C',
     line: '#EACB80',
     solid: '#9A6400',
     ink: '#5A3A00',
@@ -71,7 +71,7 @@ export const STATUS_COLORS: Record<BalanceStatus, StatusColors> = {
     fg: '#9B2C24',
     bg: '#FAE5E1',
     border: '#F0C4BD',
-    band: '#F8DED8',
+    rule: '#D9776B',
     line: '#E9B3AA',
     solid: '#9B2C24',
     ink: '#7D221B',
@@ -80,7 +80,7 @@ export const STATUS_COLORS: Record<BalanceStatus, StatusColors> = {
     fg: '#1D5C5C',
     bg: '#E2EEEC',
     border: '#B9D3CF',
-    band: '#DCEDE9',
+    rule: '#5E9E95',
     line: '#A9CEC6',
     solid: '#1D5C5C',
     ink: '#103B3B',
@@ -89,7 +89,7 @@ export const STATUS_COLORS: Record<BalanceStatus, StatusColors> = {
     fg: '#23518C',
     bg: '#E2EBF7',
     border: '#C3D4EC',
-    band: '#DEE8F7',
+    rule: '#6F95CE',
     line: '#B3C8E8',
     solid: '#23518C',
     ink: '#1A3F6E',
@@ -98,7 +98,7 @@ export const STATUS_COLORS: Record<BalanceStatus, StatusColors> = {
     fg: '#5A3E8A',
     bg: '#EEE7F8',
     border: '#D6C8EE',
-    band: '#EAE3F6',
+    rule: '#9C84C9',
     line: '#CDBDE9',
     solid: '#5A3E8A',
     ink: '#432D70',
@@ -107,7 +107,7 @@ export const STATUS_COLORS: Record<BalanceStatus, StatusColors> = {
     fg: '#24633A',
     bg: '#E0F0E3',
     border: '#B9DDC0',
-    band: '#DAEEDD',
+    rule: '#6DB282',
     line: '#A9D2B2',
     solid: '#24633A',
     ink: '#194A2A',

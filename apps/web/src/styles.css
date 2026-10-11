@@ -353,12 +353,14 @@ button {
   margin-top: 6px;
 }
 
+/* The other cards stay white, each outlined in its own color. */
+.kpi-collected,
+.kpi-days,
+.kpi-review {
+  border-width: 1.5px;
+}
 .kpi-collected {
-  background: #f1f9f2;
-  border-color: #cfe6d4;
-  box-shadow:
-    0 1px 2px rgba(28, 43, 45, 0.05),
-    0 10px 24px -14px rgba(36, 99, 58, 0.35);
+  border-color: #8cc79d;
 }
 .kpi-collected .kpi-icon {
   background: var(--green);
@@ -371,11 +373,7 @@ button {
 }
 
 .kpi-days {
-  background: #f1f5fc;
-  border-color: #ccdaf0;
-  box-shadow:
-    0 1px 2px rgba(28, 43, 45, 0.05),
-    0 10px 24px -14px rgba(35, 81, 140, 0.35);
+  border-color: #93b2e0;
 }
 .kpi-days .kpi-icon {
   background: #23518c;
@@ -388,11 +386,7 @@ button {
 }
 
 .kpi-review {
-  background: #fae8bc;
-  border-color: #eacb80;
-  box-shadow:
-    0 1px 2px rgba(28, 43, 45, 0.05),
-    0 12px 26px -14px rgba(154, 100, 0, 0.5);
+  border-color: #e0b85e;
 }
 .kpi-review .kpi-icon {
   background: #9a6400;
@@ -415,14 +409,14 @@ button {
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid #e0b85e;
-  background: rgba(255, 255, 255, 0.75);
+  background: #fdf6e3;
   color: #5a3a00;
   font-size: 12.5px;
   font-weight: 700;
   box-shadow: 0 1px 2px rgba(143, 93, 0, 0.15);
 }
 .kpi-link:hover {
-  background: #fff;
+  background: #faefd6;
 }
 .skeleton {
   display: inline-block;
@@ -703,10 +697,11 @@ button {
   padding-right: 10px;
 }
 
-/* Full-width group row: a band in the status's color (custom properties set by GroupRow), so
-   each section of the grid reads apart. Payer/provider groups use the neutral defaults. */
+/* Full-width group row: white, underlined in the status's color (custom properties set by
+   GroupRow), so each section of the grid reads apart. Payer/provider groups use the neutral
+   defaults. */
 .pb-group {
-  --group-band: #f3f0ea;
+  --group-rule: var(--line-strong);
   --group-line: var(--line-strong);
   --group-ink: var(--ink);
   --group-fg: var(--ink-2);
@@ -720,10 +715,10 @@ button {
   user-select: none;
   width: 100%;
   border: 0;
-  background: var(--group-band);
+  background: var(--surface);
   box-shadow:
-    inset 0 1px 0 var(--group-line),
-    inset 0 -1px 0 var(--group-line);
+    inset 0 1px 0 var(--line),
+    inset 0 -2px 0 var(--group-rule);
   text-align: left;
   color: var(--group-fg);
 }
