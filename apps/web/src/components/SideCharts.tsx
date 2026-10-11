@@ -7,7 +7,7 @@ import { AgCharts } from 'ag-charts-react';
 import type { AgCartesianChartOptions } from 'ag-charts-community';
 import { formatMoneyShort } from '@plainbill/core';
 import type { AgingChart, DenialsChart } from '@plainbill/api/contract';
-import { CHART_COLORS } from '../theme';
+import { AGING_BAR_COLORS, CHART_COLORS } from '../theme';
 
 const ROW_HEIGHT = 30;
 
@@ -41,10 +41,12 @@ function barOptions<T extends object>(params: {
   data: T[];
   xKey: keyof T & string;
   yKey: keyof T & string;
-  fill: string;
+  /** One color for every bar, or a color per datum. */
+  fill: string | ((datum: T) => string);
   label: (datum: T) => string;
   tooltip: (datum: T) => string;
 }): AgCartesianChartOptions {
+  const { fill } = params;
   const largest = Math.max(1, ...params.data.map((d) => Number(d[params.yKey]) || 0));
   return {
     data: params.data,
@@ -60,7 +62,9 @@ function barOptions<T extends object>(params: {
         direction: 'horizontal',
         xKey: params.xKey,
         yKey: params.yKey,
-        fill: params.fill,
+        ...(typeof fill === 'string'
+          ? { fill }
+          : { itemStyler: ({ datum }: { datum: unknown }) => ({ fill: fill(datum as T) }) }),
         cornerRadius: 4,
         label: {
           enabled: true,
@@ -105,10 +109,15 @@ export function AgingChartCard({ chart }: { chart: AgingChart | null }) {
     () =>
       chart && fontsReady
         ? barOptions({
-            data: chart.buckets.map((b) => ({ label: b.label, cents: b.cents, count: b.count })),
+            data: chart.buckets.map((b) => ({
+              bucket: b.bucket,
+              label: b.label,
+              cents: b.cents,
+              count: b.count,
+            })),
             xKey: 'label',
             yKey: 'cents',
-            fill: CHART_COLORS.teal,
+            fill: (d) => AGING_BAR_COLORS[d.bucket],
             label: (d) => formatMoneyShort(d.cents),
             tooltip: (d) =>
               `${d.label} days: ${formatMoneyShort(d.cents)} across ${d.count} ${d.count === 1 ? 'visit' : 'visits'}`,

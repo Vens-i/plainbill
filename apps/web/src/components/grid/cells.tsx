@@ -1,13 +1,12 @@
 /**
  * AG Grid cell renderers for the balances grid.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import type { ICellRendererParams, IRowNode } from 'ag-grid-community';
-import { agingLabel, isBalanceStatus } from '@plainbill/core';
+import { agingLabel, isBalanceStatus, STATUS_META } from '@plainbill/core';
 import type { BalanceRow } from '@plainbill/api/contract';
-import { groupMeta, isPaidNow, plainGroupMeta, relativeTime } from '../../lib/dashboard';
-import { AGING_COLORS } from '../../theme';
-import { StatusPill } from '../StatusPill';
+import { groupSummary, isPaidNow, plainGroupSummary, relativeTime } from '../../lib/dashboard';
+import { AGING_COLORS, STATUS_COLORS } from '../../theme';
 
 /** Shared with the grid through AG Grid's `context`. */
 export interface BalancesGridContext {
@@ -106,10 +105,26 @@ export function DaysCell({ data }: Params) {
 export function AiCell({ data, context }: Params) {
   if (!data) return null;
   if (isPaidNow(data)) {
+    const via = data.paidVia ?? 'PayPal';
+    const paypal = via === 'PayPal';
     return (
       <div className="pb-ai">
-        <span className="paid-badge" role="status">
-          ✓ Paid via {data.paidVia ?? 'PayPal'} · {relativeTime(data.paidAt!)}
+        <span className={`paid-badge${paypal ? ' paypal' : ''}`} role="status">
+          <span className="paid-badge-check" aria-hidden="true">
+            ✓
+          </span>
+          <span>
+            Paid via{' '}
+            {paypal ? (
+              <span className="paypal-word">
+                <b>Pay</b>
+                <b className="paypal-pal">Pal</b>
+              </span>
+            ) : (
+              via
+            )}{' '}
+            · {relativeTime(data.paidAt!)}
+          </span>
         </span>
       </div>
     );
@@ -152,27 +167,48 @@ export function AiCell({ data, context }: Params) {
   );
 }
 
-/** Full-width group row: caret + status pill + "4 visits · $1,078 to confirm". */
+/**
+ * Full-width group row: white, underlined in the status's color, with caret + icon + label, a
+ * "4 visits" chip, and the group total on the right ("$1,078 to confirm").
+ */
 export function GroupRow({ node }: ICellRendererParams<BalanceRow>) {
   const expanded = useExpanded(node);
   const rows = (node.childrenAfterFilter ?? [])
     .map((n) => n.data)
     .filter((d): d is BalanceRow => !!d);
   const key = node.key ?? '';
-  const byStatus = node.rowGroupColumn?.getColId() === 'status' && isBalanceStatus(key);
+  const status = node.rowGroupColumn?.getColId() === 'status' && isBalanceStatus(key) ? key : null;
+  const summary = status ? groupSummary(status, rows) : plainGroupSummary(rows);
+  const c = status ? STATUS_COLORS[status] : null;
+  const style = c
+    ? ({
+        '--group-rule': c.rule,
+        '--group-line': c.line,
+        '--group-solid': c.solid,
+        '--group-ink': c.ink,
+        '--group-fg': c.fg,
+      } as CSSProperties)
+    : undefined;
   return (
     <button
       type="button"
-      className="pb-group"
+      className={`pb-group${c ? ' pb-group-status' : ''}`}
+      style={style}
       onClick={() => node.setExpanded(!node.expanded)}
       aria-expanded={expanded}
     >
       <span className="pb-group-caret" aria-hidden="true">
         {expanded ? '▼' : '▶'}
       </span>
-      {byStatus ? <StatusPill status={key} /> : <span className="pb-group-plain">{key}</span>}
-      <span className="pb-group-meta">
-        {byStatus ? groupMeta(key, rows) : plainGroupMeta(rows)}
+      {status && (
+        <span className="pb-group-icon" aria-hidden="true">
+          {STATUS_META[status].icon}
+        </span>
+      )}
+      <span className="pb-group-label">{status ? STATUS_META[status].label : key}</span>
+      <span className="pb-group-count">{summary.visits}</span>
+      <span className="pb-group-total">
+        <b>{summary.amount}</b> {summary.what}
       </span>
     </button>
   );

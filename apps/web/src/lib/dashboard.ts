@@ -7,31 +7,53 @@ import type { BalanceRow, Kpis } from '@plainbill/api/contract';
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
-/** Group-row meta line: "4 visits · $1,078 to confirm". */
-export function groupMeta(status: BalanceStatus, rows: readonly BalanceRow[]): string {
+/** A group row's parts: "4 visits" in a chip, then "$1,078" + " to confirm" on the right. */
+export interface GroupSummary {
+  visits: string;
+  amount: string;
+  what: string;
+}
+
+export function groupSummary(status: BalanceStatus, rows: readonly BalanceRow[]): GroupSummary {
   const sum = (f: (r: BalanceRow) => number) =>
     formatMoneyShort(rows.reduce((t, r) => t + f(r), 0));
   const visits = plural(rows.length, 'visit');
   switch (status) {
     case 'review':
-      return `${visits} · ${sum((r) => r.remainingCents)} to confirm`;
+      return { visits, amount: sum((r) => r.remainingCents), what: 'to confirm' };
     case 'denied':
-      return `${visits} · ${sum((r) => r.billedCents)} billed`;
+      return { visits, amount: sum((r) => r.billedCents), what: 'billed' };
     case 'ready':
-      return `${visits} · ${sum((r) => r.remainingCents)} to invoice`;
+      return { visits, amount: sum((r) => r.remainingCents), what: 'to invoice' };
     case 'sent':
-      return `${visits} · ${sum((r) => r.remainingCents)} outstanding`;
+      return { visits, amount: sum((r) => r.remainingCents), what: 'outstanding' };
     case 'partial':
-      return `${visits} · ${sum((r) => r.remainingCents)} remaining`;
+      return { visits, amount: sum((r) => r.remainingCents), what: 'remaining' };
     case 'paid':
-      return `${visits} · ${sum((r) => r.patientPaidCents)} collected`;
+      return { visits, amount: sum((r) => r.patientPaidCents), what: 'collected' };
   }
+}
+
+/** Summary when grouping by payer or provider. */
+export function plainGroupSummary(rows: readonly BalanceRow[]): GroupSummary {
+  const open = rows.filter((r) => r.status !== 'paid' && r.status !== 'denied');
+  return {
+    visits: plural(rows.length, 'visit'),
+    amount: formatMoneyShort(open.reduce((t, r) => t + r.remainingCents, 0)),
+    what: 'open',
+  };
+}
+
+const metaLine = ({ visits, amount, what }: GroupSummary) => `${visits} · ${amount} ${what}`;
+
+/** Group-row meta line: "4 visits · $1,078 to confirm". */
+export function groupMeta(status: BalanceStatus, rows: readonly BalanceRow[]): string {
+  return metaLine(groupSummary(status, rows));
 }
 
 /** Meta line when grouping by payer or provider. */
 export function plainGroupMeta(rows: readonly BalanceRow[]): string {
-  const open = rows.filter((r) => r.status !== 'paid' && r.status !== 'denied');
-  return `${plural(rows.length, 'visit')} · ${formatMoneyShort(open.reduce((t, r) => t + r.remainingCents, 0))} open`;
+  return metaLine(plainGroupSummary(rows));
 }
 
 export function greeting(hour: number): string {
