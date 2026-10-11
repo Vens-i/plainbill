@@ -123,3 +123,49 @@ export function collectedDelta(k: Kpis['collectedThisMonth']): {
     ? { text: `▲ ${formatMoneyShort(delta)} vs. ${k.previousMonth}`, tone: 'good' }
     : { text: `▼ ${formatMoneyShort(-delta)} vs. ${k.previousMonth}`, tone: 'bad' };
 }
+
+export type BreakdownPart = 'discount' | 'insurance' | 'patientPaid' | 'owed';
+
+/** One bar of the Breakdown sparkline. `share` is the bar's height: its part of the bill, 0–1. */
+export interface BreakdownBar {
+  part: BreakdownPart;
+  label: string;
+  cents: number;
+  share: number;
+}
+
+/**
+ * The Breakdown sparkline: where the billed amount went, as four bars that add up to it
+ * (discount + insurance paid + patient paid + still owed = billed). Null for denied visits,
+ * which aren't billed to the patient.
+ */
+export function billBreakdown(
+  row: Pick<
+    BalanceRow,
+    | 'status'
+    | 'payerKind'
+    | 'billedCents'
+    | 'contractualCents'
+    | 'insurancePaidCents'
+    | 'patientPaidCents'
+    | 'remainingCents'
+  >,
+): BreakdownBar[] | null {
+  if (row.status === 'denied' || row.billedCents <= 0) return null;
+  const parts: Array<[BreakdownPart, string, number]> = [
+    [
+      'discount',
+      row.payerKind === 'self-pay' ? 'Self-pay discount' : 'Insurance discount',
+      row.contractualCents,
+    ],
+    ['insurance', 'Insurance paid', row.insurancePaidCents ?? 0],
+    ['patientPaid', 'Patient paid', row.patientPaidCents],
+    ['owed', 'Still owed', row.remainingCents],
+  ];
+  return parts.map(([part, label, cents]) => ({
+    part,
+    label,
+    cents,
+    share: cents / row.billedCents,
+  }));
+}

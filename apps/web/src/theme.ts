@@ -144,3 +144,16 @@ export const CHART_COLORS = {
   ink: '#1C2B2D',
   muted: '#5C6766',
 };
+
+/**
+ * Where a bill's money went, shared by the Breakdown sparkline and the "Chart this" chart:
+ * warm gray for the discount, blue for insurance, green for what the patient paid, teal for
+ * what's still owed.
+ */
+export const BREAKDOWN_COLORS = {
+  discount: '#C9C2B6',
+  insurance: '#6F95CE',
+  patientPaid: '#6DB282',
+  owed: '#1D5C5C',
+  billed: '#B5AC9E',
+} as const;

@@ -696,6 +696,12 @@ button {
   padding-left: 8px;
   padding-right: 10px;
 }
+/* Breakdown sparkline: tighter padding so the bars and the "Breakdown" header fit 90px. */
+.ag-cell.pb-cell-breakdown,
+.ag-header-cell.pb-header-breakdown {
+  padding-left: 6px;
+  padding-right: 6px;
+}
 
 /* Full-width group row: white, underlined in the status's color (custom properties set by
    GroupRow), so each section of the grid reads apart. Payer/provider groups use the neutral
