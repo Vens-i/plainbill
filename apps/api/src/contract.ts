@@ -324,6 +324,8 @@ export interface WaterfallStep {
 export interface PatientBill {
   practice: { name: string; phone: string; hours: string | null; address: string };
   firstName: string;
+  /** "D", for "Secure bill for Maria D." */
+  lastInitial: string;
   status: BalanceStatus;
   visit: { date: IsoDate; provider: string | null };
   dueDate: IsoDate;

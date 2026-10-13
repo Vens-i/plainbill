@@ -1,9 +1,14 @@
-/** Artboard 1f: the bill, explained. Tap a bar to learn what it means. */
+/**
+ * Artboard 1f: the bill, explained. The hero says what's owed (and why, in one line), the
+ * practice's own statement comes with margin notes, and the short version, the helper and the
+ * payment options follow.
+ */
 import { useState } from 'react';
 import type { PatientBill, PayResult } from '@plainbill/api/contract';
-import { formatLongDate, formatMoney, formatMonthDay } from '@plainbill/core';
+import { formatLongDate, formatMoney, formatMoneyShort } from '@plainbill/core';
 import type { Paid } from './PayPage';
 import { AskAboutBill } from './AskAboutBill';
+import { formatDay, useI18n } from './i18n';
 import { PayOptions, PayPalScope } from './PayOptions';
 import { StatementExplained } from './statement/StatementExplained';
 import { StickyPay } from './StickyPay';
@@ -15,44 +20,74 @@ interface Props {
   onPaid: (result: PayResult, kind: Paid['kind']) => void;
 }
 
+/** Scroll to "Ask about your bill" and put the cursor in its box. */
+function focusAsk() {
+  const input = document.getElementById('pay-ask-input');
+  input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  input?.focus({ preventScroll: true });
+}
+
+const scrollToPay = () => document.getElementById('pay')?.scrollIntoView({ behavior: 'smooth' });
+
 export function BillStep({ token, bill, onPaid }: Props) {
+  const { t, lang } = useI18n();
   const [termsOpen, setTermsOpen] = useState(true);
+  const [planPick, setPlanPick] = useState<{ months: 3 | 6; at: number } | null>(null);
   const { amounts } = bill;
   const paidSome = amounts.paidCents > 0;
-  const visitLine = `Visit ${formatMonthDay(bill.visit.date)}${bill.visit.provider ? ` with ${bill.visit.provider}` : ''}`;
   const settled = amounts.remainingCents === 0;
+  const owed = formatMoneyShort(amounts.remainingCents);
+  const day = formatDay(bill.visit.date, lang);
+  const visit = bill.visit.provider
+    ? t('visitWith', { date: day, provider: bill.visit.provider })
+    : t('visit', { date: day });
+  const planRunning = bill.plan?.status === 'active';
+  const sub = settled
+    ? t('subPaid')
+    : planRunning
+      ? `${visit} · ${t('subPlan', { paid: bill.plan!.paidCount, months: bill.plan!.months })}`
+      : paidSome
+        ? `${visit} · ${t('subPartial', { amount: formatMoneyShort(amounts.paidCents) })}`
+        : bill.selfPay
+          ? `${visit} · ${t('subSelfPay')}`
+          : `${visit} · ${t('subInsurance')}`;
+  const plans = bill.options.plans;
+  const greeting = settled ? 'heroBalance' : paidSome ? 'heroStillOwe' : 'heroOwe';
 
   return (
     <div className="pay-bill">
       <header className="pay-hero">
-        <div className="pay-hero-hi">
-          Hi {bill.firstName} —{' '}
-          {settled ? 'this bill is paid' : paidSome ? 'you still owe' : 'you owe'}
+        <div className="pay-hero-text">
+          <div className="pay-hero-hi">{t(greeting, { name: bill.firstName })}</div>
+          <div className="pay-hero-amount">{formatMoney(amounts.remainingCents)}</div>
+          <div className="pay-hero-meta">{sub}</div>
         </div>
-        <div className="pay-hero-amount">{formatMoney(amounts.remainingCents)}</div>
-        <div className="pay-hero-meta">
-          {settled ? visitLine : `Due ${formatLongDate(bill.dueDate)} · ${visitLine}`}
+        <div className="pay-hero-actions">
+          <button type="button" className="pay-hero-btn is-ask" onClick={focusAsk}>
+            <span aria-hidden="true">✦</span> {t('askButton')}
+          </button>
+          {!settled && plans.length > 0 && (
+            <button
+              type="button"
+              className="pay-hero-btn is-plan"
+              onClick={() => {
+                const months = plans.find((p) => p.months === 3)?.months ?? plans[0]!.months;
+                setPlanPick({ months, at: Date.now() });
+                scrollToPay();
+              }}
+            >
+              {t('payOverTime')}
+            </button>
+          )}
+          {!settled && (
+            <button type="button" className="pay-hero-btn is-pay" onClick={scrollToPay}>
+              {t('payAmount', { amount: owed })}
+            </button>
+          )}
         </div>
-        {bill.plan && bill.plan.status === 'active' && (
-          <div className="pay-hero-meta">
-            Payment plan: {bill.plan.paidCount} of {bill.plan.months} paid
-          </div>
-        )}
-        {!settled && !bill.plan && (
-          <a
-            className="pay-btn-primary pay-cta"
-            href="#pay"
-            onClick={(e) => {
-              e.preventDefault();
-              document.getElementById('pay')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-          >
-            Choose how to pay ↓
-          </a>
-        )}
       </header>
 
-      <StatementExplained token={token} bill={bill} />
+      <StatementExplained token={token} bill={bill} onAsk={focusAsk} />
 
       <div className="pay-column">
         <section className="pay-card">
@@ -105,7 +140,7 @@ export function BillStep({ token, bill, onPaid }: Props) {
 
         <PayPalScope bill={bill}>
           <AskAboutBill token={token} bill={bill} onPaid={onPaid} />
-          {!settled && <PayOptions token={token} bill={bill} onPaid={onPaid} />}
+          {!settled && <PayOptions token={token} bill={bill} onPaid={onPaid} planPick={planPick} />}
         </PayPalScope>
 
         {bill.payments.length > 0 && (
@@ -133,7 +168,12 @@ export function BillStep({ token, bill, onPaid }: Props) {
           {bill.practice.name} · {bill.practice.address}
         </footer>
       </div>
-      <StickyPay bill={bill} />
+      <StickyPay
+        bill={bill}
+        label={
+          plans.length > 0 ? t('payOrPlan', { amount: owed }) : t('payAmount', { amount: owed })
+        }
+      />
     </div>
   );
 }

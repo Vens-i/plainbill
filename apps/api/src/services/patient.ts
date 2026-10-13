@@ -356,6 +356,7 @@ export function patientBill(ctx: Ctx, invoiceId: number): PatientBill {
       address: [p.addressLine1, p.addressLine2].filter(Boolean).join(', '),
     },
     firstName: r.patientFirstName,
+    lastInitial: r.patientName.slice(r.patientFirstName.length).trim().charAt(0).toUpperCase(),
     status: r.status,
     visit: { date: r.visitDate, provider: r.provider },
     dueDate: invoice.dueDate ?? r.visitDate,

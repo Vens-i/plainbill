@@ -80,7 +80,7 @@ export function AskAboutBill({ token, bill, onPaid }: Props) {
   };
 
   return (
-    <section className="pay-card pay-ask" aria-labelledby="pay-ask-title">
+    <section id="ask" className="pay-card pay-ask" aria-labelledby="pay-ask-title">
       <div className="pay-ask-head">
         <h2 id="pay-ask-title" className="pay-h2">
           Ask about your bill

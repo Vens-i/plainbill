@@ -175,16 +175,77 @@
   flex-direction: column;
   gap: 20px;
 }
+/* ── Top bar (after verification) ── */
+.pay-topbar-inner {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 20px 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.pay-topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.pay-monogram {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--teal-700);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pay-topbar-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+}
+.pay-topbar-sub {
+  display: none;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+@media (min-width: 1200px) {
+  .pay-topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .pay-topbar-inner {
+    max-width: 1600px;
+    padding: 14px 56px;
+  }
+  .pay-topbar-sub {
+    display: block;
+  }
+}
+
+/* ── Hero ── */
 .pay-hero {
   padding: 0 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
 }
 .pay-hero-hi {
-  font-size: 15px;
+  font-size: 18px;
   color: var(--ink-2);
 }
 .pay-hero-amount {
   font-size: 52px;
-  font-weight: 800;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
   line-height: 1.05;
   margin-top: 2px;
@@ -193,6 +254,55 @@
   font-size: 15px;
   color: var(--ink-2);
   margin-top: 6px;
+}
+.pay-hero-actions {
+  display: none;
+}
+.pay-hero-btn {
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 10px;
+  font: 600 17px var(--font-ui);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pay-hero-btn.is-ask {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+}
+.pay-hero-btn.is-ask span {
+  color: var(--teal-700);
+  margin-right: 4px;
+}
+.pay-hero-btn.is-plan {
+  background: var(--surface);
+  border: 1.5px solid var(--teal-700);
+  color: var(--teal-700);
+}
+.pay-hero-btn.is-pay {
+  background: var(--teal-700);
+  border: 0;
+  color: #fff;
+}
+.pay-hero-btn.is-pay:hover {
+  background: var(--teal-800);
+}
+.pay-hero-btn:hover:not(.is-pay) {
+  background: var(--teal-50);
+}
+@media (min-width: 1200px) {
+  .pay-hero-hi {
+    font-size: 20px;
+  }
+  .pay-hero-amount {
+    font-size: 60px;
+  }
+  .pay-hero-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
 }
 .pay-cta {
   height: 52px;
@@ -650,6 +760,7 @@
 }
 @media (max-width: 1199.98px) {
   .pay-main.is-bill {
+    padding-top: 20px;
     padding-bottom: 104px;
   }
 }
@@ -661,7 +772,7 @@
 @media (min-width: 1200px) {
   .pay-main.is-bill {
     max-width: 1600px;
-    padding: 32px 56px 48px;
+    padding: 28px 56px 48px;
   }
   .pay-main.is-bill .pay-cta {
     max-width: 360px;

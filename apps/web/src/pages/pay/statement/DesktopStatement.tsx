@@ -5,11 +5,13 @@
  * whenever the section resizes or the fonts finish loading.
  *
  * The notes are one <ol> in note order (1…n); only their positions split them into two columns.
+ * Each note starts with a visually hidden button (shown on keyboard focus) that brings its card
+ * forward and pulses its mark.
  */
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { StatementLayout, StatementNote } from '@plainbill/api/contract';
 import { Arrows, type ArrowSpec } from './Arrows';
-import { attachPoint, placeCards } from './geometry';
+import { attachPoint, pinPositions, placeCards } from './geometry';
 import { Highlights } from './Highlights';
 import { NoteCard } from './NoteCard';
 import { StatementSvg } from './StatementSvg';
@@ -17,14 +19,21 @@ import { StatementSvg } from './StatementSvg';
 const GAP = 24;
 
 interface Props {
-  layout: StatementLayout;
-  notes: StatementNote[];
+  layout: StatementLayout | null;
+  /** Null while loading. */
+  notes: StatementNote[] | null;
+  notesFailed: boolean;
   label: string;
   phone: string;
   chipLabel: string;
+  unavailable: string;
+  noteLabel: (n: number, title: string | null) => string;
   showMarks: boolean;
   pulse: string | null;
   onPulse: (anchorId: string) => void;
+  caption: ReactNode;
+  footnote: ReactNode;
+  loading: ReactNode;
 }
 
 interface Placed {
@@ -37,12 +46,18 @@ interface Placed {
 export function DesktopStatement({
   layout,
   notes,
+  notesFailed,
   label,
   phone,
   chipLabel,
+  unavailable,
+  noteLabel,
   showMarks,
   pulse,
   onPulse,
+  caption,
+  footnote,
+  loading,
 }: Props) {
   const deskRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
@@ -50,13 +65,19 @@ export function DesktopStatement({
   const rightRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef(new Map<string, HTMLLIElement>());
   const [placed, setPlaced] = useState<Placed | null>(null);
+  const [paperWidth, setPaperWidth] = useState(0);
 
   const measure = useCallback(() => {
     const desk = deskRef.current;
     const paper = paperRef.current;
-    if (!desk || !paper || !leftRef.current || !rightRef.current) return;
+    if (!desk || !paper || !leftRef.current || !rightRef.current || !layout) return;
     const d = desk.getBoundingClientRect();
     const p = paper.getBoundingClientRect();
+    setPaperWidth(p.width);
+    if (!notes?.length) {
+      setPlaced(null);
+      return;
+    }
     const scale = p.width / layout.width;
     const box = { left: p.left - d.left, top: p.top - d.top };
     const cols = {
@@ -77,7 +98,7 @@ export function DesktopStatement({
 
     const positions: Placed['positions'] = {};
     const arrows: ArrowSpec[] = [];
-    let bottom = box.top + p.height;
+    let bottom = d.height;
     for (const side of ['left', 'right'] as const) {
       const col = cols[side];
       const mine = notes
@@ -127,49 +148,114 @@ export function DesktopStatement({
     };
   }, [measure]);
 
+  const focusNote = (id: string) => {
+    const li = cardRefs.current.get(id);
+    const card = li?.querySelector<HTMLElement>('.st-card');
+    card?.focus({ preventScroll: true });
+    li?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    onPulse(id);
+  };
+
+  // When the notes can't load: numbered pins on the paper, and a plain message.
+  const pins =
+    layout && notesFailed && paperWidth
+      ? pinPositions(layout.anchors, paperWidth / layout.width, [0, 0, 612, 792])
+      : null;
+
   return (
     <div
       ref={deskRef}
       className={`st-desk${placed ? ' is-placed' : ''}`}
       style={placed ? { minHeight: placed.height } : undefined}
     >
-      <div ref={leftRef} className="st-desk-col" aria-hidden="true" />
-      <div ref={paperRef} className="st-paper-wrap">
-        <StatementSvg layout={layout} label={label}>
-          {showMarks && <Highlights anchors={layout.anchors} pulse={pulse} onSelect={onPulse} />}
-        </StatementSvg>
+      <div className="st-desk-caption">{caption}</div>
+      <div ref={leftRef} className="st-desk-col is-left">
+        {notes === null && !notesFailed && <SkeletonCard />}
+        {notesFailed && <p className="st-unavailable">{unavailable}</p>}
       </div>
-      <div ref={rightRef} className="st-desk-col" aria-hidden="true" />
+      {layout ? (
+        <div ref={paperRef} className="st-paper-wrap">
+          <StatementSvg layout={layout} label={label}>
+            {showMarks && (
+              <Highlights anchors={layout.anchors} pulse={pulse} onSelect={focusNote} />
+            )}
+          </StatementSvg>
+          {pins &&
+            layout.anchors.map((a, i) => {
+              const at = pins.get(a.id);
+              return at ? (
+                <span
+                  key={a.id}
+                  className="st-pin is-static"
+                  style={{ left: at.x, top: at.y }}
+                  aria-hidden="true"
+                >
+                  {i + 1}
+                </span>
+              ) : null;
+            })}
+        </div>
+      ) : (
+        <div ref={paperRef} className="st-desk-paper">
+          {loading}
+        </div>
+      )}
+      <div ref={rightRef} className="st-desk-col is-right">
+        {notes === null && !notesFailed && (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        )}
+      </div>
+      <div className="st-desk-footnote">{footnote}</div>
 
       {showMarks && placed && (
         <Arrows arrows={placed.arrows} width={placed.width} height={placed.height} />
       )}
 
-      <ol className="st-notes-desk">
-        {notes.map((note) => {
-          const pos = placed?.positions[note.anchorId];
-          return (
-            <li
-              key={note.anchorId}
-              ref={(el) => {
-                if (el) cardRefs.current.set(note.anchorId, el);
-                else cardRefs.current.delete(note.anchorId);
-              }}
-              style={
-                pos ? { left: pos.left, top: pos.top, width: pos.width } : { visibility: 'hidden' }
-              }
-            >
-              <NoteCard
-                note={note}
-                phone={phone}
-                chipLabel={chipLabel}
-                pulsing={pulse === note.anchorId}
-                onSelect={() => onPulse(note.anchorId)}
-              />
-            </li>
-          );
-        })}
-      </ol>
+      {notes && notes.length > 0 && (
+        <ol className="st-notes-desk">
+          {notes.map((note) => {
+            const pos = placed?.positions[note.anchorId];
+            return (
+              <li
+                key={note.anchorId}
+                ref={(el) => {
+                  if (el) cardRefs.current.set(note.anchorId, el);
+                  else cardRefs.current.delete(note.anchorId);
+                }}
+                style={
+                  pos
+                    ? { left: pos.left, top: pos.top, width: pos.width }
+                    : { visibility: 'hidden' }
+                }
+              >
+                <button type="button" className="st-twin" onClick={() => focusNote(note.anchorId)}>
+                  {noteLabel(note.n, note.title)}
+                </button>
+                <NoteCard
+                  note={note}
+                  phone={phone}
+                  chipLabel={chipLabel}
+                  pulsing={pulse === note.anchorId}
+                  onSelect={() => onPulse(note.anchorId)}
+                />
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div className="st-card st-card-skeleton" aria-hidden="true">
+      <span />
+      <span />
+      <span />
     </div>
   );
 }

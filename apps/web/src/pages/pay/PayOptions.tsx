@@ -3,7 +3,7 @@
  * server; the browser only says "full" or, when staff allowed it, how much to pay now.
  * Plans (when staff offered one) use PayPal Subscriptions: first payment today, no interest.
  */
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   INSTANCE_LOADING_STATE,
   PayLaterOneTimePaymentButton,
@@ -23,6 +23,8 @@ interface Props {
   token: string;
   bill: PatientBill;
   onPaid: (result: PayResult, kind: Paid['kind']) => void;
+  /** "Pay over time" in the hero: pre-select this plan (`at` makes each click count). */
+  planPick?: { months: 3 | 6; at: number } | null;
 }
 
 /** "45.5" / "$45.50" → 4550, or null. */
@@ -35,7 +37,7 @@ function parseDollars(text: string): number | null {
 const message = (err: unknown) =>
   err instanceof ApiError ? err.message : 'PayPal could not finish. Please try again.';
 
-export function PayOptions({ token, bill, onPaid }: Props) {
+export function PayOptions({ token, bill, onPaid, planPick }: Props) {
   const total = bill.amounts.remainingCents;
   const minimum = bill.options.partialMinimumCents;
   const [mode, setMode] = useState<'full' | 'part'>('full');
@@ -44,6 +46,12 @@ export function PayOptions({ token, bill, onPaid }: Props) {
     bill.options.plans.find((p) => p.selected)?.months ?? bill.options.plans[0]?.months ?? null,
   );
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (planPick && bill.options.plans.some((p) => p.months === planPick.months)) {
+      setMonths(planPick.months);
+    }
+  }, [planPick, bill.options.plans]);
 
   const part = parseDollars(partText);
   const partProblem =

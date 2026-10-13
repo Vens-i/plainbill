@@ -3,7 +3,7 @@
  * line, the active line highlighted, a zoom strip showing that line at 1.6×, and one note at a
  * time with Previous / "4 of 6" / Next. Tap a pin to jump to its note; swipe the card to step.
  */
-import { useLayoutEffect, useRef, useState, type PointerEvent } from 'react';
+import { useLayoutEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import type { StatementLayout, StatementNote } from '@plainbill/api/contract';
 import { dropArrow, PHONE_CROP, pinPositions, stripCrop } from './geometry';
 import { Highlights } from './Highlights';
@@ -39,6 +39,8 @@ interface Props {
   onActive: (index: number) => void;
   pulse: string | null;
   onPulse: (anchorId: string) => void;
+  /** Under the pager (the "Ask about this bill" link). */
+  below?: ReactNode;
 }
 
 export function PhoneStatement({
@@ -52,6 +54,7 @@ export function PhoneStatement({
   onActive,
   pulse,
   onPulse,
+  below,
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
@@ -212,6 +215,7 @@ export function PhoneStatement({
             {strings.next}
           </button>
         </div>
+        {below}
       </div>
     </div>
   );

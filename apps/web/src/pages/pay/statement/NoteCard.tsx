@@ -47,6 +47,7 @@ export const NoteCard = forwardRef<HTMLDivElement, Props>(function NoteCard(
     <div
       ref={ref}
       className={`st-card${active ? ' is-active' : ''}${pulsing ? ' is-pulsing' : ''}`}
+      tabIndex={-1}
       style={{ ...style, ['--tilt' as string]: `${angle}deg` }}
       onClick={onSelect}
     >
