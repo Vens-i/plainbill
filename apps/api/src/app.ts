@@ -7,6 +7,7 @@ import {
   RecordedEobExtractor,
   RuleBillAssistant,
   RuleSuggester,
+  TemplateStatementAnnotator,
   TemplateMessageDrafter,
 } from '@plainbill/ai';
 import {
@@ -55,6 +56,7 @@ export function offlineAi(recordingsDir = DEFAULT_RECORDINGS_DIR): AiServices {
     drafter: new TemplateMessageDrafter(),
     assistant: new RuleBillAssistant(),
     suggester: new RuleSuggester(),
+    annotator: new TemplateStatementAnnotator(),
     available: false,
     model: null,
   };

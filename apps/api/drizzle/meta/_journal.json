@@ -43,6 +43,13 @@
       "when": 1791918172766,
       "tag": "0005_patient_addresses",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791918737930,
+      "tag": "0006_statement_notes",
+      "breakpoints": true
     }
   ]
 }

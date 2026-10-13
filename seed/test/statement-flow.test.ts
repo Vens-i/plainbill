@@ -13,6 +13,7 @@ import {
   type DrawerData,
   type PatientStatement,
   type SendResult,
+  type StatementNotes,
 } from '@plainbill/api';
 import { loadSeed } from '../src/load';
 import { SEED_TODAY } from '../src/spec';
@@ -219,5 +220,55 @@ describe('staff preview', () => {
   it('refuses denied claims', async () => {
     const james = await rowOf('James Whitfield');
     expect((await call('GET', `/balances/${james.id}/statement.pdf`)).status).toBe(409);
+  });
+});
+
+describe('statement notes (no API key: templates)', () => {
+  let token = '';
+  let cookie = '';
+
+  beforeAll(async () => {
+    token = tokenOf(await rowOf('Maria Delgado'));
+    cookie = (await verify(token, 'Delgado', [4, 17, 1984])).cookie;
+  });
+
+  const notes = (lang: string, withCookie = true) =>
+    call<StatementNotes>('GET', `/pay/${token}/statement/notes?lang=${lang}`, undefined, {
+      ...(withCookie ? { cookie } : {}),
+    });
+
+  it('needs the session', async () => {
+    expect((await notes('en', false)).status).toBe(401);
+  });
+
+  it('numbers the template notes and attaches each printed line', async () => {
+    const { status, json } = await notes('en');
+    expect(status).toBe(200);
+    expect(json).toMatchObject({ lang: 'en', source: 'template', fallback: false });
+    expect(json.notes.map((n) => [n.n, n.anchorId, n.title, n.quote])).toEqual([
+      [1, 'amount_due', 'This is what you owe', 'PAY THIS AMOUNT $240.00'],
+      [2, 'charges', 'What you had done', '99214 · 80053 · 93000'],
+      [3, 'insurance_payment', 'Your insurance paid $210', 'INSPMT −210.00'],
+      [4, 'discount', 'A discount, not a bill', 'CO45 −400.00'],
+      [5, 'patient_responsibility', "Why there's still $240", 'PR1 PR2 · DED 200.00 COINS 40.00'],
+      [6, 'messages', 'You have options', '3 MONTHLY PAYMENTS'],
+    ]);
+  });
+
+  it('writes Spanish, and falls back to English (flagged) for languages without a template', async () => {
+    const es = (await notes('es')).json;
+    expect(es).toMatchObject({ lang: 'es', fallback: false });
+    expect(es.notes[3]!.title).toBe('Un descuento, no un cobro');
+    const ht = (await notes('ht')).json;
+    expect(ht).toMatchObject({ lang: 'ht', source: 'template', fallback: true });
+    expect(ht.notes[3]!.title).toBe('A discount, not a bill');
+  });
+
+  it('refuses an unknown language', async () => {
+    expect((await notes('xx')).status).toBe(400);
+  });
+
+  it('keeps template notes out of the cache', () => {
+    expect(db.select().from(schema.statementNotes).all()).toEqual([]);
   });
 });

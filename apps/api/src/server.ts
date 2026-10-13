@@ -2,6 +2,7 @@ import {
   ClaudeBillAssistant,
   ClaudeEobExtractor,
   ClaudeMessageDrafter,
+  ClaudeStatementAnnotator,
   ClaudeSuggester,
   createClaudeClient,
   RecordedEobExtractor,
@@ -32,6 +33,7 @@ function aiServices(config: Config): AiServices {
     drafter: new ClaudeMessageDrafter({ client, model }),
     assistant: new ClaudeBillAssistant({ client, model }),
     suggester: new ClaudeSuggester({ client, model }),
+    annotator: new ClaudeStatementAnnotator({ client, model }),
     available: true,
     model,
   };

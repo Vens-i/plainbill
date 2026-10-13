@@ -12,6 +12,7 @@ import type {
   PatientStatement,
   PayLinkInfo,
   PayResult,
+  StatementNotes,
 } from '../contract';
 import { confirmAction, factsFor, proposalHandler, QuestionLimiter } from '../services/assistant';
 import {
@@ -28,6 +29,7 @@ import {
 import { readCookie, SESSION_COOKIE } from '../services/sessions';
 import { statementFileName, statementFor, statementIdFor } from '../services/statement';
 import { renderStatementPdf } from '../services/statement-pdf';
+import { statementNotesFor } from '../services/statement-notes';
 import type { RouteContext } from './context';
 
 type TokenParams = { Params: { token: string } };
@@ -124,6 +126,15 @@ export function registerPatientRoutes(api: FastifyInstance, ctx: RouteContext): 
           .header('content-disposition', `inline; filename="${statementFileName(name, id)}"`)
           .send(Buffer.from(pdf));
       });
+
+      /** Margin notes for the statement, in the patient's language (?lang=es; default en). */
+      pay.get<TokenParams & { Querystring: { lang?: string } }>(
+        '/:token/statement/notes',
+        async (request): Promise<StatementNotes> => {
+          const invoice = verifiedInvoice(request, request.params.token);
+          return statementNotesFor(ctx, invoice.id, request.query.lang || 'en');
+        },
+      );
 
       pay.post<TokenParams & { Body: { amountCents?: unknown; fundingSource?: unknown } }>(
         '/:token/orders',

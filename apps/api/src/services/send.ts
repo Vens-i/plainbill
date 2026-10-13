@@ -38,8 +38,9 @@ import {
 import { renderBillEmail, type BillEmailData, type RenderedEmail } from './email';
 import { markInvoiceSent } from './payments';
 import { newPayToken, payUrl } from './sessions';
+import { prepareStatementNotes } from './statement-notes';
 
-type Ctx = Pick<RouteContext, 'db' | 'today' | 'paypal' | 'email' | 'appBaseUrl' | 'log'>;
+type Ctx = Pick<RouteContext, 'db' | 'today' | 'paypal' | 'email' | 'appBaseUrl' | 'log' | 'ai'>;
 
 function practiceRow(ctx: Ctx) {
   return ctx.db.select().from(practices).orderBy(asc(practices.id)).get()!;
@@ -265,6 +266,8 @@ export async function sendBalanceInvoice(
     ...(paypal ? { paypal } : {}),
     now,
   });
+  // Write the statement notes in the background (never awaited; failures are logged).
+  void prepareStatementNotes(ctx, invoiceId);
   // The suggestion ("Send invoice") is done; reminders get suggested later.
   db.update(balances)
     .set({ aiSuggestion: null, aiAction: null, aiSuggestionBy: null, updatedAt: now })

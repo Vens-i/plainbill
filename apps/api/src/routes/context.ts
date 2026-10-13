@@ -1,4 +1,10 @@
-import type { BillAssistant, EobExtractor, MessageDrafter, Suggester } from '@plainbill/ai';
+import type {
+  BillAssistant,
+  EobExtractor,
+  MessageDrafter,
+  StatementAnnotator,
+  Suggester,
+} from '@plainbill/ai';
 import type { IsoDate } from '@plainbill/core';
 import type { Db } from '../db/client';
 import type { EventBus } from '../events';
@@ -15,6 +21,8 @@ export interface AiServices {
   assistant: BillAssistant;
   /** Writes the dashboard's "AI suggests" column. */
   suggester: Suggester;
+  /** Writes the margin notes on the patient's itemized statement. */
+  annotator: StatementAnnotator;
   /** True when a live model is configured. */
   available: boolean;
   model: string | null;

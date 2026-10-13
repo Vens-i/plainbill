@@ -421,6 +421,33 @@ export interface IntakeResolution {
 }
 
 /**
+ * Margin notes for a patient's itemized statement, per invoice and language. A row is reused
+ * while the balance it was written for is unchanged (`balanceHash`); otherwise it's rewritten.
+ */
+export const statementNotes = sqliteTable(
+  'statement_notes',
+  {
+    id: integer('id').primaryKey(),
+    invoiceId: integer('invoice_id')
+      .notNull()
+      .references(() => invoices.id),
+    lang: text('lang').notNull(),
+    /** [{ anchorId, title, body }] in note order. */
+    notes: text('notes', { mode: 'json' })
+      .$type<Array<{ anchorId: string; title: string; body: string }>>()
+      .notNull(),
+    source: text('source', { enum: ['ai', 'template', 'mixed'] }).notNull(),
+    /** Some notes are English because the language had no template to fall back to. */
+    fallback: integer('fallback', { mode: 'boolean' }).notNull().default(false),
+    model: text('model'),
+    /** Remaining + paid cents (and plan state) when written. */
+    balanceHash: text('balance_hash').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('statement_notes_invoice_lang_unique').on(t.invoiceId, t.lang)],
+);
+
+/**
  * Payment actions the bill helper proposed. The amounts were computed by code when the card was
  * shown; "Confirm" can only run an action stored here, for the same bill, recently.
  */
