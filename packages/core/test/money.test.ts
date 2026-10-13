@@ -3,6 +3,7 @@ import {
   assertCents,
   centsToDecimalString,
   dollars,
+  findDollarAmounts,
   formatMoney,
   formatMoneyShort,
   parseDecimalToCents,
@@ -95,5 +96,14 @@ describe('cents helpers', () => {
     expect(sumCents([40000, 21000, 24000])).toBe(85000);
     expect(sumCents([])).toBe(0);
     expect(() => sumCents([1, 0.5])).toThrow();
+  });
+});
+
+describe('findDollarAmounts', () => {
+  it('finds every dollar figure, with or without cents', () => {
+    expect(findDollarAmounts('You owe $240, of $1,850.50 or $ 80.00 total. ¿Debe $240?')).toEqual([
+      24000, 185050, 8000, 24000,
+    ]);
+    expect(findDollarAmounts('Call (555) 014-2290 about 3 payments')).toEqual([]);
   });
 });

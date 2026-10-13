@@ -92,3 +92,12 @@ export function formatMoneyShort(value: Cents): string {
   const full = formatMoney(value);
   return full.endsWith('.00') ? full.slice(0, -3) : full;
 }
+
+const AMOUNT_RE = /\$\s?(\d{1,3}(?:,\d{3})*|\d+)(\.\d{1,2})?/g;
+
+/** Every dollar figure written in a piece of text ("$240", "$1,850.50", "$ 80.00"), in cents. */
+export function findDollarAmounts(text: string): Cents[] {
+  return [...text.matchAll(AMOUNT_RE)].map((m) =>
+    parseDecimalToCents(`${m[1]!.replaceAll(',', '')}${m[2] ?? ''}`),
+  );
+}

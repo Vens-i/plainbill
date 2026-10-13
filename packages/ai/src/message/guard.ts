@@ -2,7 +2,7 @@
  * Checks a drafted message before staff ever see it: every dollar figure must be one the core
  * computed, and nothing that looks like a procedure or diagnosis code may appear.
  */
-import { formatMoney, parseDecimalToCents } from '@plainbill/core';
+import { findDollarAmounts, formatMoney } from '@plainbill/core';
 import { allowedAmounts, type MessageFacts } from './facts';
 
 export interface GuardIssue {
@@ -10,16 +10,12 @@ export interface GuardIssue {
   detail: string;
 }
 
-const AMOUNT_RE = /\$\s?(\d{1,3}(?:,\d{3})*|\d+)(\.\d{1,2})?/g;
 /** Five-digit procedure codes (CPT) and ICD-10-looking codes. */
-const CODE_RES = [/\b\d{5}\b/, /\b[A-TV-Z]\d{2}\.\d{1,4}\b/];
+export const CODE_RES = [/\b\d{5}\b/, /\b[A-TV-Z]\d{2}\.\d{1,4}\b/];
 const MAX_WORDS = 140;
 
-export function findAmounts(text: string): number[] {
-  return [...text.matchAll(AMOUNT_RE)].map((m) =>
-    parseDecimalToCents(`${m[1]!.replaceAll(',', '')}${m[2] ?? ''}`),
-  );
-}
+/** Every dollar figure in a text, in cents (the same finder the core's own tests use). */
+export const findAmounts = findDollarAmounts;
 
 export function checkMessage(text: string, facts: MessageFacts): GuardIssue[] {
   const issues: GuardIssue[] = [];
