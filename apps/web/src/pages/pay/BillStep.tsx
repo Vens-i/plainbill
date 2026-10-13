@@ -6,6 +6,7 @@ import type { Paid } from './PayPage';
 import { AskAboutBill } from './AskAboutBill';
 import { PayOptions, PayPalScope } from './PayOptions';
 import { StatementExplained } from './statement/StatementExplained';
+import { StickyPay } from './StickyPay';
 import { Waterfall } from './Waterfall';
 
 interface Props {
@@ -132,6 +133,7 @@ export function BillStep({ token, bill, onPaid }: Props) {
           {bill.practice.name} · {bill.practice.address}
         </footer>
       </div>
+      <StickyPay bill={bill} />
     </div>
   );
 }

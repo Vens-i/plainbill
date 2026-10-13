@@ -176,3 +176,70 @@ export function placeCards(
   }
   return new Map(sorted.map((c, i) => [c.id, Math.max(0, tops[i]!)]));
 }
+
+/** The part of the page the phone thumbnail shows (PDF points): coupon amount box to messages. */
+export const PHONE_CROP: [number, number, number, number] = [0, 100, 612, 500];
+
+/**
+ * Numbered pins beside each mark on the phone thumbnail, in thumbnail pixels: at the mark's left
+ * edge for left-side notes, its right edge for right-side ones, nudged apart vertically where
+ * neighbouring rows would make them overlap.
+ */
+export function pinPositions(
+  anchors: Array<Pick<Anchor, 'id' | 'rect' | 'side'>>,
+  scale: number,
+  crop: [number, number, number, number] = PHONE_CROP,
+  size = 22,
+): Map<string, Point> {
+  const out = new Map<string, Point>();
+  const groups = new Map<string, Array<{ id: string; x: number; y: number }>>();
+  for (const a of anchors) {
+    const x = ((a.side === 'left' ? a.rect.x : a.rect.x + a.rect.w) - crop[0]) * scale;
+    const y = (a.rect.y + a.rect.h / 2 - crop[1]) * scale;
+    // Pins in the same column (within a pin's width) can collide; others can't.
+    const key = `${a.side}:${Math.round(x / size)}`;
+    groups.set(key, [...(groups.get(key) ?? []), { id: a.id, x, y }]);
+  }
+  for (const pins of groups.values()) {
+    const tops = placeCards(
+      pins.map((p) => ({ id: p.id, desiredCenter: p.y, height: size })),
+      2,
+      Number.POSITIVE_INFINITY,
+    );
+    for (const p of pins) out.set(p.id, { x: p.x, y: tops.get(p.id)! + size / 2 });
+  }
+  return out;
+}
+
+/**
+ * The zoom strip's crop around a mark (PDF points): `width` × `height` points, centered on the
+ * mark's rows; wide marks start at their left edge, narrow ones are centered.
+ */
+export function stripCrop(
+  rect: Rect,
+  width: number,
+  height: number,
+): [number, number, number, number] {
+  const x = rect.w < width * 0.8 ? rect.x + rect.w / 2 - width / 2 : rect.x - 8;
+  const y = rect.y + rect.h / 2 - height / 2;
+  return [
+    round(Math.min(Math.max(0, x), 612 - width)),
+    round(Math.min(Math.max(0, y), 792 - height)),
+    round(width),
+    round(height),
+  ];
+}
+
+/** A short hand-drawn arrow dropping from a mark down into the zoom strip. */
+export function dropArrow(from: Point, to: Point, key: string): { line: string; head: string } {
+  const rand = seeded(`${key}:drop`);
+  const bend = 18 + rand() * 10;
+  const c1 = { x: from.x + bend, y: from.y + (to.y - from.y) * 0.35 };
+  const c2 = { x: to.x + bend * 0.4, y: to.y - (to.y - from.y) * 0.4 };
+  const line = `M${round(from.x)} ${round(from.y)} C${round(c1.x)} ${round(c1.y)} ${round(c2.x)} ${round(c2.y)} ${round(to.x)} ${round(to.y)}`;
+  const angle = Math.atan2(to.y - c2.y, to.x - c2.x);
+  const wing = (a: number) =>
+    `${round(to.x - 11 * Math.cos(angle + a))} ${round(to.y - 11 * Math.sin(angle + a))}`;
+  const spread = (28 * Math.PI) / 180;
+  return { line, head: `M${wing(spread)} L${round(to.x)} ${round(to.y)} L${wing(-spread)}` };
+}

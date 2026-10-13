@@ -198,3 +198,140 @@
     animation: none;
   }
 }
+
+/* ── Phone: thumbnail with pins, zoom strip, one note at a time ── */
+.st-phone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.st-thumb {
+  position: relative;
+}
+.st-thumb .st-paper-wrap {
+  border-radius: 10px;
+  overflow: hidden;
+}
+.st-pin {
+  position: absolute;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid #1d5c5c;
+  background: #fff;
+  color: #134545;
+  font: 700 12px/1 var(--font-ui);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.st-pin.is-active {
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  background: #1d5c5c;
+  color: #fff;
+  font-size: 15px;
+  box-shadow: 0 0 0 3px #f5c542;
+}
+.st-pin:focus-visible {
+  outline: 2px solid var(--teal-800);
+  outline-offset: 3px;
+}
+.st-strip {
+  height: 68px;
+  border: 2px solid #1d5c5c;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+.st-strip .st-svg {
+  height: 64px;
+  width: 100%;
+}
+.st-drop {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  overflow: visible;
+  pointer-events: none;
+}
+.st-phone-card {
+  background: #fffdf8;
+  border: 1px solid #e5e1d9;
+  border-radius: 16px;
+  padding: 4px 4px 12px;
+  touch-action: pan-y;
+}
+.st-phone-card .st-card {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.st-phone-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.st-card-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 140px;
+}
+.st-card-skeleton span {
+  height: 14px;
+  border-radius: 7px;
+  background: #ece8e1;
+}
+.st-card-skeleton span:first-child {
+  height: 24px;
+  width: 70%;
+}
+.st-card-skeleton span:last-child {
+  width: 55%;
+}
+.st-unavailable {
+  margin: 0;
+  padding: 18px;
+  color: var(--ink-2);
+  font-size: 15px;
+}
+.st-pager {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+}
+.st-pager-btn {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font: 700 16px var(--font-ui);
+  cursor: pointer;
+  justify-self: start;
+}
+.st-pager-btn.is-next {
+  justify-self: end;
+  border-color: #1d5c5c;
+  color: #134545;
+}
+.st-pager-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.st-pager-pos {
+  font-size: 15px;
+  color: var(--ink-2);
+  text-align: center;
+}

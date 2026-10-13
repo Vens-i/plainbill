@@ -9,8 +9,7 @@ import type { PatientBill, PatientStatement, StatementNotes } from '@plainbill/a
 import { formatMoney } from '@plainbill/core';
 import { payApi } from '../../../lib/api';
 import { DesktopStatement } from './DesktopStatement';
-import { Highlights } from './Highlights';
-import { StatementSvg } from './StatementSvg';
+import { PhoneStatement, type PhoneStrings } from './PhoneStatement';
 import { DESKTOP_QUERY, useMedia } from './useMedia';
 
 interface Props {
@@ -23,6 +22,8 @@ export function StatementExplained({ token, bill }: Props) {
   const [statement, setStatement] = useState<PatientStatement | null>(null);
   const [failed, setFailed] = useState(false);
   const [notes, setNotes] = useState<StatementNotes | null>(null);
+  const [notesFailed, setNotesFailed] = useState(false);
+  const [active, setActive] = useState(0);
   const [pulse, setPulse] = useState<string | null>(null);
   const pulseTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const lang = 'en';
@@ -46,8 +47,15 @@ export function StatementExplained({ token, bill }: Props) {
     let live = true;
     payApi
       .statementNotes(token, lang)
-      .then((n) => live && setNotes(n))
-      .catch((err: unknown) => console.warn('Statement notes unavailable', err));
+      .then((n) => {
+        if (!live) return;
+        setNotes(n);
+        setNotesFailed(false);
+      })
+      .catch((err: unknown) => {
+        console.warn('Statement notes unavailable', err);
+        if (live) setNotesFailed(true);
+      });
     return () => {
       live = false;
     };
@@ -60,6 +68,15 @@ export function StatementExplained({ token, bill }: Props) {
   }, []);
 
   if (failed) return null;
+  const strings: PhoneStrings = {
+    chipLabel: 'On your bill:',
+    previous: '‹ Previous',
+    next: 'Next ›',
+    position: (n, total) => `${n} of ${total}`,
+    pinLabel: (n, title) => (title ? `Note ${n}: ${title}` : `Note ${n}`),
+    stripLabel: (quote) => `Close-up of your bill: ${quote}`,
+    unavailable: "Explanations aren't available right now.",
+  };
   const label = `Your itemized statement from ${bill.practice.name}, amount due ${formatMoney(bill.amounts.remainingCents)}`;
 
   return (
@@ -75,10 +92,10 @@ export function StatementExplained({ token, bill }: Props) {
           aria-busy="true"
           aria-label="Loading your statement"
         />
-      ) : desktop && notes ? (
+      ) : desktop ? (
         <DesktopStatement
           layout={statement.layout}
-          notes={notes.notes}
+          notes={notes?.notes ?? []}
           label={label}
           phone={bill.practice.phone}
           chipLabel="On your bill:"
@@ -87,11 +104,18 @@ export function StatementExplained({ token, bill }: Props) {
           onPulse={onPulse}
         />
       ) : (
-        <div className="st-paper-wrap">
-          <StatementSvg layout={statement.layout} label={label}>
-            <Highlights anchors={statement.layout.anchors} pulse={pulse} onSelect={onPulse} />
-          </StatementSvg>
-        </div>
+        <PhoneStatement
+          layout={statement.layout}
+          notes={notes ? notes.notes : notesFailed ? [] : null}
+          label={label}
+          phone={bill.practice.phone}
+          strings={strings}
+          showMarks
+          active={active}
+          onActive={setActive}
+          pulse={pulse}
+          onPulse={onPulse}
+        />
       )}
     </section>
   );

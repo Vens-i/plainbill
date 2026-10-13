@@ -3,6 +3,10 @@ import type { Anchor } from '@plainbill/api/contract';
 import {
   arrowPath,
   attachPoint,
+  dropArrow,
+  PHONE_CROP,
+  pinPositions,
+  stripCrop,
   highlightShape,
   loopPath,
   placeCards,
@@ -165,5 +169,39 @@ describe('note bodies', () => {
       { kind: 'money', text: '$1,200' },
       { kind: 'text', text: ' came off.' },
     ]);
+  });
+});
+
+describe('phone geometry', () => {
+  const rows = [
+    anchor({ id: 'insurance_payment', side: 'right', rect: { x: 155, y: 404.4, w: 426, h: 10 } }),
+    anchor({ id: 'discount', side: 'left', rect: { x: 155, y: 415.4, w: 426, h: 10 } }),
+    anchor({
+      id: 'patient_responsibility',
+      side: 'right',
+      rect: { x: 155, y: 426.4, w: 426, h: 10 },
+    }),
+  ];
+
+  it('puts pins at the mark’s edge and pushes neighbours in a column apart', () => {
+    const pins = pinPositions(rows, 0.6, PHONE_CROP, 22);
+    expect(pins.get('discount')).toEqual({ x: 93, y: (420.4 - 100) * 0.6 });
+    const a = pins.get('insurance_payment')!;
+    const b = pins.get('patient_responsibility')!;
+    expect(a.x).toBeCloseTo(348.6, 5);
+    expect(b.y - a.y).toBeGreaterThanOrEqual(24);
+  });
+
+  it('crops the zoom strip around the line, inside the page', () => {
+    expect(stripCrop({ x: 155, y: 415.4, w: 426, h: 10 }, 380, 68)).toEqual([147, 386.4, 380, 68]);
+    expect(stripCrop({ x: 392, y: 122, w: 82, h: 30 }, 380, 68)).toEqual([232, 103, 380, 68]);
+    expect(stripCrop({ x: 30, y: 760, w: 552, h: 54 }, 380, 68)[1]).toBe(724);
+  });
+
+  it('drops a short arrow into the strip', () => {
+    const { line, head } = dropArrow({ x: 100, y: 10 }, { x: 140, y: 120 }, 'discount');
+    expect(line.startsWith('M100 10 C')).toBe(true);
+    expect(line.endsWith('140 120')).toBe(true);
+    expect(head).toContain('L140 120 L');
   });
 });
