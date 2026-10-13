@@ -8,7 +8,7 @@
  * Each note starts with a visually hidden button (shown on keyboard focus) that brings its card
  * forward and pulses its mark.
  */
-import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { StatementLayout, StatementNote } from '@plainbill/api/contract';
 import { Arrows, type ArrowSpec } from './Arrows';
 import { attachPoint, pinPositions, placeCards } from './geometry';
@@ -17,6 +17,10 @@ import { NoteCard } from './NoteCard';
 import { StatementSvg } from './StatementSvg';
 
 const GAP = 24;
+const MARK_STAGGER = 120;
+const MARK_MS = 250;
+const ARROW_STAGGER = 150;
+const ARROW_MS = 350;
 
 interface Props {
   layout: StatementLayout | null;
@@ -68,6 +72,11 @@ export function DesktopStatement({
   const rightRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef(new Map<string, HTMLLIElement>());
   const [placed, setPlaced] = useState<Placed | null>(null);
+  // The first time the notes are placed, the marks sweep in, then each arrow draws itself and
+  // its card fades up as the arrow lands (CSS; off under prefers-reduced-motion).
+  const [intro, setIntro] = useState<'waiting' | 'playing' | 'done'>('waiting');
+  const markCount = layout?.anchors.length ?? 0;
+  const marksEnd = Math.max(0, markCount - 1) * MARK_STAGGER + MARK_MS;
   const [paperWidth, setPaperWidth] = useState(0);
 
   const measure = useCallback(() => {
@@ -151,6 +160,18 @@ export function DesktopStatement({
     };
   }, [measure]);
 
+  const playing = intro !== 'done' && !!placed && !!notes?.length;
+  useEffect(() => {
+    if (playing && intro === 'waiting') setIntro('playing');
+  }, [playing, intro]);
+  const noteCount = notes?.length ?? 0;
+  useEffect(() => {
+    if (intro !== 'playing') return;
+    const total = marksEnd + noteCount * ARROW_STAGGER + ARROW_MS + 400;
+    const timer = setTimeout(() => setIntro('done'), total);
+    return () => clearTimeout(timer);
+  }, [intro, marksEnd, noteCount]);
+
   const focusNote = (id: string) => {
     const li = cardRefs.current.get(id);
     const card = li?.querySelector<HTMLElement>('.st-card');
@@ -168,8 +189,11 @@ export function DesktopStatement({
   return (
     <div
       ref={deskRef}
-      className={`st-desk${placed ? ' is-placed' : ''}`}
-      style={placed ? { minHeight: placed.height } : undefined}
+      className={`st-desk${placed ? ' is-placed' : ''}${intro !== 'done' ? ' is-intro' : ''}`}
+      style={{
+        ...(placed ? { minHeight: placed.height } : {}),
+        ['--marks-end' as string]: `${marksEnd}ms`,
+      }}
     >
       <div className="st-desk-caption">{caption}</div>
       <div ref={leftRef} className="st-desk-col is-left">
@@ -218,7 +242,7 @@ export function DesktopStatement({
 
       {notes && notes.length > 0 && (
         <ol className="st-notes-desk" lang={notesLang}>
-          {notes.map((note) => {
+          {notes.map((note, i) => {
             const pos = placed?.positions[note.anchorId];
             return (
               <li
@@ -229,7 +253,7 @@ export function DesktopStatement({
                 }}
                 style={
                   pos
-                    ? { left: pos.left, top: pos.top, width: pos.width }
+                    ? { left: pos.left, top: pos.top, width: pos.width, ['--i' as string]: i }
                     : { visibility: 'hidden' }
                 }
               >

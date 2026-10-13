@@ -176,8 +176,10 @@ export function PhoneStatement({
           height={size.root.height}
           aria-hidden="true"
         >
-          <path className="st-arrow-line" d={drop.line} />
-          <path className="st-arrow-head" d={drop.head} />
+          <g key={anchor.id}>
+            <path className="st-arrow-line" d={drop.line} pathLength={1} />
+            <path className="st-arrow-head" d={drop.head} pathLength={1} />
+          </g>
         </svg>
       )}
 

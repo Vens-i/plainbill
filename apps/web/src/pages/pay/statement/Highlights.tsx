@@ -29,27 +29,30 @@ export function Highlights({ anchors, only, pulse, onSelect }: Props) {
               className={`st-loop${pulsing}`}
               style={{ ['--i' as string]: i }}
               d={loopPath(a)}
+              pathLength={1}
               data-anchor={a.id}
               onClick={onSelect ? () => onSelect(a.id) : undefined}
             />
           );
         }
         const s = highlightShape(a);
+        // The tilt sits on a wrapper, so the sweep-in animation (a CSS transform on the rect)
+        // doesn't replace it.
         return (
-          <rect
-            key={a.id}
-            className={`st-highlight${pulsing}`}
-            style={{ ['--i' as string]: i }}
-            x={s.x}
-            y={s.y}
-            width={s.w}
-            height={s.h}
-            rx={s.rx}
-            ry={s.ry}
-            transform={`rotate(${s.rotate} ${s.x + s.w / 2} ${s.y + s.h / 2})`}
-            data-anchor={a.id}
-            onClick={onSelect ? () => onSelect(a.id) : undefined}
-          />
+          <g key={a.id} transform={`rotate(${s.rotate} ${s.x + s.w / 2} ${s.y + s.h / 2})`}>
+            <rect
+              className={`st-highlight${pulsing}`}
+              style={{ ['--i' as string]: i }}
+              x={s.x}
+              y={s.y}
+              width={s.w}
+              height={s.h}
+              rx={s.rx}
+              ry={s.ry}
+              data-anchor={a.id}
+              onClick={onSelect ? () => onSelect(a.id) : undefined}
+            />
+          </g>
         );
       })}
     </g>

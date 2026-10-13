@@ -31,7 +31,7 @@ const scrollToPay = () => document.getElementById('pay')?.scrollIntoView({ behav
 
 export function BillStep({ token, bill, onPaid }: Props) {
   const { t, lang } = useI18n();
-  const [termsOpen, setTermsOpen] = useState(true);
+  const [termsOpen, setTermsOpen] = useState(false);
   const [planPick, setPlanPick] = useState<{ months: 3 | 6; at: number } | null>(null);
   const { amounts } = bill;
   const paidSome = amounts.paidCents > 0;
@@ -94,22 +94,6 @@ export function BillStep({ token, bill, onPaid }: Props) {
           <h2 className="pay-h2">{t('shortVersion')}</h2>
           <p className="pay-sub">{t('tapBar')}</p>
           <Waterfall steps={bill.waterfall} />
-        </section>
-
-        <section className="pay-card">
-          <h2 className="pay-h2">What you were seen for</h2>
-          <ul className="pay-lines">
-            {bill.services.map((s, i) => (
-              <li key={i}>
-                <span>{s.name}</span>
-                <span>{formatMoney(s.chargeCents)}</span>
-              </li>
-            ))}
-            <li className="pay-lines-total">
-              <span>Total billed</span>
-              <span>{formatMoney(amounts.billedCents)}</span>
-            </li>
-          </ul>
         </section>
 
         {bill.terms.length > 0 && (

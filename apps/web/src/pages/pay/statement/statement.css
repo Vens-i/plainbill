@@ -678,3 +678,83 @@
 .st-lang-close {
   height: 48px;
 }
+
+/* ── Motion: marks sweep in, arrows draw in note order, cards fade up as each arrow lands ── */
+.st-highlight {
+  transform-box: fill-box;
+  transform-origin: left center;
+}
+@keyframes st-sweep {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes st-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes st-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.st-desk.is-intro .st-highlight {
+  animation: st-sweep 250ms ease-out both;
+  animation-delay: calc(var(--i) * 120ms);
+}
+.st-desk.is-intro .st-loop {
+  stroke-dasharray: 1;
+  animation: st-draw 400ms ease-in-out both;
+  animation-delay: calc(var(--i) * 120ms);
+}
+.st-desk.is-intro .st-arrow-line {
+  stroke-dasharray: 1;
+  animation: st-draw 350ms ease-out both;
+  animation-delay: calc(var(--marks-end) + var(--i) * 150ms);
+}
+.st-desk.is-intro .st-arrow-head {
+  stroke-dasharray: 1;
+  animation: st-draw 120ms ease-out both;
+  animation-delay: calc(var(--marks-end) + var(--i) * 150ms + 300ms);
+}
+.st-desk.is-intro .st-notes-desk > li {
+  animation: st-fade-up 300ms ease-out both;
+  animation-delay: calc(var(--marks-end) + var(--i) * 150ms + 300ms);
+}
+/* Phone: the active line sweeps in each time, and the arrow drops into the zoom strip. */
+.st-phone .st-highlight {
+  animation: st-sweep 250ms ease-out both;
+}
+.st-drop .st-arrow-line,
+.st-drop .st-arrow-head {
+  stroke-dasharray: 1;
+  animation: st-draw 300ms ease-out both 200ms;
+}
+.st-drop .st-arrow-head {
+  animation-delay: 480ms;
+  animation-duration: 120ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .st-desk.is-intro .st-highlight,
+  .st-desk.is-intro .st-loop,
+  .st-desk.is-intro .st-arrow-line,
+  .st-desk.is-intro .st-arrow-head,
+  .st-desk.is-intro .st-notes-desk > li,
+  .st-phone .st-highlight,
+  .st-drop .st-arrow-line,
+  .st-drop .st-arrow-head {
+    animation: none;
+  }
+}
