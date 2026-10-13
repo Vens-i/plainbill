@@ -26,7 +26,8 @@
     "@plainbill/core": "workspace:*",
     "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.45.4",
-    "fastify": "^5.12.5"
+    "fastify": "^5.12.5",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

@@ -7,7 +7,10 @@ import type {
   IsoDate,
   PatientShare,
   PlanOption,
+  StatementLayout,
 } from '@plainbill/core';
+
+export type { Anchor, AnchorKind, Op, Rect, StatementLayout } from '@plainbill/core';
 
 export interface BalanceLine {
   code: string;
@@ -364,6 +367,37 @@ export interface PatientBill {
     schedule: Array<{ number: number; dueDate: IsoDate; amountCents: number; paid: boolean }>;
   } | null;
   paypal: { enabled: boolean; clientId: string | null; env: 'sandbox' | 'live' };
+}
+
+// ── Itemized statement, explained ───────────────────────────────────────────
+
+/** The practice's statement as drawing ops + anchors (PDF points, top-left origin). */
+export interface PatientStatement {
+  layout: StatementLayout;
+  /** "S0000014" */
+  statementId: string;
+  /** The same statement as a PDF (behind the same session cookie). */
+  pdfPath: string;
+}
+
+/** One margin note. `n` and `quote` come from code; the model only writes title and body. */
+export interface StatementNote {
+  anchorId: string;
+  /** 1…k, the badge number. */
+  n: number;
+  title: string;
+  body: string;
+  /** The printed line, for the "On your bill:" chip. */
+  quote: string;
+}
+
+export interface StatementNotes {
+  lang: string;
+  notes: StatementNote[];
+  /** "mixed": some notes fell back to the template. */
+  source: 'ai' | 'template' | 'mixed';
+  /** True when this language wasn't available and the notes are in English. */
+  fallback: boolean;
 }
 
 // ── Patient bill helper ─────────────────────────────────────────────────────

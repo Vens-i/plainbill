@@ -23,6 +23,8 @@ import {
   type DraftInput,
 } from '../services/drawer';
 import { emailPreview, sendBalanceInvoice, sendReminder } from '../services/send';
+import { statementFileName, statementPreview } from '../services/statement';
+import { renderStatementPdf } from '../services/statement-pdf';
 import { refreshSuggestions, type RefreshResult } from '../services/suggestions';
 import { publishChanged, type RouteContext } from './context';
 
@@ -130,6 +132,27 @@ export function registerDrawerRoutes(api: FastifyInstance, ctx: RouteContext): v
       return emailPreview(ctx, balanceId, draft);
     },
   );
+
+  /** "Preview statement (PDF)": works before sending, with a placeholder statement ID. */
+  api.get<{ Params: { id: string } }>('/balances/:id/statement.pdf', async (request, reply) => {
+    const balanceId = id(request.params.id);
+    const { model, layout } = statementPreview(
+      ctx,
+      balanceId,
+      drawer(balanceId).draft.paymentOption,
+    );
+    const { name } = model.input.practice;
+    const statementId = model.input.statementId;
+    const pdf = await renderStatementPdf(layout, {
+      title: `${name} statement ${statementId}`,
+      date: model.input.statementDate,
+    });
+    return reply
+      .type('application/pdf')
+      .header('cache-control', 'no-store')
+      .header('content-disposition', `inline; filename="${statementFileName(name, statementId)}"`)
+      .send(Buffer.from(pdf));
+  });
 
   api.post<{ Params: { id: string }; Body: { path?: unknown; value?: unknown } }>(
     '/balances/:id/review/resolve',

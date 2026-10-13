@@ -70,6 +70,9 @@ importers:
       fastify:
         specifier: ^5.12.5
         version: 5.12.5
+      pdf-lib:
+        specifier: ^1.17.1
+        version: 1.17.1
     devDependencies:
       '@types/better-sqlite3':
         specifier: ^7.6.13

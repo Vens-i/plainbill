@@ -9,6 +9,7 @@ import type {
   AssistantAnswer,
   AssistantConfirmResult,
   PatientBill,
+  PatientStatement,
   PayLinkInfo,
   PayResult,
 } from '../contract';
@@ -25,6 +26,8 @@ import {
   verifyPatient,
 } from '../services/patient';
 import { readCookie, SESSION_COOKIE } from '../services/sessions';
+import { statementFileName, statementFor, statementIdFor } from '../services/statement';
+import { renderStatementPdf } from '../services/statement-pdf';
 import type { RouteContext } from './context';
 
 type TokenParams = { Params: { token: string } };
@@ -94,6 +97,32 @@ export function registerPatientRoutes(api: FastifyInstance, ctx: RouteContext): 
       pay.get<TokenParams>('/:token/bill', async (request): Promise<PatientBill> => {
         const invoice = verifiedInvoice(request, request.params.token);
         return patientBill(ctx, invoice.id);
+      });
+
+      /** The practice's itemized statement (codes included: only behind verification). */
+      pay.get<TokenParams>('/:token/statement', async (request): Promise<PatientStatement> => {
+        const invoice = verifiedInvoice(request, request.params.token);
+        const { layout } = statementFor(ctx, invoice.id);
+        return {
+          layout,
+          statementId: statementIdFor(invoice.id),
+          pdfPath: `/api/pay/${request.params.token}/statement.pdf`,
+        };
+      });
+
+      pay.get<TokenParams>('/:token/statement.pdf', async (request, reply) => {
+        const invoice = verifiedInvoice(request, request.params.token);
+        const { model, layout } = statementFor(ctx, invoice.id);
+        const id = statementIdFor(invoice.id);
+        const name = model.input.practice.name;
+        const pdf = await renderStatementPdf(layout, {
+          title: `${name} statement ${id}`,
+          date: model.input.statementDate,
+        });
+        return reply
+          .type('application/pdf')
+          .header('content-disposition', `inline; filename="${statementFileName(name, id)}"`)
+          .send(Buffer.from(pdf));
       });
 
       pay.post<TokenParams & { Body: { amountCents?: unknown; fundingSource?: unknown } }>(
