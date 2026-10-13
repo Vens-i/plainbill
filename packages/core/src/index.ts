@@ -10,5 +10,7 @@ export * from './status';
 export * from './plan';
 export * from './selfpay-csv';
 export * from './statement/model';
+export * from './statement/layout';
+export * from './statement/metrics';
 export * from './x12/parse835';
 export { tokenize, readDelimiters, type Delimiters, type Segment } from './x12/tokenize';
