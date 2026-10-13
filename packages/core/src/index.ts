@@ -13,5 +13,6 @@ export * from './statement/model';
 export * from './statement/layout';
 export * from './statement/metrics';
 export * from './statement/notes-template';
+export * from './statement/languages';
 export * from './x12/parse835';
 export { tokenize, readDelimiters, type Delimiters, type Segment } from './x12/tokenize';

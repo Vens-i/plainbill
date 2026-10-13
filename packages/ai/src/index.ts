@@ -18,3 +18,6 @@ export * from './message/drafter';
 export * from './assistant/facts';
 export * from './assistant/assistant';
 export * from './suggest/suggest';
+export * from './annotate/facts';
+export * from './annotate/guard';
+export * from './annotate/annotator';
