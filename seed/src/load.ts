@@ -117,6 +117,11 @@ export async function loadSeed(db: Db, options: LoadSeedOptions = {}): Promise<S
         dob: v.patient.dob,
         email: v.patient.email,
         memberId: v.patient.memberId ?? null,
+        addressLine1: v.patient.address.line1,
+        addressLine2: v.patient.address.line2 ?? null,
+        city: v.patient.address.city,
+        state: v.patient.address.state,
+        zip: v.patient.address.zip,
       })
       .run();
   }

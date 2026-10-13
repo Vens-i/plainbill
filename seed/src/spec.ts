@@ -51,11 +51,27 @@ export interface SeedAdjustment {
   amount: number;
 }
 
+export interface SeedAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
 export interface SeedVisit {
   key: string;
   /** CLP01 / CSV visit_id — the practice's own claim number. */
   claimId: string;
-  patient: { firstName: string; lastName: string; dob: IsoDate; memberId?: string; email: string };
+  patient: {
+    firstName: string;
+    lastName: string;
+    dob: IsoDate;
+    memberId?: string;
+    email: string;
+    /** Fictional mailing address, printed on the statement. */
+    address: SeedAddress;
+  };
   provider: ProviderKey;
   visitDate: IsoDate;
   lines: Array<{ cpt: string; charge: number }>;
@@ -125,6 +141,13 @@ export const VISITS: SeedVisit[] = [
       dob: '1984-04-17',
       memberId: 'XBC884210377',
       email: 'maria.delgado@example.com',
+      address: {
+        line1: '418 Seacliff Ave',
+        line2: 'Apt 2B',
+        city: 'Harborview',
+        state: 'CA',
+        zip: '94000',
+      },
     },
     provider: 'patel',
     visitDate: '2026-10-03',
@@ -155,6 +178,7 @@ export const VISITS: SeedVisit[] = [
       lastName: 'Lam',
       dob: '1991-02-11',
       email: 'kevin.lam@example.com',
+      address: { line1: '31 Gull St', city: 'Harborview', state: 'CA', zip: '94000' },
     },
     provider: 'kim',
     visitDate: '2026-09-29',
@@ -175,6 +199,7 @@ export const VISITS: SeedVisit[] = [
       dob: '1990-11-02',
       memberId: 'W188420355',
       email: 'priya.raman@example.com',
+      address: { line1: '1207 Tidepool Way', city: 'Harborview', state: 'CA', zip: '94000' },
     },
     provider: 'patel',
     visitDate: '2026-10-01',
@@ -206,6 +231,7 @@ export const VISITS: SeedVisit[] = [
       dob: '1972-06-23',
       memberId: '921447803',
       email: 'tomas.herrera@example.com',
+      address: { line1: '56 Anchor Ln', city: 'Harborview', state: 'CA', zip: '94000' },
     },
     provider: 'kim',
     visitDate: '2026-09-12',
@@ -237,6 +263,7 @@ export const VISITS: SeedVisit[] = [
       lastName: 'Brooks',
       dob: '1978-07-30',
       email: 'ellen.brooks@example.com',
+      address: { line1: '902 Lighthouse Rd', city: 'Harborview', state: 'CA', zip: '94000' },
     },
     provider: 'patel',
     visitDate: '2026-09-30',
@@ -255,6 +282,7 @@ export const VISITS: SeedVisit[] = [
       dob: '1965-01-19',
       memberId: 'W204115689',
       email: 'marcus.reid@example.com',
+      address: { line1: '14 Breakwater Ct', city: 'Harborview', state: 'CA', zip: '94000' },
     },
     provider: 'okoye',
     visitDate: '2026-08-25',
@@ -287,6 +315,7 @@ export const VISITS: SeedVisit[] = [
       dob: '1958-09-04',
       memberId: 'XBC310588721',
       email: 'james.whitfield@example.com',
+      address: { line1: '3301 Dune Ave', city: 'Harborview', state: 'CA', zip: '94000' },
     },
     provider: 'okoye',
     visitDate: '2026-09-18',
@@ -312,6 +341,13 @@ export const VISITS: SeedVisit[] = [
       dob: '1987-03-14',
       memberId: '933018455',
       email: 'denise.okafor@example.com',
+      address: {
+        line1: '77 Kelp St',
+        line2: 'Unit 5',
+        city: 'Harborview',
+        state: 'CA',
+        zip: '94000',
+      },
     },
     provider: 'kim',
     visitDate: '2026-08-14',
@@ -340,6 +376,7 @@ export const VISITS: SeedVisit[] = [
       dob: '1969-12-08',
       memberId: 'W177302946',
       email: 'grace.whitaker@example.com',
+      address: { line1: '245 Marina Blvd', city: 'Harborview', state: 'CA', zip: '94000' },
     },
     provider: 'okoye',
     visitDate: '2026-08-02',
@@ -373,6 +410,7 @@ export const VISITS: SeedVisit[] = [
       dob: '1981-05-27',
       memberId: '918662047',
       email: 'robert.chen@example.com',
+      address: { line1: '618 Spinnaker Dr', city: 'Harborview', state: 'CA', zip: '94000' },
     },
     provider: 'patel',
     visitDate: '2026-09-05',
@@ -402,6 +440,7 @@ export const VISITS: SeedVisit[] = [
       lastName: 'Bello',
       dob: '1995-08-21',
       email: 'aisha.bello@example.com',
+      address: { line1: '77 Linden Ct', city: 'Harborview', state: 'CA', zip: '94000' },
     },
     provider: 'kim',
     visitDate: '2026-06-20',
@@ -430,6 +469,7 @@ export const VISITS: SeedVisit[] = [
       dob: '1988-10-30',
       memberId: 'XBC552019846',
       email: 'samuel.ortiz@example.com',
+      address: { line1: '9 Pier Rd', city: 'Harborview', state: 'CA', zip: '94000' },
     },
     provider: 'okoye',
     visitDate: '2026-09-22',
@@ -462,6 +502,7 @@ export const VISITS: SeedVisit[] = [
       dob: '1976-02-03',
       memberId: 'W166045812',
       email: 'linda.park@example.com',
+      address: { line1: '150 Driftwood Ln', city: 'Harborview', state: 'CA', zip: '94000' },
     },
     provider: 'patel',
     visitDate: '2026-09-10',

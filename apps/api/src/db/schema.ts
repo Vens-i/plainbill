@@ -45,6 +45,12 @@ export const patients = sqliteTable(
     dob: text('dob'),
     email: text('email'),
     memberId: text('member_id'),
+    /** Mailing address, printed in the statement's window. */
+    addressLine1: text('address_line1'),
+    addressLine2: text('address_line2'),
+    city: text('city'),
+    state: text('state'),
+    zip: text('zip'),
     createdAt: createdAt(),
   },
   (t) => [index('patients_name_idx').on(t.practiceId, t.lastName, t.firstName)],
