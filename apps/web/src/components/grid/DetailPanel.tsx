@@ -95,6 +95,11 @@ export function DetailPanel({
           <div className="pb-owes-label">{owesLabel}</div>
           <div className="pb-owes-value">{owesValue}</div>
           {note && <div className="pb-owes-note">{note}</div>}
+          {data.invoice?.statementView && (
+            <div className="pb-owes-note">
+              Viewed statement · {data.invoice.statementView.language}
+            </div>
+          )}
           {data.invoice?.payPath && (
             <div className="pb-owes-links">
               {data.invoice.paypalInvoiceNumber && (
@@ -105,6 +110,9 @@ export function DetailPanel({
               </a>
               <a href={`/email-preview/${data.id}`} target="_blank" rel="noreferrer">
                 Email ↗
+              </a>
+              <a href={`/api/balances/${data.id}/statement.pdf`} target="_blank" rel="noreferrer">
+                Statement ↗
               </a>
             </div>
           )}

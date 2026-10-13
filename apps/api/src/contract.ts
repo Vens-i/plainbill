@@ -87,6 +87,8 @@ export interface BalanceRow {
     sentVia: 'paypal' | 'local' | null;
     paypalInvoiceNumber: string | null;
     paypalStatus: string | null;
+    /** The patient's latest look at the itemized statement, and the notes' language. */
+    statementView: { at: string; lang: string; language: string } | null;
   } | null;
   /** A PayPal payment plan in progress or finished. */
   activePlan: { months: number; paidCount: number; status: string } | null;

@@ -2,7 +2,7 @@
  * Builds dashboard rows. Display amounts and adjustment labels are recomputed from the stored
  * claim through @plainbill/core, so the grid can never show money the core didn't produce.
  */
-import { asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import {
   agingBucket,
   computePatientBalance,
@@ -11,6 +11,7 @@ import {
   describeProcedure,
   describeRemark,
   formatMoneyShort,
+  noteLanguage,
   planOption,
   type IsoDate,
   type NormalizedClaim,
@@ -22,6 +23,7 @@ import {
   adjustments,
   balances,
   claimLines,
+  events,
   invoices,
   patients,
   paymentPlans,
@@ -131,6 +133,20 @@ export function getBalanceRows(db: DbLike, today: IsoDate, ids?: number[]): Bala
       .all(),
     (p) => p.balanceId,
   );
+  const statementEvents = groupBy(
+    db
+      .select()
+      .from(events)
+      .where(
+        and(
+          inArray(events.balanceId, balanceIds),
+          inArray(events.type, ['statement.viewed', 'statement.language']),
+        ),
+      )
+      .orderBy(asc(events.id))
+      .all(),
+    (e) => e.balanceId,
+  );
   const plansByBalance = groupBy(
     db
       .select()
@@ -158,6 +174,16 @@ export function getBalanceRows(db: DbLike, today: IsoDate, ids?: number[]): Bala
         }
       : null;
     const remaining = balance.patientResponsibilityCents - balance.patientPaidCents;
+    const seen = statementEvents.get(balance.id) ?? [];
+    const viewed = seen.filter((e) => e.type === 'statement.viewed').at(-1);
+    const lang = String(
+      seen.filter((e) => e.type === 'statement.language').at(-1)?.payload.lang ??
+        viewed?.payload.lang ??
+        'en',
+    );
+    const statementView = viewed
+      ? { at: viewed.createdAt, lang, language: noteLanguage(lang)?.native ?? lang }
+      : null;
     const selfPay = visit.payerKind === 'self-pay';
     const paid = balance.status === 'paid';
 
@@ -307,6 +333,7 @@ export function getBalanceRows(db: DbLike, today: IsoDate, ids?: number[]): Bala
             sentVia: invoice.sentVia,
             paypalInvoiceNumber: invoice.paypalInvoiceNumber,
             paypalStatus: invoice.paypalStatus,
+            statementView,
           }
         : null,
       activePlan,

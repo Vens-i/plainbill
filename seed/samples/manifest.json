@@ -1,0 +1,165 @@
+{
+  "_note": "Synthetic sample documents. All people, the practice and both payers are fictional. Dollar amounts; each claim satisfies billed - contractualAdjustment - insurancePaid = patientOwes.",
+  "payerStandIns": {
+    "Tidewater Health Plan": "BCBS slot in seed/src/spec.ts",
+    "Granite Mutual Health": "Aetna slot in seed/src/spec.ts"
+  },
+  "files": {
+    "inbound_tidewater_remit_2026-10-08.pdf": {
+      "kind": "provider_remittance",
+      "audience": "clinic",
+      "payer": "Tidewater Health Plan",
+      "paymentAmount": 510,
+      "eftTrace": "BC1008120117",
+      "claims": [
+        {
+          "patient": "Maria Delgado",
+          "practiceClaimId": "HFM1001",
+          "payerClaimNumber": "BC26100800417",
+          "serviceDate": "10/03/2026",
+          "billed": 850,
+          "contractualAdjustment": 400,
+          "insurancePaid": 210,
+          "patientOwes": 240,
+          "deductible": 200,
+          "coinsurance": 40,
+          "copay": 0,
+          "denied": false
+        },
+        {
+          "patient": "Samuel Ortiz",
+          "practiceClaimId": "HFM1012",
+          "payerClaimNumber": "BC26100800452",
+          "serviceDate": "09/22/2026",
+          "billed": 450,
+          "contractualAdjustment": 70,
+          "insurancePaid": 300,
+          "patientOwes": 80,
+          "deductible": 0,
+          "coinsurance": 0,
+          "copay": 80,
+          "denied": false
+        }
+      ]
+    },
+    "inbound_tidewater_remit_2026-09-30_denial.pdf": {
+      "kind": "provider_remittance",
+      "audience": "clinic",
+      "payer": "Tidewater Health Plan",
+      "paymentAmount": 0,
+      "eftTrace": "BC0930118842",
+      "claims": [
+        {
+          "patient": "James Whitfield",
+          "practiceClaimId": "HFM1007",
+          "payerClaimNumber": "BC26093000288",
+          "serviceDate": "09/18/2026",
+          "billed": 2400,
+          "contractualAdjustment": 2400,
+          "insurancePaid": 0,
+          "patientOwes": 0,
+          "deductible": 0,
+          "coinsurance": 0,
+          "copay": 0,
+          "denied": true
+        }
+      ],
+      "denialReason": "CO-197 prior authorization absent; remark M62"
+    },
+    "inbound_granite_remit_2026-09-14.pdf": {
+      "kind": "provider_remittance",
+      "audience": "clinic",
+      "payer": "Granite Mutual Health",
+      "paymentAmount": 930,
+      "eftTrace": "AE0914553872",
+      "claims": [
+        {
+          "patient": "Marcus Reid",
+          "practiceClaimId": "HFM1006",
+          "payerClaimNumber": "AE2609140377",
+          "serviceDate": "08/25/2026",
+          "billed": 900,
+          "contractualAdjustment": 140,
+          "insurancePaid": 520,
+          "patientOwes": 240,
+          "deductible": 150,
+          "coinsurance": 90,
+          "copay": 0,
+          "denied": false
+        },
+        {
+          "patient": "Linda Park",
+          "practiceClaimId": "HFM1013",
+          "payerClaimNumber": "AE2609140342",
+          "serviceDate": "09/10/2026",
+          "billed": 560,
+          "contractualAdjustment": 50,
+          "insurancePaid": 410,
+          "patientOwes": 100,
+          "deductible": 0,
+          "coinsurance": 100,
+          "copay": 0,
+          "denied": false
+        }
+      ]
+    },
+    "patient_tidewater_eob_delgado.pdf": {
+      "kind": "member_eob",
+      "audience": "patient",
+      "payer": "Tidewater Health Plan",
+      "claims": [
+        {
+          "patient": "Maria Delgado",
+          "practiceClaimId": "HFM1001",
+          "payerClaimNumber": "BC26100800417",
+          "serviceDate": "10/03/2026",
+          "billed": 850,
+          "contractualAdjustment": 400,
+          "insurancePaid": 210,
+          "patientOwes": 240,
+          "deductible": 200,
+          "coinsurance": 40,
+          "copay": 0,
+          "denied": false
+        }
+      ],
+      "deductibleRemaining": 150,
+      "note": "Not a bill. Page 2 is appeal rights + language taglines."
+    },
+    "outbound_harborview_statement_delgado.pdf": {
+      "kind": "practice_statement",
+      "audience": "patient",
+      "amountDue": 240,
+      "account": "004417",
+      "aging": {
+        "current": 240
+      }
+    },
+    "outbound_harborview_statement_delgado_phone_photo.jpg": {
+      "kind": "practice_statement_photo",
+      "audience": "patient",
+      "amountDue": 240,
+      "note": "Phone photo of the paper statement above, folded in thirds."
+    },
+    "outbound_harborview_statement_bello_past_due.pdf": {
+      "kind": "practice_statement",
+      "audience": "patient",
+      "amountDue": 600,
+      "account": "003862",
+      "aging": {
+        "91-120": 600
+      },
+      "notice": "SECOND NOTICE - PAST DUE",
+      "payments": [
+        {
+          "on": "2026-07-15",
+          "amount": 300
+        },
+        {
+          "on": "2026-10-02",
+          "amount": 300
+        }
+      ]
+    }
+  }
+}

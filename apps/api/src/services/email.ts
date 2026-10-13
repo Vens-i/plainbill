@@ -3,8 +3,9 @@
  * in Gmail and Outlook. Amounts come from the computed balance; the message is the one staff
  * approved in the drawer (already checked for invented figures and medical codes).
  *
- * Minimal PHI: the visit date, the provider and amounts. No services, codes or insurance IDs;
- * the full breakdown lives behind the verification page.
+ * Minimal PHI: the visit date, the provider and amounts. No services, codes or insurance IDs,
+ * and no attachment: the full breakdown and the itemized statement live behind the
+ * verification page.
  */
 import { formatLongDate, formatMoney, formatMonthDay, type IsoDate } from '@plainbill/core';
 
@@ -132,6 +133,8 @@ export function renderBillEmail(d: BillEmailData): RenderedEmail {
     ? `Reminder: your ${formatMonthDay(d.visitDate)} visit — ${formatMoney(d.amountDueCents)} balance`
     : billSubject(d.visitDate, d.amountDueCents, d.dueDate);
   const segs = segments(d);
+  // The practice's itemized statement lives behind verification on the pay page (never attached).
+  const statementUrl = d.breakdownUrl === '#' ? '#' : `${d.breakdownUrl}#statement`;
   const widths = barWidths(segs.map((s) => s.cents));
   const owes = formatMoney(d.amountDueCents);
   const paras = paragraphs(d.message);
@@ -198,7 +201,7 @@ ${paras
 </td></tr>
 <tr><td style="padding:4px 32px 28px;text-align:center;font-size:15px;line-height:1.5"><a href="${esc(d.breakdownUrl)}" style="color:#1D5C5C;font-weight:600">See full breakdown</a>${
     extras.length ? ` <span style="color:#5C6766">· ${esc(extras.join(' · '))}</span>` : ''
-  }</td></tr>
+  }<br><a href="${esc(statementUrl)}" style="color:#1D5C5C">View your itemized statement</a></td></tr>
 </table>
 </td></tr>
 <tr><td style="padding:20px 40px 32px;font-size:13px;line-height:1.55;color:#5C6766">${phoneLine} For your privacy, visit details are only shown after you verify on the secure page.<br>${esc(d.practice.name)} · ${esc(d.practice.address)}</td></tr>
@@ -217,6 +220,7 @@ ${paras
     '',
     `Pay with PayPal: ${d.paypalUrl}`,
     `See the full breakdown${extras.length ? ` (${extras.join(', ')})` : ''}: ${d.breakdownUrl}`,
+    `View your itemized statement: ${statementUrl}`,
     '',
     `${phoneLine} For your privacy, visit details are only shown after you verify on the secure page.`,
     `${d.practice.name} · ${d.practice.address}`,

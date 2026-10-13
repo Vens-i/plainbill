@@ -64,6 +64,13 @@ export function StatementExplained({ token, bill, onAsk }: Props) {
     };
   }, [token, lang]);
 
+  // The email's "View your itemized statement" link lands on #statement after verification.
+  useEffect(() => {
+    if (statement && window.location.hash === '#statement') {
+      document.getElementById('statement')?.scrollIntoView({ block: 'start' });
+    }
+  }, [statement]);
+
   const onPulse = useCallback((id: string) => {
     setPulse(id);
     clearTimeout(pulseTimer.current);

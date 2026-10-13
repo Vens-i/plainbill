@@ -30,7 +30,7 @@ import {
 import { readCookie, SESSION_COOKIE } from '../services/sessions';
 import { statementFileName, statementFor, statementIdFor } from '../services/statement';
 import { renderStatementPdf } from '../services/statement-pdf';
-import { statementNotesFor } from '../services/statement-notes';
+import { recordStatementView, statementNotesFor } from '../services/statement-notes';
 import type { RouteContext } from './context';
 
 type TokenParams = { Params: { token: string } };
@@ -133,7 +133,9 @@ export function registerPatientRoutes(api: FastifyInstance, ctx: RouteContext): 
         '/:token/statement/notes',
         async (request): Promise<StatementNotes> => {
           const invoice = verifiedInvoice(request, request.params.token);
-          return statementNotesFor(ctx, invoice.id, request.query.lang || 'en');
+          const notes = await statementNotesFor(ctx, invoice.id, request.query.lang || 'en');
+          recordStatementView(ctx, invoice, notes.lang);
+          return notes;
         },
       );
 

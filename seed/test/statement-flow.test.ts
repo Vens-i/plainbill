@@ -11,6 +11,7 @@ import {
   schema,
   type BalanceRow,
   type DrawerData,
+  type EmailPreview,
   type PatientStatement,
   type SendResult,
   type StatementNotes,
@@ -270,5 +271,36 @@ describe('statement notes (no API key: templates)', () => {
 
   it('keeps template notes out of the cache', () => {
     expect(db.select().from(schema.statementNotes).all()).toEqual([]);
+  });
+
+  it('logs one view and the language, and the dashboard row shows them', async () => {
+    const seen = db
+      .select()
+      .from(schema.events)
+      .all()
+      .filter((e) => e.type.startsWith('statement.'));
+    expect(seen.map((e) => [e.type, e.payload.lang])).toEqual([
+      ['statement.viewed', 'en'],
+      ['statement.language', 'es'],
+      ['statement.language', 'ht'],
+    ]);
+    const row = await rowOf('Maria Delgado');
+    expect(row.invoice!.statementView).toMatchObject({ lang: 'ht', language: 'Kreyòl' });
+  });
+});
+
+describe('the bill email', () => {
+  it('links to the itemized statement behind verification, with no codes and no attachment', async () => {
+    const row = await rowOf('Maria Delgado');
+    const { json: email } = await call<EmailPreview>('GET', `/balances/${row.id}/email`);
+    const payUrl = `https://pay.example.test${row.invoice!.payPath}`;
+    expect(email.html).toContain(`href="${payUrl}#statement"`);
+    expect(email.html).toContain('View your itemized statement');
+    for (const leak of ['99214', '80053', '93000', 'CO45', 'CO-45', 'PR1', 'INSPMT', '.pdf']) {
+      expect(email.html).not.toContain(leak);
+    }
+    const stored = db.select().from(schema.emails).all().at(-1)!;
+    expect(Object.keys(stored)).not.toContain('attachments');
+    expect(stored.text).toContain(`View your itemized statement: ${payUrl}#statement`);
   });
 });

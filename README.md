@@ -22,8 +22,11 @@ All patients, claims and amounts in this repo are synthetic.
    from the computed numbers; a guard refuses any figure the code didn't compute. **Send invoice**
    creates a PayPal invoice (name, visit date, provider and amount only) and emails the patient
    our visual breakdown with PayPal's button.
-4. **The patient** verifies with last name + date of birth, taps through a waterfall of how the
-   bill was worked out, and can **ask the AI helper** ("why do I owe $240?", "can I pay over
+4. **The patient** verifies with last name + date of birth and sees **the practice's own itemized
+   statement, explained**: the same paper statement as the PDF, with yellow highlighter marks on
+   the lines that matter and hand-drawn arrows to short notes in the margins ("A discount, not a
+   bill: $400 comes off because Dr. Patel is in your network"), in English, Español, Kreyòl,
+   中文 and more. A waterfall gives the short version, and they can **ask the AI helper** ("why do I owe $240?", "can I pay over
    time?"). The helper answers only from this bill and can set up a payment or a plan through
    the **PayPal Agent Toolkit**, after the patient confirms. Or they pay with PayPal, Pay Later
    or a card, or start a 3/6-month interest-free PayPal plan.
@@ -66,8 +69,9 @@ The seed is a fictional practice, Harborview Family Medicine, with 13 visits in 
 - **Send a bill:** with sandbox `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` set, open Maria Delgado's
   **Send invoice + 3-month plan** and click **Send invoice**. The email preview (**Email ↗** in
   the row's detail panel) links to her patient page.
-- **Be the patient:** verify as `Delgado`, date of birth `04 / 17 / 1984`. Tap the bars, ask the
-  helper "Why do I owe $240?", then pay with a PayPal sandbox buyer account or PayPal's sandbox
+- **Be the patient:** verify as `Delgado`, date of birth `04 / 17 / 1984`. Read the notes on the
+  statement (switch to **Español** in the top bar; on a phone, tap the pins and step through the
+  notes), **Download original** for the PDF, ask the helper "Why do I owe $240?", then pay with a PayPal sandbox buyer account or PayPal's sandbox
   test card (`4012888888881881`, any future expiry, any CVV), or start a plan.
 - **Intake:** `pnpm seed --scenario=intake-demo` leaves out five visits; on **Intake**, click
   "Use the sample files" (or drop `bcbs_era_1008.835`, `aetna_eob_raman.pdf`, `uhc_eob_sept.pdf`
@@ -107,7 +111,8 @@ reconciliation pass immediately.
                  │  /dashboard: AG Grid Enterprise (grouping, master/detail, quick filter,        │
                  │  sparklines, integrated charts, flashCells) + AG Charts · Review & Send drawer │
                  │  /intake: drop files → AG Grid preview with AI flags → approve                 │
-                 │  /pay/:token (patient, mobile): verify → bill → PayPal v6 SDK buttons / plans  │
+                 │  /pay/:token (patient, mobile): verify → statement explained (SVG + notes) →   │
+                 │  the short version → AI helper → PayPal v6 SDK buttons / plans                 │
                  │  /email-preview/:id: the bill email as sent                                    │
                  └───────────────▲───────────────────────────────▲────────────────────────────────┘
                      GET /api/*  │ JSON                     SSE  │ /api/events (payment, balances.changed)
@@ -126,9 +131,11 @@ reconciliation pass immediately.
                  ┌───────────────┴────────────────────────────────────────────────────────────────┐
                  │ packages/core: 835 parser · CARC/RARC dictionary · balance math (integer cents)│
                  │ aging buckets · status machine · payment plans · self-pay CSV reader           │
+                 │ statement model + layout (ops + anchors) · template notes (en, es)             │
                  └────────────────────────────────────────────────────────────────────────────────┘
-   packages/ai: Claude reads EOB PDFs (structured output + per-field confidence) and drafts patient
-                messages from computed facts; both are checked by code before anyone sees them
+   packages/ai: Claude reads EOB PDFs (structured output + per-field confidence), drafts patient
+                messages and writes the statement's margin notes from computed facts; all are
+                checked by code before anyone sees them
    seed/: synthetic 835s, scanned EOB PDFs, CSVs → real parsers / recorded AI reads → same services
 ```
 
@@ -138,7 +145,8 @@ apps/api        Fastify + TS, SQLite (better-sqlite3) via Drizzle ORM, Server-Se
 packages/core   Framework-free domain logic, fully unit-tested
 packages/ai     Anthropic SDK: EOB extraction, message drafting, guards, templates
 seed/           Synthetic 835s, scanned EOB PDFs, self-pay CSVs, recorded AI reads, seed script
-docs/           design-reference.html (visual source of truth), paypal-notes.md
+docs/           design-reference.html (visual source of truth), paypal-notes.md,
+                design/statement-explained/ (mockups), plans/statement-explained.md
 ```
 
 ### Money is code, never the model
@@ -211,6 +219,65 @@ docs/           design-reference.html (visual source of truth), paypal-notes.md
 - Answers are checked like messages (only the bill's figures, no codes); one retry, then a
   deterministic answer. Questions are rate-limited per bill.
 
+### Itemized statement + AI explanations
+
+When staff send a bill, the patient's page also shows the practice's formal **patient statement**
+(charges, insurance payment, write-off, patient responsibility, aging, the tear-off coupon),
+explained in the margins. In one line: **the core lays out the statement as drawing operations
+plus named anchors; pdf-lib draws the PDF and React draws the same page as an SVG from the same
+operations; Claude writes a short note per anchor, and code places it, numbers it and checks every
+figure in it.**
+
+```
+                   ┌──────────────► pdf-lib  → statement.pdf  (download / print)
+balance ─► model ─► layout (ops + anchors)
+                   └──────────────► React SVG → on-screen statement + highlights + arrows
+                                        ▲
+             anchors + facts ─► Claude ─┘ notes (guarded; template fallback)
+```
+
+- `buildStatementModel` (`packages/core/src/statement`) turns the computed balance into the
+  activity rows (charges, claim filed, insurance payment, contractual adjustment, patient
+  responsibility, each patient payment) with a running balance that must land exactly on what's
+  owed. `layoutStatement` ports the sample statement's geometry (US letter, PDF points) and returns
+  the ops and the anchors: each with its rect, highlighter or loop style, margin side, the printed
+  line for the "On your bill:" chip, and the figures a note about it may mention.
+- The coupon's credit-card fields are gone: a **Pay online** box with the patient's link and the
+  statement ID takes their place. Statements are dated today and recomputed per request.
+- **Minimal PHI:** the email links to the statement ("View your itemized statement") and never
+  attaches it; the PDF, the layout and the notes are served only after the last name + date of
+  birth check. The statement shows procedure codes (an itemized statement does); they never go to
+  email or PayPal.
+- **Notes** (`ClaudeStatementAnnotator`): structured output, one `{ anchorId, title, body }` per
+  anchor. The guard rejects unknown or missing anchors, any figure outside that line's list (plus
+  what's owed), code-like strings and long notes; one retry, then the template note for that line.
+  English and Spanish notes are written in the background on Send and cached per language until
+  the balance changes. Without an API key the hand-written templates (English, Spanish) are used;
+  other languages fall back to English with a "call us for help in your language" banner.
+- **The page:** on desktop, notes | statement | notes, each card beside its line with an arrow; on a
+  phone, a thumbnail with numbered pins, a zoom strip of the active line and one note at a time.
+  The page text (hero, buttons, pager…) is English or Spanish, and `<html lang>` follows it. The
+  bill helper answers in the language the patient picked. Views and language choices show in the
+  dashboard's detail panel ("Viewed statement · Español").
+
+#### How the highlights work
+
+![How the highlights work: five steps and three guardrails](docs/design/statement-explained/how-it-works.png)
+
+1. **Read the paper.** Plainbill drew the statement itself, so it already knows every line and
+   where it sits on the page: no text recognition, no AI-guessed coordinates, no PDF parsing.
+2. **Point, don't draw.** Claude gets the lines (by id) and the computed balance and writes a short
+   note for each. It never decides where anything goes.
+3. **Check every number.** Code checks each amount in a note against that line's figures; a note
+   that fails twice is replaced by a plain, pre-written one.
+4. **Explain in their language.** Short notes in plain English, Spanish, Kreyòl and more; the
+   dollar amounts come from the checked balance.
+5. **Draw it.** The page draws the same statement as the PDF, highlights each line and points each
+   note at it (sorted top to bottom per side, so the arrows don't cross).
+
+Guardrails: **money math stays in code** · **shown only after the last name + date of birth
+check** · **unsure about a line? The note says so and gives the office number.**
+
 ### AI suggests
 
 - `ClaudeSuggester` sends each open row's situation (status, days, amounts, review or denial
@@ -237,6 +304,10 @@ parses everything with the real parsers (EOBs via the recorded Claude reads), st
 sample files exactly like an upload, and loads them through the API's own services. Tests check
 every row against a literal copy of the expected table (`seed/src/expected.ts`) and assert the
 invariant per row.
+
+Every seed patient has a fictional Harborview, CA mailing address for the statement's window.
+`seed/samples/` holds sample billing documents (remittances, an EOB, paper statements) and their
+generator; the statement layout is ported from `outbound_harborview_statement_delgado.pdf`.
 
 Samuel Ortiz is seeded as **Sent**, so there is always a bill to pay: paying him on Oct 10 makes
 him "paid in 18 days". "Today" is pinned with `DEMO_TODAY=2026-10-10` so days-out and aging match
@@ -274,7 +345,11 @@ All routes are under `/api`.
 | `POST /pay/:token/orders/:id/capture`            | Capture after approval; records the payment once                                        |
 | `POST /pay/:token/plan`, `/plan/confirm`         | Start a 3/6-month PayPal subscription; confirm after approval (records payment 1)       |
 | `POST /webhooks/paypal`                          | PayPal webhooks (signature-verified, deduplicated)                                      |
-| `POST /pay/:token/assistant`                     | Ask the bill helper `{ message, history }` → answer, source, cards                      |
+| `POST /pay/:token/assistant`                     | Ask the bill helper `{ message, history, lang? }` → answer, source, cards               |
+| `GET /pay/:token/statement`                      | The itemized statement: layout (ops + anchors), statement ID, PDF path (session)        |
+| `GET /pay/:token/statement.pdf`                  | The same statement as a PDF (session; inline, no-store)                                 |
+| `GET /pay/:token/statement/notes?lang=`          | Margin notes in en es ht zh vi ko ru tl fr pt (cached; logs the view and language)      |
+| `GET /balances/:id/statement.pdf`                | Staff preview of the statement before sending (placeholder statement ID)                |
 | `POST /pay/:token/assistant/actions/:id/confirm` | Run a confirmed card via the PayPal Agent Toolkit → order or subscription id            |
 | `POST /suggestions/refresh`                      | Rewrite AI suggests for every open row (Claude, checked; or rules)                      |
 | `POST /balances/:id/remind`                      | Email a reminder `{ offerPlanMonths? }`                                                 |

@@ -191,6 +191,19 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
       if (tab) tab.location.href = `/email-preview/${balanceId}`;
     });
 
+  // The statement preview uses the saved draft's payment option, so save first too.
+  const openStatement = () =>
+    run(async () => {
+      const tab = window.open('', '_blank');
+      const d = await api.saveDraft(balanceId, {
+        message,
+        messageSource: source,
+        paymentOption: option,
+      });
+      setData(d);
+      if (tab) tab.location.href = `/api/balances/${balanceId}/statement.pdf`;
+    });
+
   const b = data?.balance;
   const plan3 = data?.plans.find((p) => p.months === 3);
   const planMonths = option.type === 'plan' ? option.months : 3;
@@ -445,6 +458,11 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
                         To {data.email.to} ·{' '}
                         <button type="button" className="link-button" onClick={openPreview}>
                           Open full preview
+                        </button>
+                      </div>
+                      <div>
+                        <button type="button" className="link-button" onClick={openStatement}>
+                          Preview statement (PDF)
                         </button>
                       </div>
                     </div>

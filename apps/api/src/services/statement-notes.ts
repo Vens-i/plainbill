@@ -5,7 +5,7 @@
  * starting or a plan being offered). Template notes aren't cached: they're instant, and not
  * caching them means a model that was briefly down gets another chance.
  */
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { annotateFactsFor, TemplateStatementAnnotator } from '@plainbill/ai';
 import {
   isPastDue,
@@ -14,9 +14,9 @@ import {
   type StatementNoteText,
 } from '@plainbill/core';
 import type { StatementNote, StatementNotes } from '../contract';
-import { invoices, practices, statementNotes } from '../db/schema';
+import { events, invoices, practices, statementNotes } from '../db/schema';
 import { getBalanceRows } from '../queries/rows';
-import type { RouteContext } from '../routes/context';
+import { publishChanged, type RouteContext } from '../routes/context';
 import { QuestionLimiter } from './assistant';
 import { buildMessageFacts } from './drawer';
 import { PatientError } from './patient';
@@ -156,4 +156,61 @@ export function prepareStatementNotes(ctx: Ctx, invoiceId: number): Promise<void
       }),
     ),
   ).then(() => undefined);
+}
+
+/** A new "viewed" event at most this often per bill, so reloads and language switches don't spam. */
+const VIEW_EVERY_MS = 30 * 60_000;
+
+/**
+ * Log that the patient looked at the statement (`statement.viewed`) and which language they read
+ * the notes in (`statement.language`, when it changes), for the dashboard's detail panel.
+ */
+export function recordStatementView(
+  ctx: Pick<RouteContext, 'db' | 'bus'>,
+  invoice: { id: number; balanceId: number },
+  lang: string,
+  now = new Date(),
+): void {
+  const recent = ctx.db
+    .select()
+    .from(events)
+    .where(
+      and(
+        eq(events.balanceId, invoice.balanceId),
+        inArray(events.type, ['statement.viewed', 'statement.language']),
+      ),
+    )
+    .orderBy(desc(events.id))
+    .all();
+  const lastViewed = recent.find((e) => e.type === 'statement.viewed');
+  const lastLang = String(
+    recent.find((e) => e.type === 'statement.language')?.payload.lang ?? 'en',
+  );
+  const at = now.toISOString();
+  let changed = false;
+  if (!lastViewed || now.getTime() - Date.parse(lastViewed.createdAt) > VIEW_EVERY_MS) {
+    ctx.db
+      .insert(events)
+      .values({
+        type: 'statement.viewed',
+        balanceId: invoice.balanceId,
+        payload: { invoiceId: invoice.id, lang },
+        createdAt: at,
+      })
+      .run();
+    changed = true;
+  }
+  if (lang !== lastLang) {
+    ctx.db
+      .insert(events)
+      .values({
+        type: 'statement.language',
+        balanceId: invoice.balanceId,
+        payload: { invoiceId: invoice.id, lang },
+        createdAt: at,
+      })
+      .run();
+    changed = true;
+  }
+  if (changed) publishChanged(ctx, [invoice.balanceId]);
 }
