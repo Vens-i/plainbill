@@ -12,12 +12,14 @@ import type {
   Kpis,
   MessageVariant,
   PatientBill,
+  PatientStatement,
   PayLinkInfo,
   PaymentOption,
   PayResult,
   PracticeInfo,
   ReminderResult,
   SendResult,
+  StatementNotes,
 } from '@plainbill/api/contract';
 
 export class ApiError extends Error {
@@ -121,6 +123,9 @@ export const payApi = {
   verify: (token: string, body: { lastName: string; month: string; day: string; year: string }) =>
     request<PatientBill>('POST', `/pay/${token}/verify`, body),
   bill: (token: string) => get<PatientBill>(`/pay/${token}/bill`),
+  statement: (token: string) => get<PatientStatement>(`/pay/${token}/statement`),
+  statementNotes: (token: string, lang: string) =>
+    get<StatementNotes>(`/pay/${token}/statement/notes?lang=${encodeURIComponent(lang)}`),
   createOrder: (token: string, body: { amountCents?: number; fundingSource: string }) =>
     request<{ orderId: string; amountCents: number }>('POST', `/pay/${token}/orders`, body),
   captureOrder: (token: string, orderId: string) =>

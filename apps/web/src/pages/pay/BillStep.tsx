@@ -5,6 +5,7 @@ import { formatLongDate, formatMoney, formatMonthDay } from '@plainbill/core';
 import type { Paid } from './PayPage';
 import { AskAboutBill } from './AskAboutBill';
 import { PayOptions, PayPalScope } from './PayOptions';
+import { StatementExplained } from './statement/StatementExplained';
 import { Waterfall } from './Waterfall';
 
 interface Props {
@@ -49,6 +50,8 @@ export function BillStep({ token, bill, onPaid }: Props) {
           </a>
         )}
       </header>
+
+      <StatementExplained token={token} bill={bill} />
 
       <section className="pay-card">
         <h2 className="pay-h2">How we got to {formatMoney(amounts.remainingCents)}</h2>

@@ -1,0 +1,66 @@
+/* "Your statement, explained" (docs/design/statement-explained). */
+
+.st-section {
+  scroll-margin-top: 16px;
+}
+.st-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+.st-caption-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.st-paper-wrap {
+  position: relative;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgba(28, 43, 45, 0.08),
+    0 18px 40px -22px rgba(28, 43, 45, 0.35);
+}
+.st-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.st-svg text {
+  white-space: pre;
+}
+.st-skeleton {
+  aspect-ratio: 612 / 792;
+  background: linear-gradient(90deg, #f1eee8 0%, #f8f6f2 50%, #f1eee8 100%);
+  background-size: 200% 100%;
+  animation: st-shimmer 1.4s infinite linear;
+}
+@keyframes st-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Highlighter marks and loops (inside the statement SVG). */
+.st-highlight {
+  fill: rgba(245, 197, 66, 0.45);
+  mix-blend-mode: multiply;
+}
+.st-loop {
+  fill: none;
+  stroke: #1d5c5c;
+  stroke-width: 2.25px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .st-skeleton {
+    animation: none;
+  }
+}
