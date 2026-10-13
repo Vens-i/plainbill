@@ -53,83 +53,85 @@ export function BillStep({ token, bill, onPaid }: Props) {
 
       <StatementExplained token={token} bill={bill} />
 
-      <section className="pay-card">
-        <h2 className="pay-h2">How we got to {formatMoney(amounts.remainingCents)}</h2>
-        <p className="pay-sub">Tap a bar to learn what it means</p>
-        <Waterfall steps={bill.waterfall} />
-      </section>
-
-      <section className="pay-card">
-        <h2 className="pay-h2">What you were seen for</h2>
-        <ul className="pay-lines">
-          {bill.services.map((s, i) => (
-            <li key={i}>
-              <span>{s.name}</span>
-              <span>{formatMoney(s.chargeCents)}</span>
-            </li>
-          ))}
-          <li className="pay-lines-total">
-            <span>Total billed</span>
-            <span>{formatMoney(amounts.billedCents)}</span>
-          </li>
-        </ul>
-      </section>
-
-      {bill.terms.length > 0 && (
-        <section className="pay-card pay-terms">
-          <button
-            type="button"
-            className="pay-terms-toggle"
-            aria-expanded={termsOpen}
-            aria-controls="pay-terms-body"
-            onClick={() => setTermsOpen((o) => !o)}
-          >
-            <span>What do these terms mean?</span>
-            <span className="pay-terms-sign" aria-hidden="true">
-              {termsOpen ? '−' : '+'}
-            </span>
-          </button>
-          {termsOpen && (
-            <div id="pay-terms-body" className="pay-terms-body">
-              {bill.terms.map((t) => (
-                <p key={t.term}>
-                  <b>{t.term}</b> — {t.body}
-                </p>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      <PayPalScope bill={bill}>
-        <AskAboutBill token={token} bill={bill} onPaid={onPaid} />
-        {!settled && <PayOptions token={token} bill={bill} onPaid={onPaid} />}
-      </PayPalScope>
-
-      {bill.payments.length > 0 && (
+      <div className="pay-column">
         <section className="pay-card">
-          <h2 className="pay-h2">Your payments</h2>
+          <h2 className="pay-h2">How we got to {formatMoney(amounts.remainingCents)}</h2>
+          <p className="pay-sub">Tap a bar to learn what it means</p>
+          <Waterfall steps={bill.waterfall} />
+        </section>
+
+        <section className="pay-card">
+          <h2 className="pay-h2">What you were seen for</h2>
           <ul className="pay-lines">
-            {bill.payments.map((p) => (
-              <li key={p.id}>
-                <span>
-                  {formatLongDate(p.paidAt.slice(0, 10))} · {p.via}
-                  <span className="pay-mono"> {p.confirmation}</span>
-                </span>
-                <span>{formatMoney(p.amountCents)}</span>
+            {bill.services.map((s, i) => (
+              <li key={i}>
+                <span>{s.name}</span>
+                <span>{formatMoney(s.chargeCents)}</span>
               </li>
             ))}
+            <li className="pay-lines-total">
+              <span>Total billed</span>
+              <span>{formatMoney(amounts.billedCents)}</span>
+            </li>
           </ul>
         </section>
-      )}
 
-      <footer className="pay-footer">
-        Prefer a person? Call{' '}
-        <a href={`tel:${bill.practice.phone.replace(/\D/g, '')}`}>{bill.practice.phone}</a>
-        {bill.practice.hours ? `, ${bill.practice.hours}` : ''}.
-        <br />
-        {bill.practice.name} · {bill.practice.address}
-      </footer>
+        {bill.terms.length > 0 && (
+          <section className="pay-card pay-terms">
+            <button
+              type="button"
+              className="pay-terms-toggle"
+              aria-expanded={termsOpen}
+              aria-controls="pay-terms-body"
+              onClick={() => setTermsOpen((o) => !o)}
+            >
+              <span>What do these terms mean?</span>
+              <span className="pay-terms-sign" aria-hidden="true">
+                {termsOpen ? '−' : '+'}
+              </span>
+            </button>
+            {termsOpen && (
+              <div id="pay-terms-body" className="pay-terms-body">
+                {bill.terms.map((t) => (
+                  <p key={t.term}>
+                    <b>{t.term}</b> — {t.body}
+                  </p>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        <PayPalScope bill={bill}>
+          <AskAboutBill token={token} bill={bill} onPaid={onPaid} />
+          {!settled && <PayOptions token={token} bill={bill} onPaid={onPaid} />}
+        </PayPalScope>
+
+        {bill.payments.length > 0 && (
+          <section className="pay-card">
+            <h2 className="pay-h2">Your payments</h2>
+            <ul className="pay-lines">
+              {bill.payments.map((p) => (
+                <li key={p.id}>
+                  <span>
+                    {formatLongDate(p.paidAt.slice(0, 10))} · {p.via}
+                    <span className="pay-mono"> {p.confirmation}</span>
+                  </span>
+                  <span>{formatMoney(p.amountCents)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <footer className="pay-footer">
+          Prefer a person? Call{' '}
+          <a href={`tel:${bill.practice.phone.replace(/\D/g, '')}`}>{bill.practice.phone}</a>
+          {bill.practice.hours ? `, ${bill.practice.hours}` : ''}.
+          <br />
+          {bill.practice.name} · {bill.practice.address}
+        </footer>
+      </div>
     </div>
   );
 }

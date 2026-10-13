@@ -616,6 +616,23 @@
   }
 }
 
+/* The bill gets the whole width on desktop, for the statement with notes on both sides; the
+   cards below it stay a readable column. */
+.pay-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+@media (min-width: 1200px) {
+  .pay-main.is-bill {
+    max-width: 1600px;
+    padding: 32px 56px 48px;
+  }
+}
+
 @media print {
   .pay-btn-outline,
   .pay-btn-primary,

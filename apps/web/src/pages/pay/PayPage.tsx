@@ -65,7 +65,7 @@ export function PayPage() {
 
   return (
     <div className="pay-page">
-      <main className="pay-main">
+      <main className={`pay-main${bill && !paid ? ' is-bill' : ''}`}>
         <div className="pay-brand">{info?.practice.name ?? ''}</div>
         {invalid ? (
           <section className="pay-card pay-invalid">

@@ -9,6 +9,7 @@ import {
   seeded,
   toScreen,
 } from '../src/pages/pay/statement/geometry';
+import { noteParts } from '../src/pages/pay/statement/format';
 
 const anchor = (over: Partial<Anchor> = {}): Anchor => ({
   id: 'discount',
@@ -141,5 +142,28 @@ describe('placeCards', () => {
       500,
     );
     expect(Object.fromEntries(squeezed)).toEqual({ a: 276, b: 400 });
+  });
+});
+
+describe('note bodies', () => {
+  it('bold every amount and link the practice phone, and nothing else', () => {
+    expect(
+      noteParts(
+        'Pay it all now, or split it into 3 payments of $80 with no fees. $240.00 total. Questions? Call (555) 014-2290. <b>hi</b>',
+        '(555) 014-2290',
+      ),
+    ).toEqual([
+      { kind: 'text', text: 'Pay it all now, or split it into 3 payments of ' },
+      { kind: 'money', text: '$80' },
+      { kind: 'text', text: ' with no fees. ' },
+      { kind: 'money', text: '$240.00' },
+      { kind: 'text', text: ' total. Questions? Call ' },
+      { kind: 'phone', text: '(555) 014-2290', href: 'tel:5550142290' },
+      { kind: 'text', text: '. <b>hi</b>' },
+    ]);
+    expect(noteParts('$1,200 came off.', null)).toEqual([
+      { kind: 'money', text: '$1,200' },
+      { kind: 'text', text: ' came off.' },
+    ]);
   });
 });
