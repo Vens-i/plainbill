@@ -474,6 +474,8 @@ export async function createCheckoutOrder(
                   brand_name: p.name.slice(0, 127),
                   shipping_preference: 'NO_SHIPPING',
                   user_action: 'PAY_NOW',
+                  return_url: `${payUrl(ctx.appBaseUrl, invoice.payToken!)}?checkout=approved`,
+                  cancel_url: `${payUrl(ctx.appBaseUrl, invoice.payToken!)}?checkout=cancelled`,
                 },
               },
             },

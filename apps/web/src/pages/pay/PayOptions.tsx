@@ -18,6 +18,7 @@ import type { PatientBill, PayResult } from '@plainbill/api/contract';
 import { formatMoney, formatMoneyShort } from '@plainbill/core';
 import { ApiError, payApi } from '../../lib/api';
 import type { Paid } from './PayPage';
+import { CheckoutReturn } from './CheckoutReturn';
 
 interface Props {
   token: string;
@@ -197,7 +198,17 @@ export function PayOptions({ token, bill, onPaid, planPick }: Props) {
 }
 
 /** One PayPal SDK instance for the whole bill page (helper cards and the pay section). */
-export function PayPalScope({ bill, children }: { bill: PatientBill; children: ReactNode }) {
+export function PayPalScope({
+  bill,
+  token,
+  onPaid,
+  children,
+}: {
+  bill: PatientBill;
+  token: string;
+  onPaid: Props['onPaid'];
+  children: ReactNode;
+}) {
   if (!bill.paypal.enabled || !bill.paypal.clientId) return <>{children}</>;
   const sandbox = bill.paypal.env === 'sandbox';
   return (
@@ -208,7 +219,9 @@ export function PayPalScope({ bill, children }: { bill: PatientBill; children: R
       pageType="checkout"
       {...(sandbox ? { testBuyerCountry: 'US' } : {})}
     >
-      {children}
+      <CheckoutReturn token={token} onPaid={onPaid}>
+        {children}
+      </CheckoutReturn>
     </PayPalProvider>
   );
 }

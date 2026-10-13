@@ -9,6 +9,7 @@ import type { PatientBill, PayLinkInfo, PayResult } from '@plainbill/api/contrac
 import { ApiError, payApi } from '../../lib/api';
 import { BillStep } from './BillStep';
 import { Confirmation } from './Confirmation';
+import { PayPalScope } from './PayOptions';
 import { hasPageText, I18nContext, translator } from './i18n';
 import { LanguagePicker, saveLanguage, savedLanguage } from './statement/LanguagePicker';
 import { TopBar } from './TopBar';
@@ -108,10 +109,24 @@ export function PayPage() {
             </div>
           ) : !bill ? (
             <VerifyStep token={token} practice={info.practice} onVerified={setBill} />
-          ) : paid ? (
-            <Confirmation bill={bill} paid={paid} onBack={() => setPaid(null)} />
           ) : (
-            <BillStep token={token} bill={bill} onPaid={onPaid} />
+            <PayPalScope token={token} bill={bill} onPaid={onPaid}>
+              {paid ? (
+                <Confirmation
+                  bill={bill}
+                  paid={paid}
+                  onBack={() => {
+                    const url = new URL(window.location.href);
+                    for (const key of ['checkout', 'token', 'PayerID'])
+                      url.searchParams.delete(key);
+                    window.history.replaceState(window.history.state, '', url);
+                    setPaid(null);
+                  }}
+                />
+              ) : (
+                <BillStep token={token} bill={bill} onPaid={onPaid} />
+              )}
+            </PayPalScope>
           )}
         </main>
       </div>

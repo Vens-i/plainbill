@@ -9,7 +9,7 @@ import { formatLongDate, formatMoney, formatMoneyShort } from '@plainbill/core';
 import type { Paid } from './PayPage';
 import { AskAboutBill } from './AskAboutBill';
 import { formatDay, useI18n } from './i18n';
-import { PayOptions, PayPalScope } from './PayOptions';
+import { PayOptions } from './PayOptions';
 import { StatementExplained } from './statement/StatementExplained';
 import { StickyPay } from './StickyPay';
 import { Waterfall } from './Waterfall';
@@ -122,10 +122,10 @@ export function BillStep({ token, bill, onPaid }: Props) {
           </section>
         )}
 
-        <PayPalScope bill={bill}>
+        <>
           <AskAboutBill token={token} bill={bill} onPaid={onPaid} />
           {!settled && <PayOptions token={token} bill={bill} onPaid={onPaid} planPick={planPick} />}
-        </PayPalScope>
+        </>
 
         {bill.payments.length > 0 && (
           <section className="pay-card">

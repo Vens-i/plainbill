@@ -89,6 +89,8 @@ export interface CreateOrderBody {
         brand_name: string;
         shipping_preference: 'NO_SHIPPING';
         user_action: 'PAY_NOW';
+        return_url: string;
+        cancel_url: string;
       };
     };
   };

@@ -310,6 +310,12 @@ describe('Paying with PayPal (Orders v2)', () => {
       h,
     );
     expect(order.json.amountCents).toBe(5000);
+    expect(
+      paypal.orders.get(order.json.orderId)!.body.payment_source?.paypal.experience_context,
+    ).toMatchObject({
+      return_url: `https://pay.example.test/pay/${token}?checkout=approved`,
+      cancel_url: `https://pay.example.test/pay/${token}?checkout=cancelled`,
+    });
     expect(paypal.orders.get(order.json.orderId)!.body.purchase_units[0]!.description).toBe(
       'Harborview Family Medicine · visit on Sep 29, 2026',
     );
@@ -408,6 +414,32 @@ describe('An order approved in PayPal but never captured (the page closed)', () 
     expect(sync.json.recorded).toBe(1);
     expect((await rowOf('Robert Chen')).status).toBe('paid');
     expect(published.filter((e) => e.type === 'payment')).toHaveLength(1);
+
+    // Mobile returns after synchronization already recorded the payment: recover its receipt.
+    const recovered = await call<PayResult>(
+      'POST',
+      `/pay/${token}/orders/${order.orderId}/capture`,
+      undefined,
+      { cookie },
+    );
+    expect(recovered.status).toBe(200);
+    expect(recovered.json.pending).toBe(false);
+    expect(recovered.json.bill.amounts.remainingCents).toBe(0);
+    expect(
+      recovered.json.bill.payments.find((p) => p.id === recovered.json.paymentId),
+    ).toMatchObject({ via: 'PayPal', amountCents: robert.remainingCents });
+    expect(published.filter((e) => e.type === 'payment')).toHaveLength(1);
+
+    // An order in the return URL cannot be used with a different verified bill.
+    const otherToken = tokenOf(await rowOf('Kevin Lam'));
+    const other = await verify(otherToken, 'Lam', [2, 11, 1991]);
+    expect(
+      (
+        await call('POST', `/pay/${otherToken}/orders/${order.orderId}/capture`, undefined, {
+          cookie: other.cookie,
+        })
+      ).status,
+    ).toBe(404);
   });
 });
 
