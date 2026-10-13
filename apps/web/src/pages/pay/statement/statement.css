@@ -552,3 +552,129 @@
   padding: 0 22px;
   font-size: 15px;
 }
+
+/* ── Language picker ── */
+.st-lang {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.st-lang-label {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+.st-lang-seg {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.st-lang-seg button {
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font: 500 15px var(--font-ui);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.st-lang-seg button:hover {
+  background: var(--segment);
+}
+.st-lang-seg button.is-on {
+  background: var(--teal-700);
+  color: #fff;
+  font-weight: 600;
+}
+.st-lang-more {
+  position: relative;
+}
+.st-lang-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 30;
+  min-width: 180px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-raised);
+}
+.st-lang-menu button {
+  width: 100%;
+  text-align: left;
+}
+.st-lang-menu button[aria-checked='true'] {
+  background: var(--teal-50);
+  color: var(--teal-800);
+  font-weight: 600;
+}
+.st-lang-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--teal-800);
+  font: 600 16px var(--font-ui);
+  cursor: pointer;
+}
+.st-lang-sheet {
+  width: 100%;
+  max-width: 440px;
+  margin: auto auto 0;
+  border: 0;
+  border-radius: 18px 18px 0 0;
+  padding: 18px 16px calc(16px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  color: var(--ink);
+}
+.st-lang-sheet::backdrop {
+  background: rgba(28, 43, 45, 0.45);
+}
+.st-lang-list {
+  border: 0;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.st-lang-list legend {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  padding: 0;
+}
+.st-lang-list label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 8px;
+  border-radius: 10px;
+  font-size: 17px;
+  cursor: pointer;
+}
+.st-lang-list label.is-on {
+  background: var(--teal-50);
+  font-weight: 600;
+}
+.st-lang-list input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--teal-700);
+}
+.st-lang-close {
+  height: 48px;
+}

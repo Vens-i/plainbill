@@ -14,6 +14,7 @@ import {
   toScreen,
 } from '../src/pages/pay/statement/geometry';
 import { noteParts } from '../src/pages/pay/statement/format';
+import { formatDay, hasPageText, I18N_KEYS, translator } from '../src/pages/pay/i18n';
 
 const anchor = (over: Partial<Anchor> = {}): Anchor => ({
   id: 'discount',
@@ -203,5 +204,29 @@ describe('phone geometry', () => {
     expect(line.startsWith('M100 10 C')).toBe(true);
     expect(line.endsWith('140 120')).toBe(true);
     expect(head).toContain('L140 120 L');
+  });
+});
+
+describe('page text', () => {
+  it('has every string in Spanish, and fills in amounts and names', () => {
+    const en = translator('en');
+    const es = translator('es');
+    expect(es('heroOwe', { name: 'Maria' })).toBe('Hola Maria — usted debe');
+    expect(es('payOrPlan', { amount: '$240' })).toBe('Pagar $240 o en cuotas');
+    expect(es('position', { n: 5, total: 6 })).toBe('5 de 6');
+    expect(en('position', { n: 4, total: 6 })).toBe('4 of 6');
+    // Languages without page text stay English.
+    expect(translator('ht')('next')).toBe('Next ›');
+    expect(hasPageText('es')).toBe(true);
+    expect(hasPageText('zh')).toBe(false);
+    expect(formatDay('2026-10-03', 'es')).toBe('3 de octubre');
+  });
+
+  it('leaves no English behind in the Spanish table', () => {
+    const en = translator('en');
+    const es = translator('es');
+    const keys = I18N_KEYS.filter((k) => es(k) === en(k));
+    // Only strings that are the same in both languages may match.
+    expect(keys).toEqual([]);
   });
 });

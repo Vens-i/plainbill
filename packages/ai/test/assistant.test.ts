@@ -79,12 +79,24 @@ type Reply =
 
 /** Canned model turns, in order. */
 function fakeClient(replies: Reply[]) {
-  const calls: Array<{ messages: unknown[]; tools: Array<{ name: string }> }> = [];
+  const calls: Array<{
+    messages: unknown[];
+    tools: Array<{ name: string }>;
+    system?: Array<{ text: string }>;
+  }> = [];
   const client = {
     beta: {
       messages: {
-        create: async (params: { messages: unknown[]; tools: Array<{ name: string }> }) => {
-          calls.push({ messages: structuredClone(params.messages), tools: params.tools });
+        create: async (params: {
+          messages: unknown[];
+          tools: Array<{ name: string }>;
+          system?: Array<{ text: string }>;
+        }) => {
+          calls.push({
+            messages: structuredClone(params.messages),
+            tools: params.tools,
+            ...(params.system ? { system: params.system } : {}),
+          });
           const next = replies.shift();
           if (!next) throw new Error('no more canned replies');
           if (next instanceof Error) throw next;
@@ -270,5 +282,34 @@ describe('rule-based helper (offline)', () => {
     const { r } = await reply('Is this right?');
     expect(r.text).toContain('$200 + $40 = $240.');
     expect(r.cards.map((c) => c.kind)).toEqual(['phone_call']);
+  });
+});
+
+describe('the page language', () => {
+  it('asks Claude to answer in the language the patient picked', async () => {
+    const { client, calls } = fakeClient([{ text: 'Usted debe $240.' }]);
+    const reply = await new ClaudeBillAssistant({ client, model: 'claude-test' }).reply({
+      facts: maria,
+      history: [],
+      message: 'Why do I owe this?',
+      handler: handler(),
+      language: { code: 'es', name: 'Spanish' },
+    });
+    expect(reply.text).toBe('Usted debe $240.');
+    expect(calls[0]!.system!.at(-1)!.text).toBe(
+      'The patient chose Spanish on the page. Answer in Spanish, unless they write to you in another language.',
+    );
+  });
+
+  it('adds nothing for English', async () => {
+    const { client, calls } = fakeClient([{ text: 'You owe $240.' }]);
+    await new ClaudeBillAssistant({ client, model: 'claude-test' }).reply({
+      facts: maria,
+      history: [],
+      message: 'Why?',
+      handler: handler(),
+      language: { code: 'en', name: 'English' },
+    });
+    expect(calls[0]!.system).toHaveLength(2);
   });
 });

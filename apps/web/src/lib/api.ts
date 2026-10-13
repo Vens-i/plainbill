@@ -138,7 +138,8 @@ export const payApi = {
     token: string,
     message: string,
     history: Array<{ role: 'patient' | 'assistant'; text: string }>,
-  ) => request<AssistantAnswer>('POST', `/pay/${token}/assistant`, { message, history }),
+    lang = 'en',
+  ) => request<AssistantAnswer>('POST', `/pay/${token}/assistant`, { message, history, lang }),
   confirmAction: (token: string, actionId: string) =>
     request<AssistantConfirmResult>(
       'POST',

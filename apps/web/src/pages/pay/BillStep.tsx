@@ -91,8 +91,8 @@ export function BillStep({ token, bill, onPaid }: Props) {
 
       <div className="pay-column">
         <section className="pay-card">
-          <h2 className="pay-h2">How we got to {formatMoney(amounts.remainingCents)}</h2>
-          <p className="pay-sub">Tap a bar to learn what it means</p>
+          <h2 className="pay-h2">{t('shortVersion')}</h2>
+          <p className="pay-sub">{t('tapBar')}</p>
           <Waterfall steps={bill.waterfall} />
         </section>
 
@@ -121,7 +121,7 @@ export function BillStep({ token, bill, onPaid }: Props) {
               aria-controls="pay-terms-body"
               onClick={() => setTermsOpen((o) => !o)}
             >
-              <span>What do these terms mean?</span>
+              <span>{t('termsTitle')}</span>
               <span className="pay-terms-sign" aria-hidden="true">
                 {termsOpen ? '−' : '+'}
               </span>
@@ -145,7 +145,7 @@ export function BillStep({ token, bill, onPaid }: Props) {
 
         {bill.payments.length > 0 && (
           <section className="pay-card">
-            <h2 className="pay-h2">Your payments</h2>
+            <h2 className="pay-h2">{t('yourPayments')}</h2>
             <ul className="pay-lines">
               {bill.payments.map((p) => (
                 <li key={p.id}>
@@ -161,7 +161,7 @@ export function BillStep({ token, bill, onPaid }: Props) {
         )}
 
         <footer className="pay-footer">
-          Prefer a person? Call{' '}
+          {t('footerPrefer')}{' '}
           <a href={`tel:${bill.practice.phone.replace(/\D/g, '')}`}>{bill.practice.phone}</a>
           {bill.practice.hours ? `, ${bill.practice.hours}` : ''}.
           <br />

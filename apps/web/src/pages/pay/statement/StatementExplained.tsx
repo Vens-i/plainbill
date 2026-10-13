@@ -71,6 +71,7 @@ export function StatementExplained({ token, bill, onAsk }: Props) {
   }, []);
 
   if (failed) return null;
+  const notesLang = notes && !notes.fallback ? notes.lang : undefined;
   const label = t('statementLabel', {
     practice: bill.practice.name,
     amount: formatMoney(bill.amounts.remainingCents),
@@ -151,6 +152,7 @@ export function StatementExplained({ token, bill, onAsk }: Props) {
           caption={caption}
           footnote={footnote}
           loading={loadingPaper}
+          notesLang={notesLang}
         />
       ) : (
         <>
@@ -167,6 +169,7 @@ export function StatementExplained({ token, bill, onAsk }: Props) {
               onActive={setActive}
               pulse={pulse}
               onPulse={onPulse}
+              notesLang={notesLang}
               below={
                 <button type="button" className="st-link st-ask-link" onClick={onAsk}>
                   {t('askButton')}

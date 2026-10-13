@@ -34,6 +34,8 @@ interface Props {
   caption: ReactNode;
   footnote: ReactNode;
   loading: ReactNode;
+  /** The notes' language, for assistive tech (unset when they fell back to English). */
+  notesLang?: string;
 }
 
 interface Placed {
@@ -58,6 +60,7 @@ export function DesktopStatement({
   caption,
   footnote,
   loading,
+  notesLang,
 }: Props) {
   const deskRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
@@ -215,7 +218,7 @@ export function DesktopStatement({
       )}
 
       {notes && notes.length > 0 && (
-        <ol className="st-notes-desk">
+        <ol className="st-notes-desk" lang={notesLang}>
           {notes.map((note) => {
             const pos = placed?.positions[note.anchorId];
             return (

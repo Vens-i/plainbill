@@ -41,6 +41,8 @@ interface Props {
   onPulse: (anchorId: string) => void;
   /** Under the pager (the "Ask about this bill" link). */
   below?: ReactNode;
+  /** The notes' language, for assistive tech. */
+  notesLang?: string;
 }
 
 export function PhoneStatement({
@@ -55,6 +57,7 @@ export function PhoneStatement({
   pulse,
   onPulse,
   below,
+  notesLang,
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
@@ -180,7 +183,7 @@ export function PhoneStatement({
 
       <div className="st-phone-card" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
         {note ? (
-          <ol className="st-phone-list" start={note.n}>
+          <ol className="st-phone-list" start={note.n} lang={notesLang}>
             <li>
               <NoteCard note={note} phone={phone} chipLabel={strings.chipLabel} tilt={false} />
             </li>

@@ -9,7 +9,8 @@ import type { PatientBill, PayLinkInfo, PayResult } from '@plainbill/api/contrac
 import { ApiError, payApi } from '../../lib/api';
 import { BillStep } from './BillStep';
 import { Confirmation } from './Confirmation';
-import { I18nContext, translator } from './i18n';
+import { hasPageText, I18nContext, translator } from './i18n';
+import { LanguagePicker, saveLanguage, savedLanguage } from './statement/LanguagePicker';
 import { TopBar } from './TopBar';
 import { VerifyStep } from './VerifyStep';
 
@@ -25,8 +26,16 @@ export function PayPage() {
   const [bill, setBill] = useState<PatientBill | null>(null);
   const [invalid, setInvalid] = useState<string | null>(null);
   const [paid, setPaid] = useState<Paid | null>(null);
-  const [lang] = useState('en');
+  const [lang, setLang] = useState(() => savedLanguage() ?? 'en');
   const i18n = useMemo(() => ({ lang, t: translator(lang) }), [lang]);
+
+  // The page's own text is English or Spanish; other languages translate the notes only.
+  useEffect(() => {
+    document.documentElement.lang = hasPageText(lang) ? lang : 'en';
+    return () => {
+      document.documentElement.lang = 'en';
+    };
+  }, [lang]);
 
   useEffect(() => {
     document.title = 'Your bill';
@@ -75,7 +84,15 @@ export function PayPage() {
           <TopBar
             practiceName={bill!.practice.name}
             patientName={`${bill!.firstName} ${bill!.lastInitial}.`}
-          />
+          >
+            <LanguagePicker
+              value={lang}
+              onChange={(code) => {
+                setLang(code);
+                saveLanguage(code);
+              }}
+            />
+          </TopBar>
         )}
         <main className={`pay-main${onBill ? ' is-bill' : ''}`}>
           {!onBill && <div className="pay-brand">{info?.practice.name ?? ''}</div>}

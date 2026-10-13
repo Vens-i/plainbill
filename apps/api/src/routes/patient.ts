@@ -5,6 +5,7 @@
  */
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ChatTurn } from '@plainbill/ai';
+import { noteLanguage } from '@plainbill/core';
 import type {
   AssistantAnswer,
   AssistantConfirmResult,
@@ -172,13 +173,16 @@ export function registerPatientRoutes(api: FastifyInstance, ctx: RouteContext): 
         return startPlan(ctx, invoice, months);
       });
 
-      pay.post<TokenParams & { Body: { message?: unknown; history?: unknown } }>(
+      pay.post<TokenParams & { Body: { message?: unknown; history?: unknown; lang?: unknown } }>(
         '/:token/assistant',
         async (request): Promise<AssistantAnswer> => {
           const invoice = verifiedInvoice(request, request.params.token);
           const message =
             typeof request.body?.message === 'string' ? request.body.message.trim() : '';
           if (!message) throw new PatientError('Type a question first.', 400, 'empty');
+          const language = noteLanguage(
+            typeof request.body?.lang === 'string' ? request.body.lang : 'en',
+          );
           if (!limiter.allow(invoice.id)) {
             throw new PatientError(
               'That’s a lot of questions for one bill. Please call the office for more help.',
@@ -191,6 +195,7 @@ export function registerPatientRoutes(api: FastifyInstance, ctx: RouteContext): 
             history: parseHistory(request.body?.history),
             message: message.slice(0, 600),
             handler: proposalHandler(ctx, invoice),
+            ...(language ? { language: { code: language.code, name: language.name } } : {}),
           });
           if (reply.notes.length) ctx.log.info(`Bill helper notes: ${reply.notes.join(' | ')}`);
           return { text: reply.text, source: reply.source, cards: reply.cards, via: reply.via };

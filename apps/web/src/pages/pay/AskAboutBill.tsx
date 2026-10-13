@@ -17,6 +17,7 @@ import type {
 } from '@plainbill/api/contract';
 import { formatMoneyShort } from '@plainbill/core';
 import { ApiError, payApi } from '../../lib/api';
+import { useI18n } from './i18n';
 import type { Paid } from './PayPage';
 
 interface Props {
@@ -36,6 +37,7 @@ const errorText = (err: unknown) =>
   err instanceof ApiError ? err.message : 'Something went wrong. Please try again.';
 
 export function AskAboutBill({ token, bill, onPaid }: Props) {
+  const { t: tr, lang } = useI18n();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -44,9 +46,9 @@ export function AskAboutBill({ token, bill, onPaid }: Props) {
   const owes = formatMoneyShort(bill.amounts.remainingCents);
   const canSplit = bill.options.plans.length > 0 || bill.options.partialMinimumCents !== null;
   const chips = [
-    turns.length === 0 && bill.amounts.remainingCents > 0 ? `Why do I owe ${owes}?` : null,
-    canSplit ? 'Can I pay over time?' : null,
-    'Is this right?',
+    turns.length === 0 && bill.amounts.remainingCents > 0 ? tr('askWhy', { amount: owes }) : null,
+    canSplit ? tr('askPlan') : null,
+    tr('askRight'),
   ].filter((c): c is string => c !== null);
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export function AskAboutBill({ token, bill, onPaid }: Props) {
     const history = turns.map(({ role, text }) => ({ role, text }));
     setTurns((t) => [...t, { role: 'patient', text: message }]);
     try {
-      const answer = await payApi.ask(token, message, history);
+      const answer = await payApi.ask(token, message, history, lang);
       setTurns((t) => [
         ...t,
         { role: 'assistant', text: answer.text, source: answer.source, cards: answer.cards },
@@ -83,9 +85,9 @@ export function AskAboutBill({ token, bill, onPaid }: Props) {
     <section id="ask" className="pay-card pay-ask" aria-labelledby="pay-ask-title">
       <div className="pay-ask-head">
         <h2 id="pay-ask-title" className="pay-h2">
-          Ask about your bill
+          {tr('askTitle')}
         </h2>
-        <span className="pay-ai-chip">✦ AI helper</span>
+        <span className="pay-ai-chip">{tr('askHelper')}</span>
       </div>
 
       {turns.length > 0 && (
@@ -142,12 +144,12 @@ export function AskAboutBill({ token, bill, onPaid }: Props) {
 
       <form className="pay-ask-form" onSubmit={submit}>
         <label htmlFor="pay-ask-input" className="visually-hidden">
-          Your question
+          {tr('askLabel')}
         </label>
         <input
           id="pay-ask-input"
           className="pay-input"
-          placeholder="Type a question…"
+          placeholder={tr('askPlaceholder')}
           maxLength={600}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -155,7 +157,7 @@ export function AskAboutBill({ token, bill, onPaid }: Props) {
         <button
           type="submit"
           className="pay-send"
-          aria-label="Send question"
+          aria-label={tr('askSend')}
           disabled={busy || !draft.trim()}
         >
           ↑
@@ -167,7 +169,7 @@ export function AskAboutBill({ token, bill, onPaid }: Props) {
         </p>
       )}
       <p className="pay-fine pay-left">
-        Prefer a person? Call{' '}
+        {tr('preferPerson')}{' '}
         <a href={`tel:${bill.practice.phone.replace(/\D/g, '')}`}>{bill.practice.phone}</a>
       </p>
     </section>

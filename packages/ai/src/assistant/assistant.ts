@@ -59,6 +59,8 @@ export interface AssistantRequest {
   history: ChatTurn[];
   message: string;
   handler: ProposalHandler;
+  /** The language the patient picked on the page (the notes' language). */
+  language?: { code: string; name: string };
 }
 
 export interface BillAssistant {
@@ -128,7 +130,13 @@ Answer only from BILL FACTS. Rules:
 - Payments: you cannot take payments. To help someone pay, use a propose_ tool: it shows the patient a confirmation card with the exact amounts. Never say a payment was made or a plan was set up; say they can confirm below.
 - Plain, warm language, short sentences, under 80 words, written as a chat reply: no markdown, headings or bullet lists. Don't mention procedure codes, adjustment codes or insurance ID numbers.
 - Don't describe your tools or your own earlier attempts. When a card is shown, just tell the patient what it offers and that they can confirm it below.
-- Reply in the language the patient writes in (English or Spanish). Write providers exactly as given (for example "Dr. Kim").`;
+- Reply in the language the patient writes in. Write providers exactly as given (for example "Dr. Kim").`;
+
+/** The page's language, when the patient picked one other than English. */
+function languageLine(language: AssistantRequest['language']): string | null {
+  if (!language || language.code === 'en') return null;
+  return `The patient chose ${language.name} on the page. Answer in ${language.name}, unless they write to you in another language.`;
+}
 
 type Tool = Anthropic.Beta.BetaTool;
 
@@ -236,6 +244,7 @@ export class ClaudeBillAssistant implements BillAssistant {
     issues: AnswerIssue[],
   ): Promise<{ text: string | null; cards: ProposalCard[]; extraAmounts: number[] }> {
     const { facts, history, message } = request;
+    const language = languageLine(request.language);
     const cards: ProposalCard[] = [];
     const extraAmounts: number[] = [];
     const turns: Anthropic.Beta.BetaMessageParam[] = history
@@ -264,6 +273,7 @@ export class ClaudeBillAssistant implements BillAssistant {
         system: [
           { type: 'text', text: SYSTEM_PROMPT },
           { type: 'text', text: `BILL FACTS\n${factsBlock(facts)}` },
+          ...(language ? [{ type: 'text' as const, text: language }] : []),
         ],
         tools: tools(facts),
         messages,
