@@ -204,6 +204,16 @@ describe('buildStatementModel', () => {
     expect(() => buildStatementModel({ ...MARIA, insurancePaidCents: 21000.5 })).toThrow(TypeError);
   });
 
+  it('says PAST DUE on a statement dated after its due date', () => {
+    const late = { ...AISHA, dueDate: '2026-07-20' };
+    expect(buildStatementModel(late).message).toContain(
+      'THE REMAINING BALANCE OF $600.00 WAS DUE ON 07/20/2026 AND IS NOW PAST DUE.',
+    );
+    expect(buildStatementModel({ ...LINDA, dueDate: '2026-09-01' }).message).not.toContain(
+      'PAST DUE',
+    );
+  });
+
   it('writes the MESSAGES box for each situation', () => {
     expect(buildStatementModel(MARIA).message).toBe(
       'YOUR INSURANCE HAS PROCESSED THIS CLAIM. THE REMAINING BALANCE IS YOUR RESPONSIBILITY AND IS DUE BY 11/09/2026. ' +

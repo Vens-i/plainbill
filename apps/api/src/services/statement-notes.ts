@@ -7,7 +7,12 @@
  */
 import { and, eq } from 'drizzle-orm';
 import { annotateFactsFor, TemplateStatementAnnotator } from '@plainbill/ai';
-import { noteLanguage, type NoteLanguage, type StatementNoteText } from '@plainbill/core';
+import {
+  isPastDue,
+  noteLanguage,
+  type NoteLanguage,
+  type StatementNoteText,
+} from '@plainbill/core';
 import type { StatementNote, StatementNotes } from '../contract';
 import { invoices, practices, statementNotes } from '../db/schema';
 import { getBalanceRows } from '../queries/rows';
@@ -19,14 +24,15 @@ import { statementFor, type Statement } from './statement';
 
 type Ctx = Pick<RouteContext, 'db' | 'today' | 'appBaseUrl' | 'ai' | 'log'>;
 
-/** What the notes depend on, beyond the statement's fixed lines. */
+/** What the notes depend on, beyond the statement's fixed lines (including being past due). */
 export function balanceHash({ model }: Statement): string {
   const { totals, input } = model;
   const offer = input.planOffer ? `${input.planOffer.months}` : '-';
   const active = input.planActive
     ? `${input.planActive.months}/${input.planActive.paidCount}`
     : '-';
-  return `${totals.remainingCents}:${totals.patientPaidCents}:${offer}:${active}`;
+  const late = isPastDue(input) ? 'late' : 'due';
+  return `${totals.remainingCents}:${totals.patientPaidCents}:${offer}:${active}:${late}`;
 }
 
 /** Number the notes and attach each anchor's printed line (both from code, not the model). */

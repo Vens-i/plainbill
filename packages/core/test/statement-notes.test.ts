@@ -161,6 +161,19 @@ describe('templateStatementNotes', () => {
     }
   });
 
+  it('says when a bill is past due, and points to a plan through the office', () => {
+    const late: StatementInput = { ...AISHA, planOffer: null, dueDate: '2026-07-20' };
+    expect(byId(late, 'en').messages).toEqual({
+      anchorId: 'messages',
+      title: 'Past its due date',
+      body: 'This was due Jul 20. Please pay $600 soon, or call (555) 014-2290 to set up a payment plan.',
+    });
+    expect(byId(late, 'es').messages!.title).toBe('Ya pasó la fecha');
+    expect(byId({ ...KEVIN, dueDate: '2026-11-02' }, 'en').messages!.body).toBe(
+      'Please pay $275 by Nov 2. Need to pay over time? Call (555) 014-2290 to set up a payment plan.',
+    );
+  });
+
   it('keeps a long patient share under the word limit', () => {
     const input: StatementInput = {
       ...MARIA,

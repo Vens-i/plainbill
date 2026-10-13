@@ -211,7 +211,6 @@ export function DesktopStatement({
           </>
         )}
       </div>
-      <div className="st-desk-footnote">{footnote}</div>
 
       {showMarks && placed && (
         <Arrows arrows={placed.arrows} width={placed.width} height={placed.height} />
@@ -249,6 +248,8 @@ export function DesktopStatement({
           })}
         </ol>
       )}
+      {/* After the notes in the DOM (so after them in tab order); the grid puts it under the page. */}
+      <div className="st-desk-footnote">{footnote}</div>
     </div>
   );
 }

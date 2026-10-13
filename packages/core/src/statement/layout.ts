@@ -11,6 +11,7 @@ import { STATEMENT_AGING } from '../aging';
 import { formatMoney, type Cents } from '../money';
 import { textWidth, winAnsi, type StatementFont } from './metrics';
 import {
+  isPastDue,
   statementAmount,
   statementDate,
   type ActivityRow,
@@ -484,7 +485,9 @@ export function layoutStatement(model: StatementModel): StatementLayout {
           ? `PAYMENT PLAN: ${active.paidCount} OF ${active.months} PAID`
           : offer
             ? `${offer.months} MONTHLY PAYMENTS`
-            : `DUE BY ${statementDate(input.dueDate, true)}`,
+            : isPastDue(input)
+              ? 'PAST DUE'
+              : `DUE BY ${statementDate(input.dueDate, true)}`,
     amountsCents: [
       totals.remainingCents,
       ...(offer ? [offer.firstCents, offer.regularCents] : []),

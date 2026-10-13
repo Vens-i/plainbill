@@ -134,6 +134,13 @@ function shareParts(s: PatientShare): Array<{ code: string; label: string; cents
   ].filter((p) => p.cents > 0);
 }
 
+/** True when there is still something to pay and the due date is before the statement date. */
+export function isPastDue(
+  input: Pick<StatementInput, 'dueDate' | 'statementDate' | 'remainingCents'>,
+) {
+  return input.remainingCents > 0 && input.dueDate < input.statementDate;
+}
+
 function messageText(input: StatementInput, totals: StatementTotals): string {
   const name = upper(input.practice.name);
   const due = statementDate(input.dueDate, true);
@@ -147,12 +154,12 @@ function messageText(input: StatementInput, totals: StatementTotals): string {
   } else {
     parts.push('YOUR INSURANCE HAS PROCESSED THIS CLAIM.');
   }
+  // Past its due date (a statement re-dated today for an older bill): say so plainly.
+  const when = isPastDue(input) ? `WAS DUE ON ${due} AND IS NOW PAST DUE` : `IS DUE BY ${due}`;
   if (totals.patientPaidCents > 0) {
-    parts.push(
-      `THANK YOU FOR YOUR PAYMENTS. THE REMAINING BALANCE OF ${remaining} IS DUE BY ${due}.`,
-    );
+    parts.push(`THANK YOU FOR YOUR PAYMENTS. THE REMAINING BALANCE OF ${remaining} ${when}.`);
   } else {
-    parts.push(`THE REMAINING BALANCE IS YOUR RESPONSIBILITY AND IS DUE BY ${due}.`);
+    parts.push(`THE REMAINING BALANCE IS YOUR RESPONSIBILITY AND ${when}.`);
   }
   const active = input.planActive;
   if (active && active.paidCount < active.months) {

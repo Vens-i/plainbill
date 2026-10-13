@@ -8,7 +8,7 @@ import { formatMonthDay, type IsoDate } from '../dates';
 import { formatMoney, formatMoneyShort, type Cents } from '../money';
 import { patientServiceLabel } from '../procedures';
 import type { Anchor, StatementLayout } from './layout';
-import type { StatementModel } from './model';
+import { isPastDue, type StatementModel } from './model';
 
 export type TemplateNoteLang = 'en' | 'es';
 
@@ -185,9 +185,15 @@ function englishNote(model: StatementModel, anchor: Anchor): Omit<StatementNoteT
           body: `Pay it all now, or split it into ${split} with no fees. Questions? Call ${phone}.`,
         };
       }
+      if (isPastDue(input)) {
+        return {
+          title: 'Past its due date',
+          body: `This was due ${formatMonthDay(input.dueDate)}. Please pay ${$(remaining)} soon, or call ${phone} to set up a payment plan.`,
+        };
+      }
       return {
         title: "When it's due",
-        body: `Please pay ${$(remaining)} by ${formatMonthDay(input.dueDate)}. Questions, or need more time? Call ${phone}.`,
+        body: `Please pay ${$(remaining)} by ${formatMonthDay(input.dueDate)}. Need to pay over time? Call ${phone} to set up a payment plan.`,
       };
     }
   }
@@ -311,9 +317,15 @@ function spanishNote(model: StatementModel, anchor: Anchor): Omit<StatementNoteT
           body: `Pague todo ahora o divídalo en ${split} sin cargos. ¿Preguntas? Llame al ${phone}.`,
         };
       }
+      if (isPastDue(input)) {
+        return {
+          title: 'Ya pasó la fecha',
+          body: `Vencía el ${formatSpanishDate(input.dueDate)}. Por favor pague ${$(remaining)} pronto, o llame al ${phone} para hacer un plan de pagos.`,
+        };
+      }
       return {
         title: 'Cuándo vence',
-        body: `Por favor pague ${$(remaining)} antes del ${formatSpanishDate(input.dueDate)}. ¿Preguntas o necesita más tiempo? Llame al ${phone}.`,
+        body: `Por favor pague ${$(remaining)} antes del ${formatSpanishDate(input.dueDate)}. ¿Necesita pagar en cuotas? Llame al ${phone} para hacer un plan de pagos.`,
       };
     }
   }
