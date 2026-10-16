@@ -10,6 +10,7 @@ import {
   MARIA_ON_PLAN,
   SAMUEL,
   SELF_PAY_DISCOUNT,
+  THEO,
 } from './fixtures/statements';
 
 const ALL: Array<[string, StatementInput]> = [
@@ -20,6 +21,7 @@ const ALL: Array<[string, StatementInput]> = [
   ['Linda', LINDA],
   ['self-pay discount', SELF_PAY_DISCOUNT],
   ['Maria on a plan', MARIA_ON_PLAN],
+  ['Theo (split visit)', THEO],
 ];
 
 const layout = (input: StatementInput) => layoutStatement(buildStatementModel(input));
@@ -48,6 +50,7 @@ function textSpan(op: Extract<Op, { t: 'text' }>): [number, number] {
 const PAGE: Rect = { x: 0, y: 0, w: 612, h: 792 };
 const ROW_KINDS = [
   'charges',
+  'split_visit',
   'insurance_payment',
   'discount',
   'patient_responsibility',
@@ -273,5 +276,52 @@ describe('layoutStatement', () => {
     expect(() =>
       layout({ ...KEVIN, lines, patientShare: { ...KEVIN.patientShare }, remainingCents: 30000 }),
     ).toThrow(/more than one page/);
+  });
+});
+
+describe('the split visit', () => {
+  it('highlights the problem-visit line inside the charges loop', () => {
+    const l = layout(THEO);
+    expect(l.anchors.map((a) => a.id)).toEqual([
+      'amount_due',
+      'charges',
+      'split_visit',
+      'insurance_payment',
+      'discount',
+      'patient_responsibility',
+      'messages',
+    ]);
+    const split = l.anchors.find((a) => a.id === 'split_visit')!;
+    const charges = l.anchors.find((a) => a.id === 'charges')!;
+    expect(split).toMatchObject({
+      kind: 'split_visit',
+      style: 'highlight',
+      side: 'right',
+      quote: '99213 220.00',
+      amountsCents: [22000, 15000],
+    });
+    // Same rows as the loop (row highlights run to the table edge, a point past the loop).
+    expect(split.rect.y).toBeGreaterThanOrEqual(charges.rect.y);
+    expect(split.rect.y + split.rect.h).toBeLessThanOrEqual(charges.rect.y + charges.rect.h);
+  });
+
+  it('is only there when the input says so', () => {
+    expect(layout(MARIA).anchors.some((a) => a.kind === 'split_visit')).toBe(false);
+    expect(
+      layout({ ...THEO, splitVisit: null }).anchors.some((a) => a.kind === 'split_visit'),
+    ).toBe(false);
+  });
+
+  it('refuses a split visit that points at missing lines or owes more than the patient share', () => {
+    const sv = THEO.splitVisit!;
+    expect(() =>
+      buildStatementModel({ ...THEO, splitVisit: { ...sv, problemLineIndex: 7 } }),
+    ).toThrow(RangeError);
+    expect(() =>
+      buildStatementModel({
+        ...THEO,
+        splitVisit: { ...sv, problemShare: { ...sv.problemShare, totalCents: 99999 } },
+      }),
+    ).toThrow(/more than the patient's share/);
   });
 });

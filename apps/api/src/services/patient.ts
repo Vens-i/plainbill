@@ -288,6 +288,10 @@ function terms(r: BalanceRow) {
       term: 'Copay',
       body: `a set amount you pay for a visit, decided by your plan. Here, ${formatMoneyShort(s.copayCents)}.`,
     },
+    r.splitVisit && {
+      term: 'Checkup vs. office visit',
+      body: `your yearly checkup is covered in full. When another concern comes up during it, that part is billed as an office visit (here, ${formatMoneyShort(r.splitVisit.problem.chargeCents)}) and your plan's usual costs apply.`,
+    },
   ].filter((t): t is { term: string; body: string } => Boolean(t));
 }
 
@@ -377,6 +381,13 @@ export function patientBill(ctx: Ctx, invoiceId: number): PatientBill {
       name: patientServiceName(l.procedureCode, r.provider),
       chargeCents: l.chargeCents,
     })),
+    splitVisit: r.splitVisit
+      ? {
+          checkupChargeCents: r.splitVisit.preventive.chargeCents,
+          visitChargeCents: r.splitVisit.problem.chargeCents,
+          share: r.splitVisit.problem.patientShare,
+        }
+      : null,
     terms: terms(r),
     options: {
       partialMinimumCents: open && option.type === 'partial' ? option.minimumCents : null,

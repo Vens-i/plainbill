@@ -10,6 +10,7 @@ import { formatMoneyShort, parseDecimalToCents } from '@plainbill/core';
 import {
   checkAnswer,
   explainOwes,
+  explainSplitVisit,
   factsBlock,
   shortName,
   sourceLine,
@@ -104,6 +105,13 @@ export class RuleBillAssistant implements BillAssistant {
         await propose({ kind: 'phone_call' });
         text = `This bill is due in full. If that's hard right now, ${callUs(f)} — they can help.`;
       }
+    } else if (
+      f.splitVisit &&
+      /check-?up|physical|preventive|wellness|annual|yearly|free|chequeo|gratis|(second|extra|another|separate) (charge|bill|visit)/.test(
+        q,
+      )
+    ) {
+      text = `Good question! ${explainSplitVisit(f)}`;
     } else if (/\b(pay|paypal|card)\b/.test(q) && f.remainingCents > 0) {
       await propose({ kind: 'pay_in_full' });
       text = `You can pay ${$(f.remainingCents)} with PayPal, Pay Later or a card. Tap Confirm below and PayPal will open.`;
@@ -127,6 +135,7 @@ Answer only from BILL FACTS. Rules:
 - Every dollar amount you write must appear in BILL FACTS, written the same way (for example "$240"). Never calculate a new amount. You may show how listed amounts add up (for example "$200 + $40 = $240") when every number is listed.
 - If the answer is not in BILL FACTS (coverage questions, appeals, medical questions, anything about other visits), say you don't know and use offer_phone_call so they can reach the office.
 - No medical advice. Don't guess whether the bill is wrong; explain how the amount was worked out and offer a call.
+- If BILL FACTS show a split visit and the patient asks why their checkup or physical wasn't free (or why there's an extra charge), explain it: the checkup itself was covered in full; another concern discussed during it was billed as its own office visit, and their share comes from that visit. Never guess or name what the concern was.
 - Payments: you cannot take payments. To help someone pay, use a propose_ tool: it shows the patient a confirmation card with the exact amounts. Never say a payment was made or a plan was set up; say they can confirm below.
 - Plain, warm language, short sentences, under 80 words, written as a chat reply: no markdown, headings or bullet lists. Don't mention procedure codes, adjustment codes or insurance ID numbers.
 - Don't describe your tools or your own earlier attempts. When a card is shown, just tell the patient what it offers and that they can confirm it below.

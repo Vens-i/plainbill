@@ -6,6 +6,8 @@ import type {
   BalanceStatus,
   IsoDate,
   PatientShare,
+  SplitVisit,
+  SplitVisitShare,
   PlanOption,
   StatementLayout,
 } from '@plainbill/core';
@@ -76,6 +78,11 @@ export interface BalanceRow {
   lines: BalanceLine[];
   adjustments: DisplayAdjustment[];
   patientShare: PatientShare;
+  /**
+   * A covered checkup with a problem visit billed separately (modifier 25), detected by
+   * @plainbill/core from the adjudicated lines; the indexes point into `lines`.
+   */
+  splitVisit: (SplitVisit & { preventiveIndex: number; problemIndex: number }) | null;
   /** The 3-month plan option ("Plan-eligible: 3 × $80"), when there is something to pay. */
   plan: PlanOption | null;
   invoice: {
@@ -347,6 +354,12 @@ export interface PatientBill {
   waterfall: WaterfallStep[];
   /** Plain-language service names (never codes). */
   services: Array<{ name: string; chargeCents: number }>;
+  /** A covered checkup with a problem visit billed separately; the amounts are that visit's. */
+  splitVisit: {
+    checkupChargeCents: number;
+    visitChargeCents: number;
+    share: SplitVisitShare;
+  } | null;
   terms: Array<{ term: string; body: string }>;
   options: {
     /** Set when staff allowed partial payments. */

@@ -10,6 +10,7 @@ import {
   describeAdjustment,
   describeProcedure,
   describeRemark,
+  detectSplitVisit,
   formatMoneyShort,
   noteLanguage,
   planOption,
@@ -162,6 +163,14 @@ export function getBalanceRows(db: DbLike, today: IsoDate, ids?: number[]): Bala
     const lines = linesByVisit.get(visit.id) ?? [];
     const claim = visitToClaim(visit, lines, adjsByVisit.get(visit.id) ?? []);
     const computed = computePatientBalance(claim);
+    const split = detectSplitVisit(claim);
+    const splitVisit = split
+      ? {
+          ...split,
+          preventiveIndex: lines.findIndex((l) => l.lineNumber === split.preventive.lineNumber),
+          problemIndex: lines.findIndex((l) => l.lineNumber === split.problem.lineNumber),
+        }
+      : null;
     const invoice = invoicesByBalance.get(balance.id)?.at(-1) ?? null;
     const paymentList = paymentsByBalance.get(balance.id) ?? [];
     const lastPayment = paymentList.at(-1) ?? null;
@@ -323,6 +332,7 @@ export function getBalanceRows(db: DbLike, today: IsoDate, ids?: number[]): Bala
       })),
       adjustments: display,
       patientShare: computed.patientShare,
+      splitVisit,
       plan: remaining > 0 && !visit.denied ? planOption(remaining, 3) : null,
       invoice: invoice
         ? {

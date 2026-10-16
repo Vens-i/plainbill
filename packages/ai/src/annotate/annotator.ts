@@ -58,6 +58,7 @@ Rules:
 - Use only the figures listed for that line, written like "$240" or "$240.00". Never calculate, add or invent a figure.
 - No procedure codes, adjustment codes, diagnoses or insurance ID numbers in the text (the patient sees the printed line separately).
 - Write providers exactly as given (for example "Dr. Patel"); don't change the title or guess their gender.
+- Never guess or name what a health concern was; the bill doesn't say.
 - The MEANING of each line is a correct English explanation; keep to it. If you are unsure what a line means, write "Call the office to check this line." instead of guessing.
 - Plain text only: no markdown, no emoji.`;
 

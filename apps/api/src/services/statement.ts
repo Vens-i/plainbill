@@ -167,6 +167,13 @@ export function statementInput(
     contractualCode: contractualCode(r),
     insurancePaidCents: r.insurancePaidCents,
     patientShare: r.patientShare,
+    splitVisit: r.splitVisit
+      ? {
+          preventiveLineIndex: r.splitVisit.preventiveIndex,
+          problemLineIndex: r.splitVisit.problemIndex,
+          problemShare: r.splitVisit.problem.patientShare,
+        }
+      : null,
     payments: paymentRows.map((x) => ({ date: x.postedOn, amountCents: x.amountCents })),
     remainingCents: r.remainingCents,
     aging: statementAging(r.remainingCents, Math.max(0, daysBetween(r.visitDate, today))),

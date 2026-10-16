@@ -5,6 +5,7 @@ import {
   checkAnswer,
   ClaudeBillAssistant,
   explainOwes,
+  explainSplitVisit,
   RuleBillAssistant,
   sourceLine,
   type BillFacts,
@@ -311,5 +312,109 @@ describe('the page language', () => {
       language: { code: 'en', name: 'English' },
     });
     expect(calls[0]!.system).toHaveLength(2);
+  });
+});
+
+describe('the split visit (a "free" checkup with a bill)', () => {
+  const theo: BillFacts = {
+    ...maria,
+    patientFirstName: 'Theo',
+    visitDate: '2026-09-16',
+    billedCents: 75000,
+    discountCents: 21000,
+    allowedCents: 54000,
+    insurancePaidCents: 39000,
+    deductibleCents: 15000,
+    coinsuranceCents: 0,
+    patientShareCents: 15000,
+    remainingCents: 15000,
+    services: [
+      { name: 'Preventive checkup with Dr. Patel', chargeCents: 38000 },
+      { name: 'Office visit with Dr. Patel', chargeCents: 22000 },
+      { name: 'Blood work (cholesterol panel)', chargeCents: 15000 },
+    ],
+    splitVisit: {
+      checkupChargeCents: 38000,
+      visitChargeCents: 22000,
+      shareCents: 15000,
+      deductibleCents: 15000,
+      coinsuranceCents: 0,
+      copayCents: 0,
+    },
+    options: { payInFull: true, partialMinimumCents: null, plans: [] },
+  };
+  const rules = new RuleBillAssistant();
+  const reply = (message: string, facts = theo) =>
+    rules.reply({ facts, history: [], message, handler: handler() });
+
+  it('explains it without naming the concern, with only the bill’s figures', () => {
+    const text = explainSplitVisit(theo)!;
+    expect(text).toBe(
+      'Your yearly checkup was covered in full. During it you also talked with Dr. Patel about another concern, ' +
+        'and that part is billed as a regular office visit ($220), which your plan treats like any sick visit. ' +
+        '$150 of it went toward your yearly deductible, so that part is yours to pay.',
+    );
+    expect(checkAnswer(text, theo)).toEqual([]);
+    expect(explainSplitVisit(maria)).toBeNull();
+  });
+
+  it('answers “why wasn’t my checkup free?” offline, in English or Spanish', async () => {
+    for (const q of [
+      "Why wasn't my checkup free?",
+      'I thought my physical was covered',
+      'Why is there an extra charge?',
+      '¿Por qué mi chequeo no fue gratis?',
+    ]) {
+      const r = await reply(q);
+      expect(r.text, q).toBe(`Good question! ${explainSplitVisit(theo)}`);
+      expect(checkAnswer(r.text, theo)).toEqual([]);
+    }
+  });
+
+  it('leads “why do I owe” with it when the office visit is the whole share', async () => {
+    expect(explainOwes(theo)).toBe(explainSplitVisit(theo));
+    const r = await reply('Why do I owe $150?');
+    expect(r.text).toContain('Your yearly checkup was covered in full.');
+  });
+
+  it('still explains the rest when other services added to the share', () => {
+    const more = {
+      ...theo,
+      coinsuranceCents: 2000,
+      patientShareCents: 17000,
+      remainingCents: 17000,
+    };
+    const text = explainOwes(more);
+    expect(text).toContain('Your yearly checkup was covered in full.');
+    expect(text).toContain('$150 + $20 = $170.');
+  });
+
+  it('does not route checkup questions to it on bills without a split visit', async () => {
+    const r = await rules.reply({
+      facts: maria,
+      history: [],
+      message: 'Is my checkup free?',
+      handler: handler(),
+    });
+    expect(r.text).not.toContain('covered in full');
+  });
+
+  it('tells Claude about it, and falls back to the split explanation', async () => {
+    const { client, calls } = fakeClient([
+      { text: 'Your checkup cost $199.' },
+      { text: 'It was $175.' },
+    ]);
+    const assistant = new ClaudeBillAssistant({ client, model: 'claude-test' });
+    const r = await assistant.reply({
+      facts: theo,
+      history: [],
+      message: "Why wasn't my checkup free?",
+      handler: handler(),
+    });
+    expect(JSON.stringify(calls[0])).toContain(
+      'Split visit: the yearly checkup ($380) was covered in full.',
+    );
+    expect(r.via).toBe('rules');
+    expect(r.text).toBe(`Good question! ${explainSplitVisit(theo)}`);
   });
 });

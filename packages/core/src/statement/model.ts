@@ -9,6 +9,7 @@ import type { StatementAgingKey } from '../aging';
 import type { IsoDate } from '../dates';
 import { assertCents, formatMoney, sumCents, type Cents } from '../money';
 import { describeProcedure } from '../procedures';
+import type { SplitVisitShare } from '../split-visit';
 
 /** What a highlight on the statement points at. */
 export type AnchorKind =
@@ -17,6 +18,7 @@ export type AnchorKind =
   | 'insurance_payment'
   | 'discount'
   | 'patient_responsibility'
+  | 'split_visit'
   | 'patient_payment'
   | 'messages';
 
@@ -69,6 +71,16 @@ export interface StatementInput {
   aging: Record<StatementAgingKey, Cents>;
   /** An interest-free plan offered and not started yet. */
   planOffer: { months: 3 | 6; firstCents: Cents; regularCents: Cents } | null;
+  /**
+   * A covered checkup with a problem visit billed separately (detectSplitVisit), by position in
+   * `lines`. Absent or null for every other visit.
+   */
+  splitVisit?: {
+    preventiveLineIndex: number;
+    problemLineIndex: number;
+    /** The patient's share of the problem visit alone. */
+    problemShare: SplitVisitShare;
+  } | null;
   /** A plan in progress (or finished). */
   planActive: {
     months: number;
@@ -107,6 +119,13 @@ export interface StatementModel {
   input: StatementInput;
   rows: ActivityRow[];
   totals: StatementTotals;
+  /** The split visit's rows, when there is one: the covered checkup and the problem visit. */
+  splitVisit: {
+    preventiveRowId: string;
+    problemRowId: string;
+    problemChargeCents: Cents;
+    problemShare: SplitVisitShare;
+  } | null;
   /** The MESSAGES box, upper-case like the rest of the paper. */
   message: string;
 }
@@ -315,6 +334,28 @@ export function buildStatementModel(input: StatementInput): StatementModel {
     );
   }
 
+  let splitVisit: StatementModel['splitVisit'] = null;
+  const sv = input.splitVisit;
+  if (sv) {
+    const problem = input.lines[sv.problemLineIndex];
+    const preventive = input.lines[sv.preventiveLineIndex];
+    if (!problem || !preventive || sv.problemLineIndex === sv.preventiveLineIndex) {
+      throw new RangeError(`Statement ${input.statementId}: split visit points at missing lines.`);
+    }
+    if (visit.selfPay || sv.problemShare.totalCents > shareCents) {
+      throw new ReconciliationError(
+        `Statement ${input.statementId}: the problem visit's share ${formatMoney(sv.problemShare.totalCents)} ` +
+          `is more than the patient's share ${formatMoney(shareCents)}.`,
+      );
+    }
+    splitVisit = {
+      preventiveRowId: `line-${sv.preventiveLineIndex + 1}`,
+      problemRowId: `line-${sv.problemLineIndex + 1}`,
+      problemChargeCents: problem.chargeCents,
+      problemShare: sv.problemShare,
+    };
+  }
+
   const totals: StatementTotals = {
     billedCents: billed,
     contractualCents: input.contractualCents,
@@ -323,5 +364,5 @@ export function buildStatementModel(input: StatementInput): StatementModel {
     patientPaidCents: patientPaid,
     remainingCents: input.remainingCents,
   };
-  return { input, rows, totals, message: messageText(input, totals) };
+  return { input, rows, totals, splitVisit, message: messageText(input, totals) };
 }

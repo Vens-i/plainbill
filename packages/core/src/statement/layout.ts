@@ -386,6 +386,29 @@ export function layoutStatement(model: StatementModel): StatementLayout {
       amountsCents: [totals.billedCents, ...charges.map((r) => r.chargeCents!)],
     });
   }
+  // The split visit: a highlight on the problem-visit line, inside the charges loop.
+  const sv = model.splitVisit;
+  if (sv) {
+    const r = model.rows.find((x) => x.id === sv.problemRowId)!;
+    const share = sv.problemShare;
+    anchors.push({
+      id: 'split_visit',
+      kind: 'split_visit',
+      rect: rowRect(r),
+      style: 'highlight',
+      side: 'right',
+      attach: 'right',
+      quote: `${r.code} ${statementAmount(r.chargeCents!)}`,
+      amountsCents: [
+        sv.problemChargeCents,
+        share.totalCents,
+        share.deductibleCents,
+        share.coinsuranceCents,
+        share.copayCents,
+        share.otherCents,
+      ].filter((c) => c > 0),
+    });
+  }
   const s = input.patientShare;
   for (const r of model.rows) {
     const rect = rowRect(r);
@@ -529,6 +552,7 @@ export function layoutStatement(model: StatementModel): StatementLayout {
   const order: AnchorKind[] = [
     'amount_due',
     'charges',
+    'split_visit',
     'insurance_payment',
     'discount',
     'patient_responsibility',

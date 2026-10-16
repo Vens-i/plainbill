@@ -273,3 +273,44 @@ describe('Ask about your bill (Kevin, partial payments allowed, Claude)', () => 
     expect(json.cards[0]!.detail).toEqual(['(555) 014-2290', 'Mon–Fri 8–5']);
   });
 });
+
+describe('“I’ll just pay it all now” (video scene 9b)', () => {
+  it('shows a pay-in-full card; confirming creates the order via the toolkit; capture pays the bill', async () => {
+    const { token, cookie } = await sendAndVerify(
+      'Theo Lambert',
+      { type: 'full' },
+      'Lambert',
+      [4, 11, 1979],
+    );
+    assistant.current = new RuleBillAssistant();
+    const { json } = await call<AssistantAnswer>(
+      'POST',
+      `/pay/${token}/assistant`,
+      { message: "I'll just pay it all now" },
+      cookie,
+    );
+    expect(json.cards).toHaveLength(1);
+    expect(json.cards[0]).toMatchObject({ kind: 'pay_in_full', amountCents: 15000 });
+
+    const confirmed = await call<AssistantConfirmResult>(
+      'POST',
+      `/pay/${token}/assistant/actions/${json.cards[0]!.id}/confirm`,
+      undefined,
+      cookie,
+    );
+    expect(confirmed.status).toBe(200);
+    expect(agent.calls.at(-1)).toMatchObject({
+      tool: 'create_order',
+      input: { amountCents: 15000 },
+    });
+    paypal.payerApprovesOrder(confirmed.json.orderId!);
+    const paid = await call<PayResult>(
+      'POST',
+      `/pay/${token}/orders/${confirmed.json.orderId}/capture`,
+      undefined,
+      cookie,
+    );
+    expect(paid.json.bill.amounts.remainingCents).toBe(0);
+    expect((await rowOf('Theo Lambert')).status).toBe('paid');
+  });
+});

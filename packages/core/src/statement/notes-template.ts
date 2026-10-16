@@ -7,6 +7,7 @@
 import { formatMonthDay, type IsoDate } from '../dates';
 import { formatMoney, formatMoneyShort, type Cents } from '../money';
 import { patientServiceLabel } from '../procedures';
+import type { SplitVisitShare } from '../split-visit';
 import type { Anchor, StatementLayout } from './layout';
 import { isPastDue, type StatementModel } from './model';
 
@@ -68,6 +69,20 @@ function serviceList(codes: string[], lang: TemplateNoteLang): string {
   return `${shown.slice(0, -1).join(', ')} ${and} ${shown.at(-1)}`;
 }
 
+/** The one kind of patient share a split visit's problem line has, or null when it's mixed. */
+function soleShareKind(share: SplitVisitShare): 'deductible' | 'coinsurance' | 'copay' | null {
+  const kinds = (
+    [
+      ['deductible', share.deductibleCents],
+      ['coinsurance', share.coinsuranceCents],
+      ['copay', share.copayCents],
+      ['other', share.otherCents],
+    ] as const
+  ).filter(([, cents]) => cents > 0);
+  const [only] = kinds;
+  return kinds.length === 1 && only![0] !== 'other' ? only![0] : null;
+}
+
 function englishNote(model: StatementModel, anchor: Anchor): Omit<StatementNoteText, 'anchorId'> {
   const { input, totals } = model;
   const { visit } = input;
@@ -105,6 +120,24 @@ function englishNote(model: StatementModel, anchor: Anchor): Omit<StatementNoteT
       return {
         title: 'What you had done',
         body: `Your ${formatMonthDay(visit.date)} visit${who}: ${serviceList(codes, 'en')}. ${before}: ${$(totals.billedCents)}.`,
+      };
+    }
+    case 'split_visit': {
+      const share = model.splitVisit!.problemShare;
+      const who = visit.providerName ?? 'your provider';
+      const only = soleShareKind(share);
+      const owed = $(share.totalCents);
+      const last =
+        only === 'deductible'
+          ? `That ${owed} goes toward your deductible.`
+          : only === 'coinsurance'
+            ? `Your share of that part is ${owed} (coinsurance).`
+            : only === 'copay'
+              ? `That part has a ${owed} copay.`
+              : `Your share of that part is ${owed}.`;
+      return {
+        title: "Why your checkup wasn't free",
+        body: `Your yearly checkup was covered in full. You also talked with ${who} about another concern, which is billed as a regular office visit. ${last}`,
       };
     }
     case 'insurance_payment':
@@ -237,6 +270,23 @@ function spanishNote(model: StatementModel, anchor: Anchor): Omit<StatementNoteT
       return {
         title: 'Lo que le hicieron',
         body: `Su visita del ${formatSpanishDate(visit.date)}${provider}: ${serviceList(codes, 'es')}. ${before}: ${$(totals.billedCents)}.`,
+      };
+    }
+    case 'split_visit': {
+      const share = model.splitVisit!.problemShare;
+      const only = soleShareKind(share);
+      const owed = $(share.totalCents);
+      const last =
+        only === 'deductible'
+          ? `Esos ${owed} van a su deducible.`
+          : only === 'coinsurance'
+            ? `Su parte de eso es ${owed} (coseguro).`
+            : only === 'copay'
+              ? `Esa parte tiene un copago de ${owed}.`
+              : `Su parte de eso es ${owed}.`;
+      return {
+        title: '¿Por qué no fue gratis?',
+        body: `Su chequeo anual fue cubierto por completo. También habló de otra preocupación con su proveedor${provider}, y esa parte se cobra como una consulta regular. ${last}`,
       };
     }
     case 'insurance_payment':

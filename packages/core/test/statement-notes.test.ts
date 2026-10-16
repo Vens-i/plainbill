@@ -19,6 +19,7 @@ import {
   MARIA_ON_PLAN,
   SAMUEL,
   SELF_PAY_DISCOUNT,
+  THEO,
 } from './fixtures/statements';
 
 const ALL: Array<[string, StatementInput]> = [
@@ -29,6 +30,7 @@ const ALL: Array<[string, StatementInput]> = [
   ['Linda', LINDA],
   ['self-pay discount', SELF_PAY_DISCOUNT],
   ['Maria on a plan', MARIA_ON_PLAN],
+  ['Theo (split visit)', THEO],
 ];
 const CASES = ALL.flatMap(([name, input]) =>
   (['en', 'es'] as const).map((lang) => [name, lang, input] as const),
@@ -194,5 +196,64 @@ describe('templateStatementNotes', () => {
     expect(note.body).toBe(
       'Your share is $200 deductible, $40 coinsurance, $50 copay and $50 not covered by your plan. Questions? Call (555) 014-2290.',
     );
+  });
+});
+
+describe('the split-visit note', () => {
+  const share = (over: Partial<NonNullable<StatementInput['splitVisit']>['problemShare']>) => ({
+    deductibleCents: 0,
+    coinsuranceCents: 0,
+    copayCents: 0,
+    otherCents: 0,
+    totalCents: 15000,
+    ...over,
+  });
+  const note = (input: StatementInput, lang: TemplateNoteLang) =>
+    notesFor(input, lang).notes.find((n) => n.anchorId === 'split_visit')!;
+
+  it('explains the covered checkup and the separate visit, in English and Spanish', () => {
+    expect(note(THEO, 'en')).toEqual({
+      anchorId: 'split_visit',
+      title: "Why your checkup wasn't free",
+      body: 'Your yearly checkup was covered in full. You also talked with Dr. Patel about another concern, which is billed as a regular office visit. That $150 goes toward your deductible.',
+    });
+    expect(note(THEO, 'es')).toEqual({
+      anchorId: 'split_visit',
+      title: '¿Por qué no fue gratis?',
+      body: 'Su chequeo anual fue cubierto por completo. También habló de otra preocupación con su proveedor (Dr. Patel), y esa parte se cobra como una consulta regular. Esos $150 van a su deducible.',
+    });
+  });
+
+  it('names the kind of share, or just the amount when it is mixed', () => {
+    const withShare = (s: ReturnType<typeof share>) => ({
+      ...THEO,
+      splitVisit: { ...THEO.splitVisit!, problemShare: s },
+      patientShare: {
+        ...THEO.patientShare,
+        deductibleCents: s.deductibleCents,
+        coinsuranceCents: s.coinsuranceCents,
+        copayCents: s.copayCents,
+      },
+    });
+    expect(note(withShare(share({ coinsuranceCents: 15000 })), 'en').body).toMatch(
+      /Your share of that part is \$150 \(coinsurance\)\.$/,
+    );
+    expect(note(withShare(share({ copayCents: 15000 })), 'es').body).toMatch(
+      /Esa parte tiene un copago de \$150\.$/,
+    );
+    expect(note(withShare(share({ deductibleCents: 10000, copayCents: 5000 })), 'en').body).toMatch(
+      /Your share of that part is \$150\.$/,
+    );
+  });
+
+  it('says "your provider" when no provider is on the claim', () => {
+    const input = { ...THEO, visit: { ...THEO.visit, providerName: null } };
+    expect(note(input, 'en').body).toContain('You also talked with your provider about');
+  });
+
+  it('never names a diagnosis or a code', () => {
+    for (const lang of ['en', 'es'] as const) {
+      expect(note(THEO, lang).body).not.toMatch(/\b\d{5}\b|\b(CO|PR)-?\d/);
+    }
   });
 });

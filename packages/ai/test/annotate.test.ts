@@ -285,3 +285,70 @@ describe('ClaudeStatementAnnotator', () => {
     expect(result.notes[0]!.body).toBe('Ou dwe $240.');
   });
 });
+
+describe('the split-visit note', () => {
+  const THEO_INPUT: StatementInput = {
+    ...MARIA_INPUT,
+    patient: { firstName: 'Theo', lastName: 'Lambert', addressLines: [] },
+    statementId: 'S0000021',
+    lines: [
+      { code: '99396', chargeCents: 38000 },
+      { code: '99213', chargeCents: 22000 },
+      { code: '80061', chargeCents: 15000 },
+    ],
+    contractualCents: 21000,
+    insurancePaidCents: 39000,
+    patientShare: {
+      deductibleCents: 15000,
+      coinsuranceCents: 0,
+      copayCents: 0,
+      otherCents: 0,
+      selfPayCents: 0,
+    },
+    remainingCents: 15000,
+    aging: statementAging(15000, 24),
+    planOffer: null,
+    splitVisit: {
+      preventiveLineIndex: 0,
+      problemLineIndex: 1,
+      problemShare: {
+        deductibleCents: 15000,
+        coinsuranceCents: 0,
+        copayCents: 0,
+        otherCents: 0,
+        totalCents: 15000,
+      },
+    },
+  };
+  const theoFacts = () => {
+    const model = buildStatementModel(THEO_INPUT);
+    return annotateFactsFor(
+      { ...MARIA_MESSAGE, patientFirstName: 'Theo', owesCents: 15000, plan: null },
+      { model, layout: layoutStatement(model) },
+      { code: 'en', name: 'English' },
+    );
+  };
+
+  it('gives Claude the line, its figures and its meaning', () => {
+    const f = theoFacts();
+    const split = f.anchors.find((a) => a.id === 'split_visit')!;
+    expect(split).toMatchObject({ kind: 'split_visit', amountsCents: [22000, 15000] });
+    expect(f.templates.en.find((n) => n.anchorId === 'split_visit')!.title).toBe(
+      "Why your checkup wasn't free",
+    );
+  });
+
+  it('rejects a note that brings in the checkup price or a code', () => {
+    const f = theoFacts();
+    const anchor = f.anchors.find((a) => a.id === 'split_visit');
+    const kinds = (body: string) =>
+      checkNote({ anchorId: 'split_visit', title: 'Your checkup', body }, anchor, f).map(
+        (i) => i.kind,
+      );
+    expect(kinds('Your checkup was covered. The $220 office visit left you $150 to pay.')).toEqual(
+      [],
+    );
+    expect(kinds('The $380 checkup was covered.')).toEqual(['unknown-amount']);
+    expect(kinds('The 99213 visit costs $150.')).toContain('medical-code');
+  });
+});

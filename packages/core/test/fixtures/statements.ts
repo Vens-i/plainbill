@@ -198,3 +198,48 @@ export const MARIA_ON_PLAN = {
   planOffer: null,
   planActive: { months: 3, paidCount: 1, nextDate: '2026-11-10', nextCents: 8000 },
 } satisfies StatementInput;
+
+/**
+ * The split visit: checkup $380 (paid in full), problem visit 99213-25 $220 (deductible $150),
+ * cholesterol panel $150. $750 − $210 − $390 = $150.
+ */
+export const THEO = base({
+  patient: {
+    firstName: 'Theo',
+    lastName: 'Lambert',
+    addressLines: ['31 Seawall Ave', 'Harborview CA 94000'],
+  },
+  accountNumber: '000014',
+  statementId: 'S0000021',
+  visit: {
+    date: '2026-09-16',
+    providerName: 'Dr. Patel',
+    payerName: 'BlueCross BlueShield',
+    payerShortName: 'BlueCross',
+    selfPay: false,
+    claimFiledDate: null,
+    paymentDate: '2026-09-30',
+    traceNumber: 'BC0930118842',
+  },
+  lines: [
+    { code: '99396', chargeCents: 38000 },
+    { code: '99213', chargeCents: 22000 },
+    { code: '80061', chargeCents: 15000 },
+  ],
+  contractualCents: 21000,
+  insurancePaidCents: 39000,
+  patientShare: share({ deductibleCents: 15000 }),
+  remainingCents: 15000,
+  aging: statementAging(15000, 24),
+  splitVisit: {
+    preventiveLineIndex: 0,
+    problemLineIndex: 1,
+    problemShare: {
+      deductibleCents: 15000,
+      coinsuranceCents: 0,
+      copayCents: 0,
+      otherCents: 0,
+      totalCents: 15000,
+    },
+  },
+});

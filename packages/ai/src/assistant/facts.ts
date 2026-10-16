@@ -32,6 +32,18 @@ export interface BillFacts {
   /** ISO date. */
   dueDate: string;
   services: Array<{ name: string; chargeCents: number }>;
+  /**
+   * A covered checkup with another concern billed as its own office visit (detected by
+   * @plainbill/core). The amounts are the office visit's; what the concern was is never known.
+   */
+  splitVisit?: {
+    checkupChargeCents: number;
+    visitChargeCents: number;
+    shareCents: number;
+    deductibleCents: number;
+    coinsuranceCents: number;
+    copayCents: number;
+  } | null;
   options: {
     payInFull: boolean;
     partialMinimumCents: number | null;
@@ -73,6 +85,16 @@ export function assistantAmounts(f: BillFacts): Set<number> {
     f.remainingCents,
     f.options.partialMinimumCents,
     ...f.services.map((s) => s.chargeCents),
+    ...(f.splitVisit
+      ? [
+          f.splitVisit.checkupChargeCents,
+          f.splitVisit.visitChargeCents,
+          f.splitVisit.shareCents,
+          f.splitVisit.deductibleCents,
+          f.splitVisit.coinsuranceCents,
+          f.splitVisit.copayCents,
+        ]
+      : []),
     ...f.options.plans.flatMap((p) => [p.firstCents, p.regularCents]),
     ...(f.activePlan?.schedule.map((s) => s.amountCents) ?? []),
   ];
@@ -92,13 +114,44 @@ export const shortName = (practiceName: string) => practiceName.split(' ')[0]!;
 const $ = formatMoneyShort;
 
 /**
+ * Why a "free" checkup came with a bill: the checkup was covered, and another concern discussed
+ * during it was billed as its own office visit. Deterministic, never names the concern.
+ */
+export function explainSplitVisit(f: BillFacts): string | null {
+  const s = f.splitVisit;
+  if (!s) return null;
+  const who = f.provider ?? 'your provider';
+  const kinds = [
+    s.deductibleCents > 0 && 'deductible',
+    s.coinsuranceCents > 0 && 'coinsurance',
+    s.copayCents > 0 && 'copay',
+  ].filter(Boolean);
+  const owed =
+    kinds.length === 1 && kinds[0] === 'deductible'
+      ? `${$(s.shareCents)} of it went toward your yearly deductible, so that part is yours to pay.`
+      : kinds.length === 1 && kinds[0] === 'coinsurance'
+        ? `Your share of it is ${$(s.shareCents)} (coinsurance).`
+        : kinds.length === 1 && kinds[0] === 'copay'
+          ? `It has a ${$(s.shareCents)} copay.`
+          : `Your share of it is ${$(s.shareCents)}.`;
+  return (
+    `Your yearly checkup was covered in full. During it you also talked with ${who} about another concern, ` +
+    `and that part is billed as a regular office visit (${$(s.visitChargeCents)}), which your plan treats like any sick visit. ${owed}`
+  );
+}
+
+/**
  * Why the patient owes what they owe, in the design's words ("Your plan put $200 toward your
  * yearly deductible… $200 + $40 = $240."). Deterministic: used by the offline helper and as
  * the safe answer when the model's reply fails the guard.
  */
 export function explainOwes(f: BillFacts): string {
   const out: string[] = [];
-  if (f.selfPay) {
+  const split = explainSplitVisit(f);
+  if (split) out.push(split);
+  if (split && f.splitVisit!.shareCents === f.patientShareCents) {
+    // The office visit is the whole share; the split explanation already says how.
+  } else if (f.selfPay) {
     out.push(
       f.discountCents > 0
         ? `Your visit came to ${$(f.billedCents)}. ${shortName(f.practice.name)}'s self-pay rate took off ${$(f.discountCents)}, so your price is ${$(f.patientShareCents)}.`
@@ -161,6 +214,11 @@ export function factsBlock(f: BillFacts): string {
     if (f.coinsuranceCents) lines.push(`Coinsurance (patient's share): ${$(f.coinsuranceCents)}`);
     if (f.copayCents) lines.push(`Copay: ${$(f.copayCents)}`);
     if (f.otherPatientCents) lines.push(`Not covered by the plan: ${$(f.otherPatientCents)}`);
+  }
+  if (f.splitVisit) {
+    lines.push(
+      `Split visit: the yearly checkup (${$(f.splitVisit.checkupChargeCents)}) was covered in full. Another concern was discussed during it and billed as a separate office visit (${$(f.splitVisit.visitChargeCents)}); the patient's share of that office visit is ${$(f.splitVisit.shareCents)}. What the concern was is not on the bill.`,
+    );
   }
   lines.push(`Patient's share: ${$(f.patientShareCents)}`);
   if (f.paidCents) lines.push(`Already paid by the patient: ${$(f.paidCents)}`);

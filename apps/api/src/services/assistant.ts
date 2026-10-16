@@ -56,6 +56,16 @@ export function billFacts(bill: PatientBill, payerShortName: string | null): Bil
     remainingCents: amounts.remainingCents,
     dueDate: bill.dueDate,
     services: bill.services,
+    splitVisit: bill.splitVisit
+      ? {
+          checkupChargeCents: bill.splitVisit.checkupChargeCents,
+          visitChargeCents: bill.splitVisit.visitChargeCents,
+          shareCents: bill.splitVisit.share.totalCents,
+          deductibleCents: bill.splitVisit.share.deductibleCents,
+          coinsuranceCents: bill.splitVisit.share.coinsuranceCents,
+          copayCents: bill.splitVisit.share.copayCents,
+        }
+      : null,
     options: {
       payInFull: amounts.remainingCents > 0,
       partialMinimumCents: bill.options.partialMinimumCents,
