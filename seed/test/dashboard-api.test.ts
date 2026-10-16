@@ -217,7 +217,7 @@ describe('live payment over Server-Sent Events', () => {
         for (const block of buffer.split('\n\n')) {
           const event = /^event: (.+)$/m.exec(block)?.[1];
           const data = /^data: (.+)$/m.exec(block)?.[1];
-          if (event && data) return { event, data };
+          if (event && data && event !== 'ping') return { event, data };
         }
       }
     };

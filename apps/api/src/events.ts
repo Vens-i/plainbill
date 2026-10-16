@@ -34,7 +34,14 @@ export class EventBus {
   }
 }
 
-const HEARTBEAT_MS = 20_000;
+/**
+ * A visible `ping` event (not an SSE comment, which EventSource never surfaces), so the browser
+ * can tell a live stream from a dead one: behind a proxy (Vite's in dev), an API restart can
+ * leave the browser's connection open with nothing behind it. The client reconnects when pings
+ * stop (see useServerEvents).
+ */
+export const HEARTBEAT_MS = 15_000;
+export const HEARTBEAT_CHUNK = 'event: ping\ndata: {}\n\n';
 
 export function streamEvents(bus: EventBus, request: FastifyRequest, reply: FastifyReply): void {
   reply.hijack();
@@ -51,7 +58,7 @@ export function streamEvents(bus: EventBus, request: FastifyRequest, reply: Fast
   const unsubscribe = bus.subscribe(({ id, event }) => {
     res.write(`id: ${id}\nevent: ${event.type}\ndata: ${JSON.stringify(event.data)}\n\n`);
   });
-  const heartbeat = setInterval(() => res.write(': ping\n\n'), HEARTBEAT_MS);
+  const heartbeat = setInterval(() => res.write(HEARTBEAT_CHUNK), HEARTBEAT_MS);
   request.raw.on('close', () => {
     clearInterval(heartbeat);
     unsubscribe();
