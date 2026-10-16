@@ -17,7 +17,9 @@ type Block =
   | { type: 'text'; text: string }
   | { type: 'tool_use'; id: string; name: string; input: unknown }
   | { type: 'tool_result'; tool_use_id: string; content: string };
-type Message = { role: 'user' | 'assistant'; content: Block[] };
+type Turn = { role: 'user' | 'assistant'; content: Block[] };
+/** A mid-conversation system message carries an operator instruction for this turn. */
+type Message = Turn | { role: 'system'; content: string };
 
 function parseArgs(raw: string): unknown {
   try {
@@ -29,12 +31,12 @@ function parseArgs(raw: string): unknown {
 
 /** Studio's conversation as Anthropic messages; system messages are folded into `system`. */
 export function toAnthropicMessages(input: StudioConversationItem[]): {
-  messages: Message[];
+  messages: Turn[];
   extraSystem: string[];
 } {
-  const messages: Message[] = [];
+  const messages: Turn[] = [];
   const extraSystem: string[] = [];
-  const push = (role: Message['role'], block: Block) => {
+  const push = (role: 'user' | 'assistant', block: Block) => {
     const last = messages.at(-1);
     if (last && last.role === role) last.content.push(block);
     else messages.push({ role, content: [block] });
@@ -68,10 +70,12 @@ export function toAnthropicMessages(input: StudioConversationItem[]): {
 export interface AnthropicTurnParams {
   model: string;
   max_tokens: number;
+  /** Automatic caching: the conversation so far is cached too, not only the instructions. */
+  cache_control: { type: 'ephemeral' };
   system: Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }>;
   messages: Message[];
   tools?: Array<{ name: string; description: string; input_schema: Record<string, unknown> }>;
-  tool_choice?: { type: 'auto' | 'any' | 'none' } | { type: 'tool'; name: string };
+  tool_choice?: { type: 'auto' | 'none' };
   output_config?: {
     effort?: 'low' | 'medium' | 'high';
     format?: { type: 'json_schema'; schema: Record<string, unknown> };
@@ -84,7 +88,8 @@ export function toAnthropicParams(
   model: string,
   maxTokens = 4096,
 ): AnthropicTurnParams {
-  const { messages, extraSystem } = toAnthropicMessages(request.input);
+  const { messages: turns, extraSystem } = toAnthropicMessages(request.input);
+  const messages: Message[] = turns;
   const system: AnthropicTurnParams['system'] = [];
   if (request.instructions?.trim()) {
     system.push({
@@ -95,7 +100,13 @@ export function toAnthropicParams(
   }
   for (const text of extraSystem) system.push({ type: 'text', text });
 
-  const params: AnthropicTurnParams = { model, max_tokens: maxTokens, system, messages };
+  const params: AnthropicTurnParams = {
+    model,
+    max_tokens: maxTokens,
+    cache_control: { type: 'ephemeral' },
+    system,
+    messages,
+  };
   const tools = (request.tools ?? [])
     .filter((t) => t.kind !== 'provided')
     .map((t) => ({
@@ -106,14 +117,18 @@ export function toAnthropicParams(
   if (tools.length) {
     params.tools = tools;
     const choice = request.toolChoice;
-    params.tool_choice =
+    params.tool_choice = choice === 'none' ? { type: 'none' } : { type: 'auto' };
+    // Current models refuse a forced tool_choice ("any" / "tool" is a 400), so a forced turn
+    // (Studio forces complete_task when a sub-agent answers in text) becomes an instruction at
+    // the end of the conversation, where it doesn't disturb the cached prefix.
+    const forced =
       choice === 'required'
-        ? { type: 'any' }
-        : choice === 'none'
-          ? { type: 'none' }
-          : choice && typeof choice === 'object'
-            ? { type: 'tool', name: choice.name }
-            : { type: 'auto' };
+        ? 'Respond by calling one of the provided tools, not with text.'
+        : choice && typeof choice === 'object' && tools.some((t) => t.name === choice.name)
+          ? `Respond by calling the \`${choice.name}\` tool now, not with text.`
+          : null;
+    if (forced && messages.at(-1)?.role === 'user')
+      messages.push({ role: 'system', content: forced });
   }
   params.output_config = { effort: 'low' };
   if (request.responseFormat?.type === 'json') {

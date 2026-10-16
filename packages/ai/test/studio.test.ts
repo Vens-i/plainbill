@@ -116,19 +116,38 @@ describe('toAnthropicParams', () => {
     ]);
   });
 
-  it('maps tool choice and JSON output', () => {
-    expect(toAnthropicParams(request({ toolChoice: 'required' }), 'm').tool_choice).toEqual({
-      type: 'any',
+  it('never forces a tool (current models 400 on it): asks for the call in a system message', () => {
+    // Studio forces complete_task when a sub-agent answers in text. Sonnet 5.5 / Opus 5.5
+    // answer tool_choice "any" or "tool" with: 'tool_choice: type "tool" and "any" are not
+    // supported for this model.'
+    const required = toAnthropicParams(request({ toolChoice: 'required' }), 'm');
+    expect(required.tool_choice).toEqual({ type: 'auto' });
+    expect(required.messages.at(-1)).toEqual({
+      role: 'system',
+      content: 'Respond by calling one of the provided tools, not with text.',
     });
+    const named = toAnthropicParams(request({ toolChoice: { name: 'view_schema' } }), 'm');
+    expect(named.tool_choice).toEqual({ type: 'auto' });
+    expect(named.messages.at(-1)).toEqual({
+      role: 'system',
+      content: 'Respond by calling the `view_schema` tool now, not with text.',
+    });
+    // The instruction comes after the conversation, so the cached prefix is unchanged.
+    expect(named.messages.slice(0, -1)).toEqual(toAnthropicParams(request(), 'm').messages);
+    // An unknown tool name or "auto" adds nothing; "none" maps through.
+    expect(
+      toAnthropicParams(request({ toolChoice: { name: 'nope' } }), 'm').messages.at(-1)!.role,
+    ).toBe('user');
     expect(toAnthropicParams(request({ toolChoice: 'none' }), 'm').tool_choice).toEqual({
       type: 'none',
     });
-    expect(
-      toAnthropicParams(request({ toolChoice: { name: 'view_schema' } }), 'm').tool_choice,
-    ).toEqual({
-      type: 'tool',
-      name: 'view_schema',
-    });
+  });
+
+  it('caches the conversation as well as the instructions', () => {
+    expect(toAnthropicParams(request(), 'm').cache_control).toEqual({ type: 'ephemeral' });
+  });
+
+  it('maps JSON output', () => {
     const schema = { type: 'object', properties: { title: { type: 'string' } } };
     expect(
       toAnthropicParams(request({ responseFormat: { type: 'json', name: 'plan', schema } }), 'm')
