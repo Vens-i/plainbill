@@ -47,6 +47,15 @@
 .insights-loading {
   color: var(--ink-3);
 }
+.insights-stale {
+  margin: 0 0 8px;
+  padding: 6px 12px;
+  border: 1px solid #efd9a0;
+  border-radius: 8px;
+  background: #faefd6;
+  color: #7a4e00;
+  font-size: 13px;
+}
 
 /* Still owed scoreboard (custom Studio widget) */
 .owed-board {

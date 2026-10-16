@@ -17,6 +17,7 @@ import type { InsightsData } from '@plainbill/api/contract';
 import { api } from '../../lib/api';
 import { useServerEvents } from '../../lib/useServerEvents';
 import { plainbillClaudeAdapter } from './studioAdapter';
+import { afterLoad, type InsightsLoadState } from './loadState';
 import { INITIAL_REPORT, insightsSources, PROMPT_STARTERS } from './report';
 import { stillOwedWidget } from './StillOwedWidget';
 import { moneyFlowWidget } from './MoneyFlowWidget';
@@ -58,14 +59,16 @@ const widgets = (config: { menu: Array<{ label: string; widgetIds: string[] }> }
   } as never);
 
 export function Insights() {
-  const [data, setData] = useState<InsightsData | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [{ data, error }, setLoad] = useState<InsightsLoadState<InsightsData>>({
+    data: null,
+    error: null,
+  });
 
   const reload = useCallback(() => {
     api
       .insights()
-      .then(setData)
-      .catch(() => setError('Could not load the practice data. Is the API running?'));
+      .then((next) => setLoad((prev) => afterLoad(prev, { ok: true, data: next })))
+      .catch(() => setLoad((prev) => afterLoad(prev, { ok: false })));
   }, []);
   useEffect(reload, [reload]);
   // A payment (webhook, capture or the poll) or any balance change: Studio gets the new data and
@@ -86,11 +89,12 @@ export function Insights() {
         </div>
         <span className="insights-badge">AG Studio · Claude</span>
       </header>
-      {error ? (
-        <p className="insights-error" role="alert">
+      {error && sources ? (
+        <p className="insights-stale" role="status">
           {error}
         </p>
-      ) : sources ? (
+      ) : null}
+      {sources ? (
         <div className="insights-studio">
           <AgStudioProvider {...(licenseKey ? { licenseKey } : {})}>
             <AgStudio
@@ -104,6 +108,10 @@ export function Insights() {
             />
           </AgStudioProvider>
         </div>
+      ) : error ? (
+        <p className="insights-error" role="alert">
+          {error}
+        </p>
       ) : (
         <p className="insights-loading">Loading practice data…</p>
       )}
