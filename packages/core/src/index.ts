@@ -5,6 +5,7 @@ export * from './codes';
 export * from './procedures';
 export * from './payers';
 export * from './balance';
+export * from './split-visit';
 export * from './aging';
 export * from './status';
 export * from './plan';
