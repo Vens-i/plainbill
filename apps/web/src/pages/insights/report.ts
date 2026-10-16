@@ -40,13 +40,22 @@ const flag = (id: string, name: string, description?: string) => ({
   ...(description ? { description } : {}),
 });
 
+/**
+ * Dates here are calendar days. AG Studio reads a date filter value like "2026-10-01" or
+ * "2026-10-01T00:00:00Z" as UTC and then takes the local day, so west of UTC it becomes Sep 30
+ * and a Sep 30 denial lands in "this quarter". A local date-time with no zone filters correctly.
+ */
+export const DATE_FILTER_HINT =
+  'In date filters, always write values as a local date-time with no time zone, for example 2026-10-01T00:00:00 for the start of Oct 1 and 2026-10-10T23:59:59 for the end of Oct 10 (never 2026-10-01 or a value ending in Z).';
+
 /** Studio data sources. `month` is precomputed ("2026-07") so months sort and group simply. */
 export function insightsSources(data: InsightsData) {
   return {
     description:
       'Harborview Family Medicine, a small independent practice. Patient balances after insurance, the payments patients made, and the adjustments on each claim (insurance write-offs and the patient share). Amounts are US dollars. Today is ' +
       data.today +
-      '.',
+      '. ' +
+      DATE_FILTER_HINT,
     sources: [
       {
         id: 'balances',
