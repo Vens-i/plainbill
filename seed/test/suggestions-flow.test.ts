@@ -63,7 +63,7 @@ describe('AI suggests', () => {
 
   it('refreshes every open row; the design’s labels come out of the rules', async () => {
     const { json } = await call<{ via: string; updated: number }>('POST', '/suggestions/refresh');
-    expect(json).toMatchObject({ via: 'rules', updated: 12 });
+    expect(json).toMatchObject({ via: 'rules', updated: 13 });
     const all = await rows();
     const by = (n: string) => all.find((r) => r.patientName === n)!;
     expect(by('Grace Whitaker')).toMatchObject({

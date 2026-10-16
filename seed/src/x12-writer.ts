@@ -22,6 +22,7 @@ interface Component {
 
 interface LineSplit {
   cpt: string;
+  modifiers: string[];
   chargeCents: Cents;
   paidCents: Cents;
   adjustments: Array<{ group: GroupCode; reason: string; amountCents: Cents }>;
@@ -42,6 +43,7 @@ const money = (cents: Cents) => centsToDecimalString(cents);
 export function splitAcrossLines(visit: SeedVisit): LineSplit[] {
   const ins = visit.insurance;
   if (!ins) throw new Error(`${visit.key} is self-pay`);
+  if (ins.lines) return explicitLines(visit);
   const charges = visit.lines.map((l) => dollars(l.charge));
   const billed = charges.reduce((a, b) => a + b, 0);
   const components: Component[] = [
@@ -87,6 +89,7 @@ export function splitAcrossLines(visit: SeedVisit): LineSplit[] {
     });
     return {
       cpt: visit.lines[i]!.cpt,
+      modifiers: visit.lines[i]!.modifiers ?? [],
       chargeCents,
       paidCents: shares[components.findIndex((c) => c.kind === 'paid')]!,
       adjustments: components
@@ -95,6 +98,54 @@ export function splitAcrossLines(visit: SeedVisit): LineSplit[] {
         .map(({ c, amountCents }) => ({ group: c.group!, reason: c.reason!, amountCents })),
     };
   });
+}
+
+/**
+ * Per-line adjudication as the spec gives it. Every line must balance (charge − paid = CAS), and
+ * the lines must add up to the claim's paid amount and each of its adjustments exactly.
+ */
+function explicitLines(visit: SeedVisit): LineSplit[] {
+  const ins = visit.insurance!;
+  const given = ins.lines!;
+  if (given.length !== visit.lines.length) {
+    throw new Error(
+      `${visit.key}: ${given.length} adjudicated lines for ${visit.lines.length} services`,
+    );
+  }
+  const lines = given.map((g, i) => {
+    const chargeCents = dollars(visit.lines[i]!.charge);
+    const paidCents = dollars(g.paid);
+    const adjustments = g.adjustments.map((a) => ({
+      group: a.group,
+      reason: a.reason,
+      amountCents: dollars(a.amount),
+    }));
+    const adjusted = adjustments.reduce((sum, a) => sum + a.amountCents, 0);
+    if (chargeCents - paidCents !== adjusted) {
+      throw new Error(`${visit.key}: line ${i + 1} does not balance`);
+    }
+    return {
+      cpt: visit.lines[i]!.cpt,
+      modifiers: visit.lines[i]!.modifiers ?? [],
+      chargeCents,
+      paidCents,
+      adjustments,
+    };
+  });
+  if (lines.reduce((sum, l) => sum + l.paidCents, 0) !== dollars(ins.paid)) {
+    throw new Error(`${visit.key}: line payments don't add up to the claim's paid amount`);
+  }
+  const key = (a: { group: string; reason: string }) => `${a.group}-${a.reason}`;
+  const fromLines = new Map<string, number>();
+  for (const a of lines.flatMap((l) => l.adjustments)) {
+    fromLines.set(key(a), (fromLines.get(key(a)) ?? 0) + a.amountCents);
+  }
+  const fromClaim = new Map(ins.adjustments.map((a) => [key(a), dollars(a.amount)]));
+  const same =
+    fromLines.size === fromClaim.size &&
+    [...fromClaim].every(([k, cents]) => fromLines.get(k) === cents);
+  if (!same) throw new Error(`${visit.key}: line adjustments don't add up to the claim's`);
+  return lines;
 }
 
 function casSegments(adjustments: LineSplit['adjustments']): string[] {
@@ -162,7 +213,7 @@ export function write835(era: EraInput): string {
     body.push(`DTM*232*${visitD8}`, `DTM*233*${visitD8}`);
     for (const line of lines) {
       body.push(
-        `SVC*HC:${line.cpt}*${money(line.chargeCents)}*${money(line.paidCents)}**1`,
+        `SVC*HC:${[line.cpt, ...line.modifiers].join(':')}*${money(line.chargeCents)}*${money(line.paidCents)}**1`,
         `DTM*472*${visitD8}`,
       );
       body.push(...casSegments(line.adjustments));

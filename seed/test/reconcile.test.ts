@@ -9,6 +9,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { eobToClaims, RecordedEobExtractor } from '@plainbill/ai';
 import {
   computePatientBalance,
+  detectSplitVisit,
   dollars,
   formatShortDate,
   parse835,
@@ -131,6 +132,18 @@ describe('seed rows reconcile', () => {
     const remaining = b.patientOwesCents - paidByPatient;
     if (row.remaining !== undefined) expect(remaining).toBe(dollars(row.remaining));
     if (row.status === 'paid' && visit.key !== 'samuel') expect(remaining).toBe(0);
+  });
+
+  it('finds the split visit on Theo Lambert, and on no one else', () => {
+    const split = [...byName].filter(([, { claim }]) => claim && detectSplitVisit(claim));
+    expect(split.map(([name]) => name)).toEqual(['Theo Lambert']);
+    const visit = detectSplitVisit(byName.get('Theo Lambert')!.claim!)!;
+    expect(visit.preventive).toMatchObject({ code: '99396', paidCents: 28000 });
+    expect(visit.problem).toMatchObject({
+      code: '99213',
+      chargeCents: 22000,
+      patientShare: { deductibleCents: 15000, totalCents: 15000 },
+    });
   });
 
   it('keeps the hero row exactly as designed', () => {

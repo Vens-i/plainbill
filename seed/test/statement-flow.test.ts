@@ -100,7 +100,7 @@ describe('patient addresses', () => {
       .from(schema.patients)
       .all()
       .sort((a, b) => a.id - b.id);
-    expect(rows).toHaveLength(13);
+    expect(rows).toHaveLength(14);
     for (const p of rows) {
       expect(p.addressLine1, p.lastName).toMatch(/^\d+ /);
       expect([p.city, p.state, p.zip]).toEqual(['Harborview', 'CA', '94000']);

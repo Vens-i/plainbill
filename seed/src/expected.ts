@@ -1,5 +1,5 @@
 /**
- * The seed table (13 fictional visits), copied verbatim as data (dollars; null = "–" in the table).
+ * The seed table (14 fictional visits), copied verbatim as data (dollars; null = "–" in the table).
  * Deliberately independent of spec.ts: the reconciliation test parses the generated files and
  * checks the results against these literals, so a typo in either place fails the build.
  */
@@ -147,5 +147,15 @@ export const EXPECTED_TABLE: ExpectedRow[] = [
     insurancePaid: 410,
     owes: 100,
     status: 'paid',
+  },
+  {
+    patient: 'Theo Lambert',
+    payer: 'BCBS',
+    visit: '9/16/26',
+    billed: 750,
+    discount: 210,
+    insurancePaid: 390,
+    owes: 150,
+    status: 'ready',
   },
 ];

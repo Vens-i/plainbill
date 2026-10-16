@@ -74,7 +74,8 @@ export interface SeedVisit {
   };
   provider: ProviderKey;
   visitDate: IsoDate;
-  lines: Array<{ cpt: string; charge: number }>;
+  /** `modifiers` print in the 835's SVC composite ("HC:99213:25"). */
+  lines: Array<{ cpt: string; charge: number; modifiers?: string[] }>;
   /** Insurance adjudication; absent for self-pay. */
   insurance?: {
     payer: PayerKey;
@@ -87,6 +88,12 @@ export interface SeedVisit {
     paid: number;
     adjustments: SeedAdjustment[];
     remarks?: string[];
+    /**
+     * Per-line adjudication, in line order, when the payer treated lines differently (a covered
+     * checkup next to a problem visit). Must add up to `paid` and `adjustments`. Without it the
+     * 835 writer spreads the claim across lines in proportion to their charges.
+     */
+    lines?: Array<{ paid: number; adjustments: SeedAdjustment[] }>;
   };
   selfPay?: { rateApplied: boolean; csv: string };
   /** Where the row sits on the dashboard today. */
@@ -525,6 +532,50 @@ export const VISITS: SeedVisit[] = [
     aiSuggestion: null,
     invoice: { sentOn: '2026-09-14', openCount: 2 },
     payments: [{ on: '2026-09-16', amount: 100, method: 'paypal' }],
+  },
+  {
+    // The "split visit": a yearly checkup (covered in full) where a new problem was also
+    // discussed, billed as its own office visit (modifier 25) that goes to the deductible.
+    key: 'theo',
+    claimId: 'HFM1014',
+    patient: {
+      firstName: 'Theo',
+      lastName: 'Lambert',
+      dob: '1979-04-11',
+      memberId: 'XBC771204563',
+      email: 'theo.lambert@example.com',
+      address: { line1: '31 Seawall Ave', city: 'Harborview', state: 'CA', zip: '94000' },
+    },
+    provider: 'patel',
+    visitDate: '2026-09-16',
+    lines: [
+      { cpt: '99396', charge: 380 },
+      { cpt: '99213', charge: 220, modifiers: ['25'] },
+      { cpt: '80061', charge: 150 },
+    ],
+    insurance: {
+      payer: 'BCBS',
+      era: 'bcbs_era_0930',
+      payerClaimNumber: 'BC26093000518',
+      paid: 390,
+      adjustments: [
+        { group: 'CO', reason: '45', amount: 210 },
+        { group: 'PR', reason: '1', amount: 150 },
+      ],
+      lines: [
+        { paid: 280, adjustments: [{ group: 'CO', reason: '45', amount: 100 }] },
+        {
+          paid: 0,
+          adjustments: [
+            { group: 'CO', reason: '45', amount: 70 },
+            { group: 'PR', reason: '1', amount: 150 },
+          ],
+        },
+        { paid: 110, adjustments: [{ group: 'CO', reason: '45', amount: 40 }] },
+      ],
+    },
+    status: 'ready',
+    aiSuggestion: 'Send invoice',
   },
 ];
 

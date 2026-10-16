@@ -40,9 +40,9 @@ describe('dashboard API on the seed world', () => {
     return res.json() as T;
   };
 
-  it('GET /api/balances returns all 13 rows with line items', async () => {
+  it('GET /api/balances returns all 14 rows with line items', async () => {
     const rows = await get<BalanceRow[]>('/api/balances');
-    expect(rows).toHaveLength(13);
+    expect(rows).toHaveLength(14);
     const maria = rows.find((r) => r.patientName === 'Maria Delgado')!;
     expect(maria).toMatchObject({
       status: 'ready',
@@ -109,6 +109,7 @@ describe('dashboard API on the seed world', () => {
       ['Aisha Bello', 112],
       ['Samuel Ortiz', 18],
       ['Linda Park', null],
+      ['Theo Lambert', 24],
     ]);
   });
 
@@ -125,7 +126,7 @@ describe('dashboard API on the seed world', () => {
     ]);
     expect(sum(group('review'), (r) => r.remainingCents)).toBe('$1,078');
     expect(sum(group('denied'), (r) => r.billedCents)).toBe('$3,010');
-    expect(sum(group('ready'), (r) => r.remainingCents)).toBe('$515');
+    expect(sum(group('ready'), (r) => r.remainingCents)).toBe('$665'); // + Theo's $150
     expect(sum(group('sent'), (r) => r.remainingCents)).toBe('$480'); // $400 + Samuel's $80 until he pays
     expect(sum(group('partial'), (r) => r.remainingCents)).toBe('$600');
     expect(sum(group('paid'), (r) => r.patientPaidCents)).toBe('$100');
@@ -136,7 +137,7 @@ describe('dashboard API on the seed world', () => {
     const kpis = await get<Kpis>('/api/kpis');
     expect(kpis).toEqual({
       today: '2026-10-10',
-      outstanding: { cents: 107800 + 51500 + 48000 + 60000, patients: 10 },
+      outstanding: { cents: 107800 + 66500 + 48000 + 60000, patients: 11 },
       collectedThisMonth: {
         cents: 30000,
         previousCents: 10000,
@@ -145,15 +146,15 @@ describe('dashboard API on the seed world', () => {
       },
       avgDaysToPay: { days: 6, paidCount: 1, paperBaselineDays: 34 },
       review: { count: 4, cents: 107800, firstPatientName: 'Priya Raman', firstBalanceId: 3 },
-      ready: { count: 2, cents: 51500 },
-      todoMinutes: 5,
+      ready: { count: 3, cents: 66500 },
+      todoMinutes: 6, // one more ready row (Theo)
     });
   });
 
   it('GET /api/charts/aging buckets open patient balances', async () => {
     const chart = await get<AgingChart>('/api/charts/aging');
     expect(chart.buckets.map((b) => [b.label, b.cents])).toEqual([
-      ['0–30', 24000 + 27500 + 16000 + 36800 + 31000 + 8000],
+      ['0–30', 24000 + 27500 + 16000 + 36800 + 31000 + 8000 + 15000],
       ['31–60', 24000 + 15000],
       ['61–90', 25000],
       ['90+', 60000],

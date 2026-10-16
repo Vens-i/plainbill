@@ -4,7 +4,7 @@
  * and everything is stored by the same ingest / intake / invoice / payment services the API uses.
  *
  * Scenarios:
- *   full         all 13 visits; the Intake demo files are staged and approved like an upload, so
+ *   full         all 14 visits; the Intake demo files are staged and approved like an upload, so
  *                Priya's and Tomás's review reasons come from real AI flags
  *   intake-demo  the 5 visits in the Intake demo files are left out, to be uploaded live
  */

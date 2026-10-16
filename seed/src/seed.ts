@@ -1,5 +1,5 @@
 /**
- *   pnpm seed                          all 13 visits
+ *   pnpm seed                          all 14 visits
  *   pnpm seed --scenario=intake-demo   leave out the Intake demo files' 5 visits (upload them live)
  *   pnpm seed --if-empty               only when the database has no data yet (hosted demo start)
  *

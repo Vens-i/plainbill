@@ -67,9 +67,9 @@ const rows = async () => (await call<BalanceRow[]>('GET', '/balances')).json;
 describe('Intake → dashboard → Review & Send', () => {
   let batch: IntakeBatchView;
 
-  it('starts with no open batch and 8 rows on the dashboard', async () => {
+  it('starts with no open batch and 9 rows on the dashboard', async () => {
     expect((await call<{ batch: null }>('GET', '/intake/batch')).json.batch).toBeNull();
-    expect(await rows()).toHaveLength(8);
+    expect(await rows()).toHaveLength(9);
   });
 
   it('reads the four files into 5 visits with 2 fields flagged', async () => {
@@ -172,7 +172,7 @@ describe('Intake → dashboard → Review & Send', () => {
     expect(published).toEqual(['balances.changed']);
 
     const all = await rows();
-    expect(all).toHaveLength(13);
+    expect(all).toHaveLength(14);
     const tomas = all.find((r) => r.patientName === 'Tomás Herrera')!;
     expect(tomas).toMatchObject({
       status: 'review',
