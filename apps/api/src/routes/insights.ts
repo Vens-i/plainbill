@@ -161,8 +161,27 @@ export function registerInsightsRoutes(api: FastifyInstance, ctx: RouteContext):
       'cache-control': 'no-store',
       'x-content-type-options': 'nosniff',
     });
+    const started = Date.now();
     for await (const line of ctx.ai.studio.run(request.body, { signal: abort.signal })) {
       if (abort.signal.aborted) break;
+      if ('response' in line) {
+        // Cost and speed per turn: cachedInputTokens > 0 after the first turn means the
+        // instructions and tool schemas were read from the prompt cache.
+        request.log.info(
+          {
+            studioTurn: {
+              ms: Date.now() - started,
+              status: line.response.status,
+              usage: line.response.usage,
+              tools: line.response.output.flatMap((o) =>
+                o.type === 'function_call' ? [o.name] : [],
+              ),
+              error: line.response.error?.message,
+            },
+          },
+          'studio turn',
+        );
+      }
       reply.raw.write(`${JSON.stringify(line)}\n`);
     }
     reply.raw.end();
