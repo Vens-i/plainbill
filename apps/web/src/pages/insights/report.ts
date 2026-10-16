@@ -129,8 +129,19 @@ export function insightsSources(data: InsightsData) {
         ],
       },
     ],
+    // Payments and adjustments belong to a balance, so a filter on a balance field (clicking
+    // "90+ days" in the money flow) narrows them too: the Collected tile then agrees with the
+    // flow's Collected instead of showing the whole practice.
+    relationships: BALANCE_RELATIONSHIPS,
   };
 }
+
+export const BALANCE_RELATIONSHIPS = (['payments', 'adjustments'] as const).map((tableId) => ({
+  id: `${tableId}-balance`,
+  source: { tableId, fieldId: 'balanceId' },
+  target: { tableId: 'balances', fieldId: 'balanceId' },
+  type: 'many-to-one' as const,
+}));
 
 const title = (text: string) => ({
   title: { enabled: true, text, typography: { fontSize: 15, fontWeight: 'bold' } },
