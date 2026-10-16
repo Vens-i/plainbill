@@ -104,6 +104,22 @@ describe('arrows', () => {
 });
 
 describe('placeCards', () => {
+  it('never overlaps cards when they are taller than the column altogether', () => {
+    const cards = [
+      { id: 'a', desiredCenter: 40, height: 160 },
+      { id: 'b', desiredCenter: 160, height: 220 },
+      { id: 'c', desiredCenter: 260, height: 180 },
+      { id: 'd', desiredCenter: 560, height: 190 },
+    ];
+    const tops = placeCards(cards, 24, 700);
+    const sorted = cards.map((c) => ({ ...c, top: tops.get(c.id)! }));
+    expect(sorted[0]!.top).toBe(0);
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = sorted[i - 1]!;
+      expect(sorted[i]!.top).toBeGreaterThanOrEqual(prev.top + prev.height + 24);
+    }
+  });
+
   it('centers each card on its line when there is room', () => {
     const tops = placeCards(
       [

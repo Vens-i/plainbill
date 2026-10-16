@@ -155,7 +155,9 @@ export function toScreen(rect: Rect, box: { left: number; top: number; scale: nu
 /**
  * Stack note cards beside their lines: each wants its center level with its anchor; sorted by
  * that, cards are pushed down to keep `gap` between them, and if the last one runs past
- * `bottom`, a reverse pass pushes them back up.
+ * `bottom`, a reverse pass pushes them back up. When the cards are taller than the column
+ * altogether, the first one stops at the top and the rest stack below it (past `bottom`)
+ * rather than overlap.
  */
 export function placeCards(
   cards: Array<{ id: string; desiredCenter: number; height: number }>,
@@ -172,6 +174,12 @@ export function placeCards(
     tops[last] = bottom - sorted[last]!.height;
     for (let i = last - 1; i >= 0; i--) {
       tops[i] = Math.min(tops[i]!, tops[i + 1]! - gap - sorted[i]!.height);
+    }
+    if (tops[0]! < 0) {
+      tops[0] = 0;
+      for (let i = 1; i < sorted.length; i++) {
+        tops[i] = Math.max(tops[i]!, tops[i - 1]! + sorted[i - 1]!.height + gap);
+      }
     }
   }
   return new Map(sorted.map((c, i) => [c.id, Math.max(0, tops[i]!)]));

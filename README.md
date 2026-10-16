@@ -27,7 +27,9 @@ All patients, claims and amounts in this repo are synthetic.
    the lines that matter and hand-drawn arrows to short notes in the margins ("A discount, not a
    bill: $400 comes off because Dr. Patel is in your network"), in English, Español, Kreyòl,
    中文 and more. A waterfall gives the short version, and they can **ask the AI helper** ("why do I owe $240?", "can I pay over
-   time?"). The helper answers only from this bill and can set up a payment or a plan through
+   time?"). When a "free" yearly checkup came with a bill because another concern was discussed and
+   billed as its own office visit, Plainbill spots it in the claim and explains that too (a
+   **split visit**). The helper answers only from this bill and can set up a payment or a plan through
    the **PayPal Agent Toolkit**, after the patient confirms. Or they pay with PayPal, Pay Later
    or a card, or start a 3/6-month interest-free PayPal plan.
 5. **The payment lands** (capture, verified webhook, or the reconciliation poll) and the
@@ -62,7 +64,7 @@ Open <http://localhost:5173/dashboard>.
 
 ### Try it with the sample data
 
-The seed is a fictional practice, Harborview Family Medicine, with 13 visits in every state
+The seed is a fictional practice, Harborview Family Medicine, with 14 visits in every state
 (review, denied, ready, sent, partially paid, paid). "Today" is pinned to 2026-10-10
 (`DEMO_TODAY`) so aging and due dates line up with the data.
 
@@ -260,6 +262,17 @@ balance ─► model ─► layout (ops + anchors)
   bill helper answers in the language the patient picked. Views and language choices show in the
   dashboard's detail panel ("Viewed statement · Español").
 
+#### The split visit ("why wasn't my checkup free?")
+
+A common surprise bill: the patient comes in for a covered yearly checkup, mentions a new problem,
+and that part is billed as a separate office visit that goes to the deductible. `detectSplitVisit`
+(`packages/core`) finds it in the adjudicated 835: one preventive visit line (99381–99397) paid
+with no patient share, and one office visit line (99202–99215) with modifier 25 and a patient
+share. Anything ambiguous returns nothing. When it's there, the statement highlights the office-visit
+line ("Why your checkup wasn't free", in English and Spanish, figures limited to that line), the
+bill page adds a "Checkup vs. office visit" term, and the bill helper explains it without ever
+naming the concern. The email stays generic. Seed patient: Theo Lambert.
+
 #### How the highlights work
 
 ![How the highlights work: five steps and three guardrails](docs/design/statement-explained/how-it-works.png)
@@ -297,7 +310,7 @@ and PLB. Errors name the segment position (`segment 23 (SVC): SVC02 is not a val
 
 ### Seed data
 
-`seed/src/spec.ts` describes the 13 fictional visits. `pnpm seed:generate` writes six 835
+`seed/src/spec.ts` describes the 14 fictional visits. `pnpm seed:generate` writes six 835
 ERAs (one per payer payment) and two self-pay CSVs to `seed/data/`; `--pdfs` also renders the two
 scanned EOBs (Priya's and Tomás's), each with one deliberately smudged character. `pnpm seed`
 parses everything with the real parsers (EOBs via the recorded Claude reads), stages the Intake
