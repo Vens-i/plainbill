@@ -4,6 +4,7 @@ import type {
   MessageDrafter,
   StatementAnnotator,
   Suggester,
+  StudioRunner,
 } from '@plainbill/ai';
 import type { IsoDate } from '@plainbill/core';
 import type { Db } from '../db/client';
@@ -23,6 +24,8 @@ export interface AiServices {
   suggester: Suggester;
   /** Writes the margin notes on the patient's itemized statement. */
   annotator: StatementAnnotator;
+  /** Runs the AG Studio agent's turns on Practice insights. */
+  studio: StudioRunner;
   /** True when a live model is configured. */
   available: boolean;
   model: string | null;

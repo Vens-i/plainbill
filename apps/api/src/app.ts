@@ -4,6 +4,7 @@ import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import { asc } from 'drizzle-orm';
 import {
+  OfflineStudioRunner,
   RecordedEobExtractor,
   RuleBillAssistant,
   RuleSuggester,
@@ -42,6 +43,7 @@ import {
   type RouteContext,
 } from './routes/context';
 import { registerDrawerRoutes } from './routes/drawer';
+import { registerInsightsRoutes } from './routes/insights';
 import { registerIntakeRoutes } from './routes/intake';
 import { registerPatientRoutes } from './routes/patient';
 import { registerWebhookRoutes } from './routes/webhooks';
@@ -57,6 +59,7 @@ export function offlineAi(recordingsDir = DEFAULT_RECORDINGS_DIR): AiServices {
     assistant: new RuleBillAssistant(),
     suggester: new RuleSuggester(),
     annotator: new TemplateStatementAnnotator(),
+    studio: new OfflineStudioRunner(),
     available: false,
     model: null,
   };
@@ -222,6 +225,7 @@ export function buildApp(options: AppOptions): {
       registerDrawerRoutes(api, ctx);
       registerPatientRoutes(api, ctx);
       registerWebhookRoutes(api, ctx);
+      registerInsightsRoutes(api, ctx);
 
       api.post<{ Querystring: { fileName?: string }; Body: string }>(
         '/intake/835',

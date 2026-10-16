@@ -21,3 +21,6 @@ export * from './suggest/suggest';
 export * from './annotate/facts';
 export * from './annotate/guard';
 export * from './annotate/annotator';
+export * from './studio/protocol';
+export * from './studio/bridge';
+export * from './studio/runner';

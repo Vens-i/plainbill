@@ -455,3 +455,44 @@ export interface PayResult {
   /** PayPal accepted it but hasn't settled it yet (it lands via sync/webhook). */
   pending: boolean;
 }
+
+/** GET /api/insights/data: the AG Studio report's sources. Dollars, no patient names. */
+export interface InsightsData {
+  today: IsoDate;
+  balances: Array<{
+    balanceId: number;
+    status: string;
+    payer: string;
+    provider: string;
+    visitDate: IsoDate;
+    billed: number;
+    insuranceDiscount: number;
+    insurancePaid: number;
+    patientShare: number;
+    patientPaid: number;
+    stillOwed: number;
+    daysOut: number;
+    aging: string;
+    invoiceOpened: boolean;
+    onPlan: boolean;
+    splitVisit: boolean;
+  }>;
+  payments: Array<{
+    paymentId: number;
+    balanceId: number;
+    paidOn: IsoDate;
+    amount: number;
+    method: string;
+    payer: string;
+  }>;
+  adjustments: Array<{
+    balanceId: number;
+    payer: string;
+    date: IsoDate;
+    code: string;
+    reason: string;
+    whoPays: 'Patient' | 'Written off';
+    amount: number;
+    denied: boolean;
+  }>;
+}
