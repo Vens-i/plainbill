@@ -192,6 +192,21 @@ describe('detectSplitVisit', () => {
     expect(detectSplitVisit(claim)).toBeNull();
   });
 
+  it('stays quiet when a second problem visit has no modifier 25 (still ambiguous)', () => {
+    const claim = splitClaim({
+      chargeCents: 97000,
+      patientResponsibilityCents: 30000,
+      lines: [
+        ...splitClaim().lines,
+        line(4, '99212', 22000, 0, [
+          ['CO', '45', 7000],
+          ['PR', '1', 15000],
+        ]),
+      ],
+    });
+    expect(detectSplitVisit(claim)).toBeNull();
+  });
+
   it('ignores self-pay, EOB and denied claims', () => {
     expect(detectSplitVisit(splitClaim({ source: { kind: 'self-pay-csv' } }))).toBeNull();
     expect(detectSplitVisit(splitClaim({ source: { kind: 'eob' } }))).toBeNull();

@@ -65,13 +65,14 @@ export function detectSplitVisit(claim: NormalizedClaim): SplitVisit | null {
   if (claim.source.kind !== '835' || claim.denied) return null;
 
   const preventive = claim.lines.filter((l) => isPreventiveVisitCode(l.procedureCode));
-  const problem = claim.lines.filter(
-    (l) => isProblemVisitCode(l.procedureCode) && l.modifiers.includes('25'),
-  );
+  // Every office-visit line counts toward "exactly one", with or without modifier 25: with two,
+  // we can't say which one the patient is asking about.
+  const problem = claim.lines.filter((l) => isProblemVisitCode(l.procedureCode));
   if (preventive.length !== 1 || problem.length !== 1) return null;
 
   const checkup = preventive[0]!;
   const sick = problem[0]!;
+  if (!sick.modifiers.includes('25')) return null;
   // "Covered in full" has to be literally true: the payer paid and the patient owes nothing.
   if (checkup.paidCents <= 0 || patientShareOf(checkup).totalCents !== 0) return null;
   const share = patientShareOf(sick);
