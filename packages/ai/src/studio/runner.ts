@@ -65,7 +65,7 @@ export class OfflineStudioRunner implements StudioRunner {
   async *run(): AsyncIterable<StudioStreamLine> {
     const messageId = `offline_${Date.now().toString(36)}`;
     const text =
-      'The AI analyst needs a Claude API key (ANTHROPIC_API_KEY) on the server. Everything else on this page works without it: the charts, the filters and the Still owed scoreboard.';
+      'The AI analyst needs a Claude API key (`ANTHROPIC_API_KEY`) on the server. Everything else on this page works without it: the charts, the filters and the Who still owes list.';
     yield { event: { type: 'TEXT_MESSAGE_START', messageId, role: 'assistant' } };
     yield { event: { type: 'TEXT_MESSAGE_CONTENT', messageId, delta: text } };
     yield { event: { type: 'TEXT_MESSAGE_END', messageId } };

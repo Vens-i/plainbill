@@ -9,6 +9,7 @@ import type {
   EmailPreview,
   IntakeApproveResult,
   IntakeBatchView,
+  InsightsData,
   Kpis,
   MessageVariant,
   PatientBill,
@@ -104,6 +105,7 @@ export const api = {
     request<DrawerData>('POST', `/balances/${id}/review/resolve`, { path, value }),
   markReady: (id: number) => request<DrawerData>('POST', `/balances/${id}/review/ready`),
   emailPreview: (id: number) => get<EmailPreview>(`/balances/${id}/email`),
+  insights: () => get<InsightsData>('/insights/data'),
   remind: (id: number, offerPlanMonths?: 3 | 6) =>
     request<ReminderResult>(
       'POST',

@@ -150,6 +150,19 @@ describe('POST /api/studio/llm', () => {
     expect(lines(res.body).at(-1)).toMatchObject({ response: { status: 'completed' } });
   });
 
+  it('streams over a real HTTP connection too (not only app.inject)', async () => {
+    await offline.listen({ port: 0, host: '127.0.0.1' });
+    const { port } = offline.server.address() as { port: number };
+    const res = await fetch(`http://127.0.0.1:${port}/api/studio/llm`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(turn),
+    });
+    const out = lines(await res.text());
+    expect(out.length).toBe(4);
+    expect(out.at(-1)).toMatchObject({ response: { status: 'completed' } });
+  });
+
   it('refuses something that is not a Studio turn', async () => {
     const res = await app.inject({ method: 'POST', url: '/api/studio/llm', payload: { hello: 1 } });
     expect(res.statusCode).toBe(400);

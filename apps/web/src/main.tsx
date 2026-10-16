@@ -31,6 +31,10 @@ const router = createBrowserRouter([
         lazy: async () => ({ Component: (await import('./pages/Intake')).Intake }),
       },
       {
+        path: '/insights',
+        lazy: async () => ({ Component: (await import('./pages/insights/Insights')).Insights }),
+      },
+      {
         path: '/email-preview/:id',
         lazy: async () => ({ Component: (await import('./pages/EmailPreview')).EmailPreview }),
       },

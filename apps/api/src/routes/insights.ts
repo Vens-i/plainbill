@@ -150,7 +150,9 @@ export function registerInsightsRoutes(api: FastifyInstance, ctx: RouteContext):
         .send({ error: 'rate_limited', message: 'Too many questions this hour. Try again later.' });
     }
     const abort = new AbortController();
-    request.raw.on('close', () => {
+    // The response's close (not the request's, which fires once the body is read) means the
+    // browser went away before the turn finished.
+    reply.raw.on('close', () => {
       if (!reply.raw.writableEnded) abort.abort();
     });
     reply.hijack();

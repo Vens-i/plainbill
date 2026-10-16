@@ -1,0 +1,128 @@
+/* Practice insights (AG Studio) */
+.insights-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 28px 28px;
+  min-height: 0;
+}
+.insights-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.insights-head h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.insights-head p {
+  margin: 4px 0 0;
+  max-width: 640px;
+  color: var(--ink-3);
+  font-size: 14px;
+}
+.insights-badge {
+  flex: none;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--teal-800);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.insights-studio {
+  height: calc(100vh - 170px);
+  min-height: 640px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+.insights-error,
+.insights-loading {
+  color: var(--ink-3);
+}
+
+/* Still owed scoreboard (custom Studio widget) */
+.owed-board {
+  list-style: none;
+  margin: 0;
+  padding: 4px 14px 14px;
+  height: 100%;
+  overflow: auto;
+  font-family: var(--font-ui);
+}
+.owed-row {
+  display: grid;
+  /* Two lines: who · amount, then days out · action, so the button always fits. */
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.owed-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.owed-name {
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.owed-meta,
+.owed-note {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.owed-days {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.owed-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--teal-200), var(--teal-700));
+}
+.owed-days-label {
+  font-size: 12px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.owed-amount {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  text-align: right;
+}
+.owed-action {
+  text-align: right;
+  white-space: nowrap;
+}
+.owed-confirm {
+  display: inline-flex;
+  gap: 6px;
+}
+.btn-quiet {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-3);
+}
+.owed-sent {
+  color: var(--green);
+  font-weight: 600;
+}
+.owed-error {
+  color: #9b2c24;
+}

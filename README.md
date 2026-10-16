@@ -34,6 +34,9 @@ All patients, claims and amounts in this repo are synthetic.
    or a card, or start a 3/6-month interest-free PayPal plan.
 5. **The payment lands** (capture, verified webhook, or the reconciliation poll) and the
    dashboard row **flashes green live**.
+6. **Practice insights** (AG Studio): the office manager asks the AI analyst "which payer denied
+   the most this quarter?" and Studio's agent, running on Claude, builds the chart. A "Who still
+   owes" scoreboard sends friendly reminders in one click.
 
 ## Design principles
 
@@ -116,6 +119,7 @@ reconciliation pass immediately.
                  │  /pay/:token (patient, mobile): verify → statement explained (SVG + notes) →   │
                  │  the short version → AI helper → PayPal v6 SDK buttons / plans                 │
                  │  /email-preview/:id: the bill email as sent                                    │
+                 │  /insights: AG Studio report + its AI agent (Claude via /api/studio/llm)       │
                  └───────────────▲───────────────────────────────▲────────────────────────────────┘
                      GET /api/*  │ JSON                     SSE  │ /api/events (payment, balances.changed)
                  ┌───────────────┴───────────────────────────────┴────────────────────────────────┐
@@ -291,6 +295,29 @@ naming the concern. The email stays generic. Seed patient: Theo Lambert.
 Guardrails: **money math stays in code** · **shown only after the last name + date of birth
 check** · **unsure about a line? The note says so and gives the office number.**
 
+### Practice insights (AG Studio)
+
+The front-desk grid stays the dashboard; `/insights` is the office manager's view, built on
+**AG Studio** (`ag-studio-react` 3.0, on the same AG Grid 36.2 / AG Charts 14.2 as the grid).
+
+- **Data:** `GET /api/insights/data` gives three sources (balances, payments, adjustments), in
+  dollars converted from the same computed rows as the grid. Studio aggregates; it never computes
+  a balance. No patient names: Studio's query results are sent to the model.
+- **The AI analyst runs on Claude.** AG Studio ships no model connection; each agent turn hands
+  the app a request (conversation, instructions, tool schemas). `packages/ai/src/studio` maps
+  it to the Messages API (Studio's long instructions are prompt-cached) and Claude's stream back
+  to Studio's events; `POST /api/studio/llm` streams them as NDJSON. Studio runs its own tools in
+  the browser: the lead agent delegates to its page agent (`add_widget`) and widget agent
+  (`configure_widget`), and the new chart appears on the page. Without `ANTHROPIC_API_KEY` the
+  chat says so and the rest of the report works.
+- **"Who still owes"** is a custom Studio widget: open balances, longest-waiting first, as a
+  scoreboard rather than a collections report. It reads ids and amounts through Studio (so page
+  filters apply), looks names up from the staff API itself, and offers **Send reminder** (with a
+  confirm) on bills that went out, calling the same reminder endpoint as AI suggests.
+- The default report: still owed, collected and denied-claim tiles; owed by age and by payer;
+  collected by month; denials by payer. Prompt starters: "Which payer denied the most this
+  quarter?", "Show what we collected each week", "Who has owed us the longest?".
+
 ### AI suggests
 
 - `ClaudeSuggester` sends each open row's situation (status, days, amounts, review or denial
@@ -340,6 +367,8 @@ All routes are under `/api`.
 | `POST /intake/835`                               | Raw 835 body (`text/plain`), `?fileName=`; parses, reconciles, stores; skips duplicates |
 | `GET /events`                                    | Server-Sent Events: `payment`, `balances.changed`                                       |
 | `GET /practice`, `GET /health`                   | Shell info, health check                                                                |
+| `GET /insights/data`                             | Practice insights sources: balances, payments, adjustments (dollars, no patient names)  |
+| `POST /studio/llm`                               | One AG Studio agent turn → Claude; streams NDJSON events, then the turn's response      |
 | `GET /intake/batch`                              | The open intake batch: files, items, AI flags (with which readings add up)              |
 | `POST /intake/files`                             | Multipart upload of 835 / EOB PDF / CSV files into the batch                            |
 | `PATCH /intake/items/:id/flags`                  | Confirm or change a flagged field `{ path, value }`                                     |
@@ -387,6 +416,7 @@ Copy `.env.example` to `.env` (gitignored). Both the API and Vite read the repo-
 | `PAYPAL_SYNC_SECONDS`                      | api               | Reconciliation poll interval (default 20, 0 = off)    |
 | `VITE_PAYPAL_CLIENT_ID`                    | web               | Optional: the API hands the page `PAYPAL_CLIENT_ID`   |
 | `VITE_AG_GRID_LICENSE_KEY`                 | web               | Without it the grid runs in trial mode                |
+| `VITE_AG_STUDIO_LICENSE_KEY`               | web               | AG Studio (Insights); without it, a watermark         |
 | `RESEND_API_KEY`                           | api               | Patient emails; unset = outbox + preview page         |
 | `EMAIL_FROM`                               | api               | Sender (default `onboarding@resend.dev`)              |
 | `EMAIL_TO_OVERRIDE`                        | api               | Send every patient email here instead (testing)       |
@@ -409,6 +439,8 @@ Copy `.env.example` to `.env` (gitignored). Both the API and Vite read the repo-
   live dashboard update. Sandbox findings are in [docs/paypal-notes.md](docs/paypal-notes.md).
 - **PayPal Agent Toolkit** (`@paypal/agent-toolkit`, Bedrock-style adapter driven from Claude's
   tool calls): `create_order` and `create_subscription` for the patient helper's confirmed actions.
+- **AG Studio** (`ag-studio-react`): the Practice insights report, its AI agent connected to
+  Claude through our own bridge, and a custom "Who still owes" widget.
 - **Email**: Resend's REST API, or an outbox viewable at `/email-preview/:balanceId` when no key
   is set.
 
