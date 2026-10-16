@@ -34,9 +34,11 @@ All patients, claims and amounts in this repo are synthetic.
    or a card, or start a 3/6-month interest-free PayPal plan.
 5. **The payment lands** (capture, verified webhook, or the reconciliation poll) and the
    dashboard row **flashes green live**.
-6. **Practice insights** (AG Studio): the office manager asks the AI analyst "which payer denied
-   the most this quarter?" and Studio's agent, running on Claude, builds the chart. A "Who still
-   owes" scoreboard sends friendly reminders in one click.
+6. **Practice insights** (AG Studio): **"Where every dollar went"**, an animated money flow from
+   everything billed to where it ended up (insurance discount, denials, insurance paid, collected,
+   still owed by age). When a payment lands, a coin moves into Collected. The office manager asks
+   the AI analyst "which payer denied the most this quarter?" and Studio's agent, running on
+   Claude, builds the chart. A "Who still owes" scoreboard sends friendly reminders in one click.
 
 ## Design principles
 
@@ -310,11 +312,19 @@ The front-desk grid stays the dashboard; `/insights` is the office manager's vie
   the browser: the lead agent delegates to its page agent (`add_widget`) and widget agent
   (`configure_widget`), and the new chart appears on the page. Without `ANTHROPIC_API_KEY` the
   chat says so and the rest of the report works.
+- **"Where every dollar went"** (the focal point) is a custom Studio widget: a money flow from
+  everything billed into insurance discount, denials, insurance paid and the patient share, which
+  splits into collected and still owed by age. Particles move along each stream in proportion to
+  the money. It reads balances through Studio, so page filters reshape it; clicking an age or
+  Denied cross-filters the whole report; and when a payment arrives (the same Server-Sent Events
+  as the grid's flash) the streams re-balance and a coin travels from what was owed into
+  Collected. Amounts are summed in integer cents and every split must add up exactly
+  (`apps/web/src/pages/insights/flow.ts`, unit-tested). Reduced motion turns the animation off.
 - **"Who still owes"** is a custom Studio widget: open balances, longest-waiting first, as a
   scoreboard rather than a collections report. It reads ids and amounts through Studio (so page
   filters apply), looks names up from the staff API itself, and offers **Send reminder** (with a
   confirm) on bills that went out, calling the same reminder endpoint as AI suggests.
-- The default report: still owed, collected and denied-claim tiles; owed by age and by payer;
+- The default report: the money flow across the top; still owed, collected and denied-claim tiles; owed by age and by payer;
   collected by month; denials by payer. Prompt starters: "Which payer denied the most this
   quarter?", "Show what we collected each week", "Who has owed us the longest?".
 

@@ -126,3 +126,166 @@
 .owed-error {
   color: #9b2c24;
 }
+
+/* Where every dollar went (money flow, the focal widget) */
+.flow {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-family: var(--font-ui);
+  padding: 0 6px 6px;
+}
+.flow-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+  margin: 0 0 6px;
+  color: var(--ink-2);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.flow-summary strong {
+  color: var(--ink);
+  font-size: 17px;
+}
+.flow-summary .flow-in {
+  color: #2e7d4a;
+}
+.flow-summary .flow-owed {
+  color: #9b2c24;
+}
+.flow-hint {
+  margin-left: auto;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.flow-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.flow-svg,
+.flow-particles {
+  position: absolute;
+  inset: 0;
+}
+.flow-particles {
+  pointer-events: none;
+}
+.flow-link {
+  fill-opacity: 0.22;
+  transition: fill-opacity 160ms ease;
+}
+.flow-link:hover {
+  fill-opacity: 0.42;
+}
+.flow-label {
+  font-size: 12.5px;
+  fill: var(--ink-2);
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.flow-label-name {
+  font-weight: 600;
+  fill: var(--ink);
+}
+.flow-label-amount {
+  font-variant-numeric: tabular-nums;
+}
+.flow-clickable {
+  cursor: pointer;
+}
+.flow-clickable:hover .flow-label-name {
+  text-decoration: underline;
+}
+.flow-clickable:focus-visible rect {
+  outline: none;
+  stroke: var(--teal-700);
+  stroke-width: 2px;
+}
+.flow-selected rect {
+  stroke: var(--ink);
+  stroke-width: 2px;
+}
+.flow-enter .flow-reveal {
+  transform-origin: left center;
+  animation: flow-reveal 1100ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes flow-reveal {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.flow-tip {
+  position: absolute;
+  z-index: 2;
+  max-width: 320px;
+  padding: 6px 9px;
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.flow-coin {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  top: 0;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #8fe0a8, #2e7d4a 70%);
+  box-shadow:
+    0 0 0 6px rgba(46, 125, 74, 0.18),
+    0 0 18px 4px rgba(46, 125, 74, 0.45);
+  pointer-events: none;
+  animation: flow-coin 1700ms cubic-bezier(0.45, 0, 0.2, 1) forwards;
+}
+.flow-coin-label {
+  position: absolute;
+  left: -48px;
+  top: -32px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #e4f2e6;
+  color: #24633a;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+@keyframes flow-coin {
+  0% {
+    transform: translate(var(--from-x), var(--from-y)) scale(0.4);
+    opacity: 0;
+  }
+  15% {
+    transform: translate(var(--from-x), var(--from-y)) scale(1.1);
+    opacity: 1;
+  }
+  70% {
+    transform: translate(var(--to-x), var(--to-y)) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--to-x), var(--to-y)) scale(1.6);
+    opacity: 0;
+  }
+}
+.flow-error {
+  color: var(--ink-3);
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow-coin {
+    animation-duration: 1ms;
+  }
+}

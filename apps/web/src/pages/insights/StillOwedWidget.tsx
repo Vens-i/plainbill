@@ -22,7 +22,8 @@ type SendState = 'idle' | 'confirm' | 'sending' | 'sent' | { error: string };
 
 const FIELDS = ['balanceId', 'stillOwed', 'daysOut', 'status'] as const;
 
-export function StillOwedWidget({ widgetApi }: AgWidgetParams) {
+export function StillOwedWidget(params: AgWidgetParams) {
+  const { widgetApi } = params;
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [names, setNames] = useState<Map<number, BalanceRow>>(new Map());
   const [send, setSend] = useState<Record<number, SendState>>({});
@@ -39,7 +40,7 @@ export function StillOwedWidget({ widgetApi }: AgWidgetParams) {
     }
     const found = fields as AgWidgetField[];
     const [result, rows] = await Promise.all([
-      widgetApi.getData({ fields: found }),
+      widgetApi.getData({ fields: found }, { queryId: 'still-owed' }),
       api.balances(),
     ]);
     const read = (row: Record<string, unknown>, i: number) => row[found[i]!.key];
@@ -59,7 +60,8 @@ export function StillOwedWidget({ widgetApi }: AgWidgetParams) {
 
   useEffect(() => {
     void load();
-  }, [load]);
+    // Studio passes new params on every refresh (filters, cross-filters, new data): reload then.
+  }, [load, params]);
 
   const remind = async (id: number) => {
     setSend((s) => ({ ...s, [id]: 'sending' }));

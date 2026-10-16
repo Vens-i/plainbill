@@ -4,7 +4,7 @@
  * someone asks "which payer denied the most this quarter?" and gets a chart.
  */
 import './insights.css';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AgStudio, AgStudioProvider, createWidgets } from 'ag-studio-react';
 import {
   AgStudioAiModule,
@@ -15,9 +15,11 @@ import {
 } from 'ag-studio';
 import type { InsightsData } from '@plainbill/api/contract';
 import { api } from '../../lib/api';
+import { useServerEvents } from '../../lib/useServerEvents';
 import { plainbillClaudeAdapter } from './studioAdapter';
 import { INITIAL_REPORT, insightsSources, PROMPT_STARTERS } from './report';
 import { stillOwedWidget } from './StillOwedWidget';
+import { moneyFlowWidget } from './MoneyFlowWidget';
 
 AgStudioModuleRegistry.registerModules([AgStudioAiModule]);
 
@@ -51,20 +53,24 @@ const ai = ({ api: studio }: { api: AgStudioApi }) =>
 // checked by Studio at runtime (enableStudioDevValidations in development).
 const widgets = (config: { menu: Array<{ label: string; widgetIds: string[] }> }) =>
   createWidgets({
-    additionalTypes: [stillOwedWidget],
-    menu: [...config.menu, { label: 'Plainbill', widgetIds: ['still-owed'] }],
+    additionalTypes: [moneyFlowWidget, stillOwedWidget],
+    menu: [...config.menu, { label: 'Plainbill', widgetIds: ['money-flow', 'still-owed'] }],
   } as never);
 
 export function Insights() {
   const [data, setData] = useState<InsightsData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const reload = useCallback(() => {
     api
       .insights()
       .then(setData)
       .catch(() => setError('Could not load the practice data. Is the API running?'));
   }, []);
+  useEffect(reload, [reload]);
+  // A payment (webhook, capture or the poll) or any balance change: Studio gets the new data and
+  // the money flow re-balances, with a coin moving into Collected.
+  useServerEvents({ onPayment: reload, onBalancesChanged: reload, onOpen: reload });
 
   const sources = useMemo(() => (data ? insightsSources(data) : null), [data]);
 
