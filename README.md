@@ -128,8 +128,7 @@ Copy `.env.example` to `.env`. Everything is optional; the app runs without keys
 | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`     | Turns on Claude. Without it, recorded and template answers |
 | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | PayPal sandbox app (`PAYPAL_ENV=sandbox`)                  |
 | `PAYPAL_WEBHOOK_ID`                        | Needed to accept PayPal webhooks once deployed             |
-| `VITE_AG_GRID_LICENSE_KEY`                 | AG Grid Enterprise (trial mode without it)                 |
-| `VITE_AG_STUDIO_LICENSE_KEY`               | AG Studio (watermark without it)                           |
+| `VITE_AG_GRID_LICENSE_KEY`                 | AG Grid Enterprise and AG Studio (trial mode without it)   |
 | `RESEND_API_KEY`, `EMAIL_TO_OVERRIDE`      | Real emails, optionally all sent to one test address       |
 | `APP_BASE_URL`, `SESSION_SECRET`           | Public URL for pay links; key for patient sessions         |
 | `INSIGHTS_PATIENT_NAMES`                   | Names the analyst sees: `full`, `initials` or `off`        |

@@ -24,8 +24,6 @@ import { moneyFlowWidget } from './MoneyFlowWidget';
 
 AgStudioModuleRegistry.registerModules([AgStudioAiModule]);
 
-const licenseKey = import.meta.env.VITE_AG_STUDIO_LICENSE_KEY?.trim() || undefined;
-
 const theme = studioTheme.withParams({
   fontFamily: 'Figtree, system-ui, -apple-system, "Segoe UI", sans-serif',
   fontSize: 13,
@@ -96,7 +94,8 @@ export function Insights() {
       ) : null}
       {sources ? (
         <div className="insights-studio">
-          <AgStudioProvider {...(licenseKey ? { licenseKey } : {})}>
+          {/* Licensed by the AG Grid key that agGrid.ts applies at startup. */}
+          <AgStudioProvider>
             <AgStudio
               mode="edit"
               theme={theme as never}

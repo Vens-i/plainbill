@@ -3,7 +3,8 @@
  *
  * - Registers every Enterprise module, with AG Charts Enterprise for integrated charts and
  *   sparklines.
- * - Applies the license key from VITE_AG_GRID_LICENSE_KEY. Without a valid key the grid runs in
+ * - Applies the license key from VITE_AG_GRID_LICENSE_KEY. The same key licenses AG Studio on the
+ *   Insights page (it reads the global LicenseManager). Without a valid key the grid runs in
  *   trial mode: AG Grid prints a license notice to the console, and shows a watermark on
  *   non-localhost hosts. Run `pnpm check:license` to validate a key without opening a browser.
  */
