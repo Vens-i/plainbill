@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { DATE_FILTER_HINT, insightsSources } from '../src/pages/insights/report';
+import {
+  ADJUSTMENTS_DESCRIPTION,
+  DATE_FILTER_HINT,
+  insightsSources,
+} from '../src/pages/insights/report';
 
 const empty = { today: '2026-10-10', balances: [], payments: [], adjustments: [] };
 
@@ -30,5 +34,11 @@ describe('insightsSources', () => {
         type: 'many-to-one',
       })),
     );
+  });
+
+  it('says self-pay visits have no adjustments, so the patient share there is not "unexplained"', () => {
+    const adjustments = insightsSources(empty).sources.find((s) => s.id === 'adjustments')!;
+    expect(adjustments.description).toBe(ADJUSTMENTS_DESCRIPTION);
+    expect(ADJUSTMENTS_DESCRIPTION).toContain('Self-pay visits have no adjustments');
   });
 });

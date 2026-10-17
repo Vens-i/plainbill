@@ -48,6 +48,13 @@ const flag = (id: string, name: string, description?: string) => ({
 export const DATE_FILTER_HINT =
   'In date filters, always write values as a local date-time with no time zone, for example 2026-10-01T00:00:00 for the start of Oct 1 and 2026-10-10T23:59:59 for the end of Oct 10 (never 2026-10-01 or a value ending in Z).';
 
+/**
+ * Found live: asked "Where did our money go?", the analyst said half the patient share "has no
+ * itemised reason". That half is self-pay visits, which have no insurance adjustments at all.
+ */
+export const ADJUSTMENTS_DESCRIPTION =
+  'Each insurance claim adjustment with its plain-English reason: insurance write-offs (including denials) and the patient share (deductible, coinsurance, copay). Self-pay visits have no adjustments: their whole bill is the patient share, so the patient-share adjustments here only cover insured visits.';
+
 /** Studio data sources. `month` is precomputed ("2026-07") so months sort and group simply. */
 export function insightsSources(data: InsightsData) {
   return {
@@ -114,8 +121,7 @@ export function insightsSources(data: InsightsData) {
       {
         id: 'adjustments',
         name: 'Adjustments',
-        description:
-          'Each claim adjustment with its plain-English reason: insurance write-offs (including denials) and the patient share (deductible, coinsurance, copay).',
+        description: ADJUSTMENTS_DESCRIPTION,
         data: data.adjustments,
         fields: [
           int('balanceId', 'Balance ID'),
