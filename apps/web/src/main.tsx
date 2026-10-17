@@ -39,13 +39,6 @@ const router = createBrowserRouter([
         lazy: async () => ({ Component: (await import('./pages/EmailPreview')).EmailPreview }),
       },
       {
-        path: '/invoices',
-        lazy: async () => {
-          const { Placeholder } = await import('./pages/Placeholder');
-          return { element: <Placeholder title="Invoices" phase="a later phase" /> };
-        },
-      },
-      {
         path: '/patients',
         lazy: async () => ({ Component: (await import('./pages/patients/Patients')).Patients }),
       },

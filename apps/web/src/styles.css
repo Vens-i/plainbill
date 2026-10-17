@@ -919,15 +919,7 @@ button {
   padding: 8px 0;
 }
 
-/* ── Placeholder pages / errors ───────────────────────────────────────── */
-.placeholder {
-  background: var(--surface);
-  border: 1px dashed var(--teal-200);
-  border-radius: var(--radius-lg);
-  padding: 40px;
-  text-align: center;
-  color: var(--ink-2);
-}
+/* ── Errors ──────────────────────────────────────────────────────────── */
 .banner {
   border-radius: var(--radius-lg);
   padding: 14px 18px;

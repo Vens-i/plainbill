@@ -21,7 +21,6 @@ const NAV = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/intake', label: 'Intake' },
   { to: '/insights', label: 'Insights' },
-  { to: '/invoices', label: 'Invoices' },
   { to: '/patients', label: 'Patients' },
 ];
 
