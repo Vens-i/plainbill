@@ -291,6 +291,7 @@ export function getBalanceRows(db: DbLike, today: IsoDate, ids?: number[]): Bala
     return {
       id: balance.id,
       status: balance.status,
+      patientId: patient.id,
       patientName: `${patient.firstName} ${patient.lastName}`,
       patientFirstName: patient.firstName,
       provider,

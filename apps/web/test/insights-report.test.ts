@@ -1,22 +1,25 @@
 import { describe, expect, it } from 'vitest';
+import type { InsightsData } from '@plainbill/api/contract';
 import {
   ADJUSTMENTS_DESCRIPTION,
+  PATIENT_FIELD,
   DATE_FILTER_HINT,
   insightsSources,
 } from '../src/pages/insights/report';
 
-const empty = { today: '2026-10-10', balances: [], payments: [], adjustments: [] };
+const empty: InsightsData = {
+  today: '2026-10-10',
+  patientNames: 'full',
+  balances: [],
+  payments: [],
+  adjustments: [],
+};
 
 describe('insightsSources', () => {
   it('tells the analyst how to write date filters so Studio keeps the right day', () => {
     // Found live: in America/New_York, Studio read a "2026-10-01T00:00:00Z" lower bound as
     // Sep 30, so a Sep 30 denial was reported as "this quarter".
-    const { description } = insightsSources({
-      today: '2026-10-10',
-      balances: [],
-      payments: [],
-      adjustments: [],
-    });
+    const { description } = insightsSources(empty);
     expect(description).toContain('Today is 2026-10-10.');
     expect(description).toContain(DATE_FILTER_HINT);
     expect(DATE_FILTER_HINT).toMatch(/2026-10-01T00:00:00 /);
@@ -40,5 +43,19 @@ describe('insightsSources', () => {
     const adjustments = insightsSources(empty).sources.find((s) => s.id === 'adjustments')!;
     expect(adjustments.description).toBe(ADJUSTMENTS_DESCRIPTION);
     expect(ADJUSTMENTS_DESCRIPTION).toContain('Self-pay visits have no adjustments');
+  });
+
+  it('gives Balances and Payments a Patient field that says what it holds', () => {
+    // Found live: the analyst could only say "visit #11" while the widget showed Aisha Bello.
+    for (const mode of ['full', 'initials', 'off'] as const) {
+      const { sources } = insightsSources({ ...empty, patientNames: mode });
+      for (const id of ['balances', 'payments']) {
+        const fields = sources.find((s) => s.id === id)!.fields;
+        expect(fields.find((f) => f.id === 'patientId')).toBeTruthy();
+        expect(fields.find((f) => f.id === 'patient')).toMatchObject({
+          description: PATIENT_FIELD[mode],
+        });
+      }
+    }
   });
 });

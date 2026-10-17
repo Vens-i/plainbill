@@ -2,15 +2,17 @@
  * Practice insights (AG Studio): the data the office manager's dashboard is built from, and the
  * bridge between Studio's agent and Claude.
  *
- * Studio's query results are sent to the model, so this data has balance ids and payer names
- * but no patient names; the Still owed widget looks names up itself from /api/balances. Every
- * amount comes from the same computed rows as the grid, converted to dollars only here.
+ * Studio's query results are sent to the model (Claude). Patients appear as configured by
+ * INSIGHTS_PATIENT_NAMES: full names (default), first name + last initial, or "Patient 7" with no
+ * name at all. Nothing else that identifies a patient is here: no date of birth, member ID,
+ * address, email or diagnosis. Every amount comes from the same computed rows as the grid,
+ * converted to dollars only here.
  */
 import { inArray } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { StudioTurnRequest } from '@plainbill/ai';
 import type { BalanceStatus } from '@plainbill/core';
-import type { InsightsData } from '../contract';
+import type { BalanceRow, InsightsData, PatientNamesMode } from '../contract';
 import { payments, visits } from '../db/schema';
 import { getBalanceRows } from '../queries/rows';
 import type { RouteContext } from './context';
@@ -35,7 +37,25 @@ const dollars = (cents: number | null | undefined) => Math.round(cents ?? 0) / 1
 
 const METHOD: Record<string, string> = { paypal: 'PayPal', card: 'Card', cash: 'Cash' };
 
-export function insightsData(ctx: Pick<RouteContext, 'db' | 'today'>): InsightsData {
+/** How a patient is named in the analyst's data. */
+export function patientLabel(
+  row: Pick<BalanceRow, 'patientId' | 'patientName' | 'patientFirstName'>,
+  mode: PatientNamesMode,
+): string {
+  if (mode === 'off') return `Patient ${row.patientId}`;
+  if (mode === 'full') return row.patientName;
+  const last = row.patientName.slice(row.patientFirstName.length).trim();
+  return last ? `${row.patientFirstName} ${last[0]}.` : row.patientFirstName;
+}
+
+/** Age of what's still owed. Nothing owed (denied, or paid) is not in an age bucket. */
+function agingOf(r: BalanceRow): string {
+  if (r.status === 'denied') return 'Denied';
+  return r.agingBucket && r.remainingCents > 0 ? AGING_LABEL[r.agingBucket] : 'Settled';
+}
+
+export function insightsData(ctx: Pick<RouteContext, 'db' | 'today' | 'insights'>): InsightsData {
+  const mode = ctx.insights.patientNames;
   const rows = getBalanceRows(ctx.db, ctx.today());
   const byId = new Map(rows.map((r) => [r.id, r]));
   const visitDates = new Map(
@@ -48,6 +68,8 @@ export function insightsData(ctx: Pick<RouteContext, 'db' | 'today'>): InsightsD
 
   const balances = rows.map((r) => ({
     balanceId: r.id,
+    patientId: r.patientId,
+    patient: patientLabel(r, mode),
     status: STATUS_LABEL[r.status],
     payer: r.payerKind === 'self-pay' ? 'Self-pay' : r.payerShortName,
     provider: r.provider ?? 'Unassigned',
@@ -59,7 +81,7 @@ export function insightsData(ctx: Pick<RouteContext, 'db' | 'today'>): InsightsD
     patientPaid: dollars(r.patientPaidCents),
     stillOwed: r.status === 'denied' ? 0 : dollars(r.remainingCents),
     daysOut: r.daysOut ?? 0,
-    aging: r.agingBucket ? AGING_LABEL[r.agingBucket] : 'Settled',
+    aging: agingOf(r),
     invoiceOpened: r.invoice ? r.invoice.openCount > 0 : false,
     onPlan: r.activePlan?.status === 'active',
     splitVisit: Boolean(r.splitVisit),
@@ -82,6 +104,8 @@ export function insightsData(ctx: Pick<RouteContext, 'db' | 'today'>): InsightsD
     return {
       paymentId: p.id,
       balanceId: p.balanceId,
+      patientId: r.patientId,
+      patient: patientLabel(r, mode),
       paidOn: p.postedOn,
       amount: dollars(p.amountCents),
       method: p.planId ? 'Payment plan' : (METHOD[p.method] ?? p.method),
@@ -104,7 +128,7 @@ export function insightsData(ctx: Pick<RouteContext, 'db' | 'today'>): InsightsD
       })),
   );
 
-  return { today: ctx.today(), balances, payments: paid, adjustments };
+  return { today: ctx.today(), patientNames: mode, balances, payments: paid, adjustments };
 }
 
 /** Caps agent turns so the page can't be used to run up model costs. */

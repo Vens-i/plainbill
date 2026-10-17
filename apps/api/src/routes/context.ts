@@ -7,6 +7,7 @@ import type {
   StudioRunner,
 } from '@plainbill/ai';
 import type { IsoDate } from '@plainbill/core';
+import type { PatientNamesMode } from '../contract';
 import type { Db } from '../db/client';
 import type { EventBus } from '../events';
 import type { AgentPayPalTools } from '../paypal/agent';
@@ -74,6 +75,8 @@ export interface RouteContext {
   appBaseUrl: string;
   /** Directory dev routes may read sample files from. */
   sampleDir: string;
+  /** How patients appear in Practice insights, whose data goes to the AI analyst. */
+  insights: { patientNames: PatientNamesMode };
   log: { info: (msg: string) => void; warn: (msg: string) => void; error: (msg: string) => void };
 }
 

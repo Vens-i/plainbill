@@ -88,6 +88,7 @@ const { app, ctx } = buildApp({
   appBaseUrl: config.appBaseUrl,
   sessions: new PatientSessions(config.sessionSecret, config.appBaseUrl.startsWith('https://')),
   webDist: config.webDist,
+  insights: config.insights,
 });
 
 if (!config.sessionSecret && process.env.NODE_ENV === 'production') {
@@ -102,6 +103,7 @@ try {
       ` · AI ${ai.available ? `${ai.model} (EOBs: ${config.ai.eobMode})` : 'offline (recorded + templates)'}` +
       ` · PayPal ${paypal.api ? `${paypal.env}${paypal.webhookId ? ' + webhooks' : ''}${config.paypal.syncSeconds ? `, sync every ${config.paypal.syncSeconds}s` : ''}` : 'off'}` +
       ` · email ${email.mailer.provider}${email.toOverride ? ' (demo inbox)' : ''}` +
+      ` · insights names ${config.insights.patientNames}` +
       (config.webDist ? ' · serving the web app' : '') +
       (config.devRoutes ? ' · dev routes on' : ''),
   );

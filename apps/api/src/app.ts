@@ -19,7 +19,7 @@ import {
   X12ParseError,
   type IsoDate,
 } from '@plainbill/core';
-import type { IntakeResult, PracticeInfo } from './contract';
+import type { IntakeResult, PatientNamesMode, PracticeInfo } from './contract';
 import type { Db } from './db/client';
 import { practices } from './db/schema';
 import { REPO_ROOT } from './env';
@@ -76,6 +76,8 @@ export interface AppOptions {
   ai?: AiServices;
   /** Where dev routes read sample files (defaults to seed/data). */
   sampleDir?: string;
+  /** Patient names in Practice insights: full (default), initials or off. */
+  insights?: { patientNames: PatientNamesMode };
   /** Defaults to "not configured": sends stay local, patient pages can't take payments. */
   paypal?: PayPalServices;
   /** Defaults to the outbox (emails are stored and previewable, not delivered). */
@@ -175,6 +177,7 @@ export function buildApp(options: AppOptions): {
     practiceId: () => practice()!.id,
     appBaseUrl: options.appBaseUrl ?? 'http://localhost:5173',
     sampleDir: options.sampleDir ?? DEFAULT_SAMPLE_DIR,
+    insights: options.insights ?? { patientNames: 'full' },
     log: {
       info: (msg) => app.log.info(msg),
       warn: (msg) => app.log.warn(msg),

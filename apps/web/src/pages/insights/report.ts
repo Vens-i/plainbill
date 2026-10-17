@@ -55,13 +55,29 @@ export const DATE_FILTER_HINT =
 export const ADJUSTMENTS_DESCRIPTION =
   'Each insurance claim adjustment with its plain-English reason: insurance write-offs (including denials) and the patient share (deductible, coinsurance, copay). Self-pay visits have no adjustments: their whole bill is the patient share, so the patient-share adjustments here only cover insured visits.';
 
+/**
+ * What the Patient field holds, by INSIGHTS_PATIENT_NAMES. Found live: with no patient field the
+ * analyst could only say "visit #11" when the Who still owes widget showed Aisha Bello.
+ */
+export const PATIENT_FIELD: Record<InsightsData['patientNames'], string> = {
+  full: "The patient's name. One patient can have several visits: group by Patient ID.",
+  initials:
+    "The patient's first name and last initial. One patient can have several visits: group by Patient ID.",
+  off: 'A label for the patient ("Patient 7"); names are not shared. One patient can have several visits: group by Patient ID.',
+};
+
+const patientFields = (data: InsightsData) => [
+  int('patientId', 'Patient ID'),
+  text('patient', 'Patient', PATIENT_FIELD[data.patientNames]),
+];
+
 /** Studio data sources. `month` is precomputed ("2026-07") so months sort and group simply. */
 export function insightsSources(data: InsightsData) {
   return {
     description:
       'Harborview Family Medicine, a small independent practice. Patient balances after insurance, the payments patients made, and the adjustments on each claim (insurance write-offs and the patient share). Amounts are US dollars. Today is ' +
       data.today +
-      '. ' +
+      '. Patients are in the Patient field of Balances and Payments. ' +
       DATE_FILTER_HINT,
     sources: [
       {
@@ -72,6 +88,7 @@ export function insightsSources(data: InsightsData) {
         data: data.balances.map((b) => ({ ...b, deniedClaims: b.status === 'Denied' ? 1 : 0 })),
         fields: [
           int('balanceId', 'Balance ID'),
+          ...patientFields(data),
           text(
             'status',
             'Status',
@@ -91,7 +108,11 @@ export function insightsSources(data: InsightsData) {
           money('patientPaid', 'Patient paid'),
           money('stillOwed', 'Still owed', 'What the patient still owes today'),
           int('daysOut', 'Days out', 'Days since the visit, for open balances'),
-          text('aging', 'Aging', '0–30, 31–60, 61–90 or 90+ days, or Settled'),
+          text(
+            'aging',
+            'Aging',
+            'Age of what is still owed: 0–30, 31–60, 61–90 or 90+ days; Settled when nothing is owed; Denied for denied claims',
+          ),
           int('deniedClaims', 'Denied claims', '1 when insurance denied the claim'),
           flag('invoiceOpened', 'Bill opened'),
           flag('onPlan', 'On a payment plan'),
@@ -111,6 +132,7 @@ export function insightsSources(data: InsightsData) {
         fields: [
           int('paymentId', 'Payment ID'),
           int('balanceId', 'Balance ID'),
+          ...patientFields(data),
           date('paidOn', 'Paid on'),
           text('month', 'Month', 'YYYY-MM'),
           money('amount', 'Amount'),
@@ -125,6 +147,7 @@ export function insightsSources(data: InsightsData) {
         data: data.adjustments,
         fields: [
           int('balanceId', 'Balance ID'),
+          ...patientFields(data),
           text('payer', 'Payer'),
           date('date', 'Date'),
           text('code', 'Code', 'Adjustment code, e.g. CO-45 or PR-1'),

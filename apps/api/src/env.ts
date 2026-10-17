@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { todayIso, type IsoDate } from '@plainbill/core';
+import type { PatientNamesMode } from './contract';
 
 /** Repo root: apps/api/src → ../../.. */
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -49,9 +50,28 @@ export interface Config {
   sessionSecret: string | null;
   /** Built web app to serve from the API (one origin in production), or null. */
   webDist: string | null;
+  insights: {
+    /**
+     * How patients appear in Practice insights, whose data goes to the AI analyst (Claude):
+     * full names, first name + last initial, or "Patient 7" labels (INSIGHTS_PATIENT_NAMES).
+     */
+    patientNames: PatientNamesMode;
+  };
 }
 
 const blank = (v: string | undefined) => v?.trim() || null;
+
+const PATIENT_NAMES: PatientNamesMode[] = ['full', 'initials', 'off'];
+
+function patientNames(value: string | undefined): PatientNamesMode {
+  const v = blank(value)?.toLowerCase() ?? 'full';
+  if (!(PATIENT_NAMES as string[]).includes(v)) {
+    throw new Error(
+      `INSIGHTS_PATIENT_NAMES must be one of ${PATIENT_NAMES.join(', ')} (got "${value}").`,
+    );
+  }
+  return v as PatientNamesMode;
+}
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const production = env.NODE_ENV === 'production';
@@ -95,5 +115,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       existsSync(resolve(REPO_ROOT, 'apps/web/dist/index.html'))
         ? resolve(REPO_ROOT, 'apps/web/dist')
         : null,
+    insights: { patientNames: patientNames(env.INSIGHTS_PATIENT_NAMES) },
   };
 }

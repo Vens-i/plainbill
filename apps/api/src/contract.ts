@@ -33,6 +33,7 @@ export interface DisplayAdjustment {
 export interface BalanceRow {
   id: number;
   status: BalanceStatus;
+  patientId: number;
   patientName: string;
   patientFirstName: string;
   /** "Dr. Patel" */
@@ -457,10 +458,19 @@ export interface PayResult {
 }
 
 /** GET /api/insights/data: the AG Studio report's sources. Dollars, no patient names. */
+/**
+ * How patients appear in Practice insights (whose data goes to the AI analyst): "Aisha Bello",
+ * "Aisha B.", or "Patient 7" with no name at all.
+ */
+export type PatientNamesMode = 'full' | 'initials' | 'off';
+
 export interface InsightsData {
   today: IsoDate;
+  patientNames: PatientNamesMode;
   balances: Array<{
     balanceId: number;
+    patientId: number;
+    patient: string;
     status: string;
     payer: string;
     provider: string;
@@ -480,6 +490,8 @@ export interface InsightsData {
   payments: Array<{
     paymentId: number;
     balanceId: number;
+    patientId: number;
+    patient: string;
     paidOn: IsoDate;
     amount: number;
     method: string;
