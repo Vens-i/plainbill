@@ -25,6 +25,7 @@ import { practices } from './db/schema';
 import { REPO_ROOT } from './env';
 import { EventBus, streamEvents } from './events';
 import { computeAgingChart, computeDenialsChart, computeKpis } from './queries/dashboard';
+import { getPatients } from './queries/patients';
 import { getBalanceRows } from './queries/rows';
 import { DuplicateClaimError, ingestClaim } from './services/ingest';
 import { PaymentError, recordPayment } from './services/payments';
@@ -217,6 +218,12 @@ export function buildApp(options: AppOptions): {
       });
 
       api.get('/kpis', async () => computeKpis(db, getBalanceRows(db, today()), today()));
+      /** One row per patient; `q` narrows by name ("bel" finds Aisha Bello). */
+      api.get<{ Querystring: { q?: string } }>('/patients', async (request) => {
+        const q = request.query.q?.trim().toLowerCase();
+        const all = getPatients(db, getBalanceRows(db, today()), today());
+        return q ? all.filter((p) => p.name.toLowerCase().includes(q)) : all;
+      });
       api.get('/charts/aging', async () => computeAgingChart(getBalanceRows(db, today())));
       api.get('/charts/denials-by-payer', async () =>
         computeDenialsChart(getBalanceRows(db, today()), today()),

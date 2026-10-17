@@ -20,7 +20,8 @@ import { payments, practices } from '../db/schema';
 
 const OPEN: readonly BalanceStatus[] = ['review', 'ready', 'sent', 'partial'];
 
-const isOpen = (r: BalanceRow) => OPEN.includes(r.status) && r.remainingCents > 0;
+/** A balance with money still owed by the patient: what Outstanding adds up. */
+export const isOpen = (r: BalanceRow) => OPEN.includes(r.status) && r.remainingCents > 0;
 
 export function computeKpis(db: DbLike, rows: BalanceRow[], today: IsoDate): Kpis {
   const open = rows.filter(isOpen);

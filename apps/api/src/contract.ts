@@ -508,3 +508,63 @@ export interface InsightsData {
     denied: boolean;
   }>;
 }
+
+// ── Patients (staff) ────────────────────────────────────────────────────────
+
+/** The most recent thing that happened on a patient's bills. */
+export interface PatientActivity {
+  kind: 'payment' | 'statement_view' | 'reminder' | 'invoice_sent';
+  /** "Paid $80 via PayPal", "Viewed statement · Español", "Reminder sent", "Invoice sent". */
+  label: string;
+  /** Wall-clock time (for "just now"), when the app recorded one. */
+  at: string | null;
+  /** Calendar date it counts toward (demo-aware). */
+  on: IsoDate;
+  balanceId: number;
+}
+
+/** One visit under a patient: the same computed amounts as the dashboard row. */
+export interface PatientVisit {
+  balanceId: number;
+  status: BalanceStatus;
+  visitDate: IsoDate;
+  provider: string | null;
+  payerShortName: string;
+  payerName: string;
+  claimId: string;
+  /** Second line, as on the dashboard ("Opened 2× · not paid"). */
+  sub: string;
+  billedCents: number;
+  /** What the patient is responsible for; null when denied (not billed to the patient). */
+  patientShareCents: number | null;
+  paidCents: number;
+  /** Still owed on an open balance; 0 once paid; null when denied. */
+  owedCents: number | null;
+  daysOut: number | null;
+  agingBucket: AgingBucket | null;
+}
+
+/**
+ * GET /api/patients: one row per patient, summed in integer cents from the dashboard's rows.
+ * Contact details (DOB, member ID, address, email) are deliberately not here.
+ */
+export interface PatientSummary {
+  patientId: number;
+  name: string;
+  /** "Delgado, Maria", for sorting by last name. */
+  sortName: string;
+  visitCount: number;
+  billedCents: number;
+  patientShareCents: number;
+  paidCents: number;
+  /** Open balances only (review, ready, sent, partial): sums to the dashboard's Outstanding. */
+  owedCents: number;
+  /** Days out on the oldest visit that still has money owed; null when nothing is owed. */
+  oldestOpenDays: number | null;
+  oldestOpenBucket: AgingBucket | null;
+  /** Visits per status, in the dashboard's status order. */
+  statuses: Array<{ status: BalanceStatus; count: number }>;
+  lastActivity: PatientActivity | null;
+  /** Newest first. */
+  visits: PatientVisit[];
+}
