@@ -10,7 +10,7 @@ import { formatMoney } from '@plainbill/core';
 import { payApi } from '../../../lib/api';
 import { useI18n } from '../i18n';
 import { DesktopStatement } from './DesktopStatement';
-import { HowItWorks } from './HowItWorks';
+import { NotesSourceLine } from './HowItWorks';
 import { PhoneStatement, type PhoneStrings } from './PhoneStatement';
 import { DESKTOP_QUERY, useMedia } from './useMedia';
 
@@ -124,11 +124,7 @@ export function StatementExplained({ token, bill, onAsk }: Props) {
           {t('fallbackBanner', { phone: bill.practice.phone })}
         </p>
       )}
-      {notes && (
-        <p>
-          {notes.source === 'template' ? t('footnoteTemplate') : t('footnoteAi')} <HowItWorks />
-        </p>
-      )}
+      {notes && <NotesSourceLine source={notes.source} />}
       <p>{t('synthetic')}</p>
     </div>
   );

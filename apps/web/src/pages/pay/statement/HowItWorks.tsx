@@ -3,6 +3,7 @@
  * how-it-works board), in plain words, in a modal dialog.
  */
 import { useRef } from 'react';
+import type { StatementNotes } from '@plainbill/api/contract';
 import { useI18n, type I18nKey } from '../i18n';
 
 const STEPS: Array<[I18nKey, I18nKey]> = [
@@ -61,5 +62,19 @@ export function HowItWorks() {
         </div>
       </dialog>
     </>
+  );
+}
+
+/**
+ * "Notes written by AI and checked by code. How this works" under the statement. A div, not a
+ * <p>: the How it works dialog inside it has headings and lists, which a <p> can't contain
+ * (React warned about it on every patient page).
+ */
+export function NotesSourceLine({ source }: { source: StatementNotes['source'] }) {
+  const { t } = useI18n();
+  return (
+    <div className="st-footnote-line">
+      {source === 'template' ? t('footnoteTemplate') : t('footnoteAi')} <HowItWorks />
+    </div>
   );
 }

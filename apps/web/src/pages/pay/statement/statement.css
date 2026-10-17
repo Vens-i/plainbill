@@ -390,7 +390,8 @@
   line-height: 1.55;
   color: var(--ink-3);
 }
-.st-footnote p {
+.st-footnote p,
+.st-footnote-line {
   margin: 0;
 }
 .st-footnote .st-link {
