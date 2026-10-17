@@ -1,6 +1,6 @@
 /**
  * In-memory stand-in for PayPal, for tests and offline rehearsals. It mirrors what the sandbox
- * actually did when we tried it (see docs/paypal-notes.md): invoices read UNPAID after send,
+ * actually did when we tried it (see "How Plainbill uses PayPal" in the README): invoices read UNPAID after send,
  * recorded payments get "EXTR-" ids, capturing twice fails with ORDER_ALREADY_CAPTURED, and a
  * subscription's first installment is collected when the payer approves.
  *
