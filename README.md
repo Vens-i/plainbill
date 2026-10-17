@@ -304,7 +304,11 @@ The front-desk grid stays the dashboard; `/insights` is the office manager's vie
 
 - **Data:** `GET /api/insights/data` gives three sources (balances, payments, adjustments), in
   dollars converted from the same computed rows as the grid. Studio aggregates; it never computes
-  a balance. No patient names: Studio's query results are sent to the model.
+  a balance. Studio's query results are sent to the model, so the data names patients (so the
+  analyst can say "Aisha Bello has owed $600 for 112 days") and nothing else that identifies
+  them: no date of birth, member ID, address, email or diagnosis. `INSIGHTS_PATIENT_NAMES`
+  sets the names: `full` (default), `initials` ("Aisha B.") or `off` ("Patient 7"); the "Who
+  still owes" widget shows full names to staff either way, from the staff API.
 - **The AI analyst runs on Claude.** AG Studio ships no model connection; each agent turn hands
   the app a request (conversation, instructions, tool schemas). `packages/ai/src/studio` maps
   it to the Messages API (Studio's long instructions are prompt-cached) and Claude's stream back
@@ -377,7 +381,7 @@ All routes are under `/api`.
 | `POST /intake/835`                               | Raw 835 body (`text/plain`), `?fileName=`; parses, reconciles, stores; skips duplicates |
 | `GET /events`                                    | Server-Sent Events: `payment`, `balances.changed`                                       |
 | `GET /practice`, `GET /health`                   | Shell info, health check                                                                |
-| `GET /insights/data`                             | Practice insights sources: balances, payments, adjustments (dollars, no patient names)  |
+| `GET /insights/data`                             | Insights sources: balances, payments, adjustments (dollars; names per setting)          |
 | `POST /studio/llm`                               | One AG Studio agent turn → Claude; streams NDJSON events, then the turn's response      |
 | `GET /intake/batch`                              | The open intake batch: files, items, AI flags (with which readings add up)              |
 | `POST /intake/files`                             | Multipart upload of 835 / EOB PDF / CSV files into the batch                            |
@@ -436,6 +440,7 @@ Copy `.env.example` to `.env` (gitignored). Both the API and Vite read the repo-
 | `API_PORT`                                 | api, Vite proxy   | Default 3001. In production the API listens on `PORT` |
 | `DATABASE_PATH`                            | api, seed         | Default `apps/api/data/plainbill.db`                  |
 | `DEMO_TODAY`                               | api               | Pin "today" (seed assumes `2026-10-10`)               |
+| `INSIGHTS_PATIENT_NAMES`                   | api               | AI analyst's patient names: `full`/`initials`/`off`   |
 
 ## AI and PayPal
 
@@ -476,6 +481,11 @@ re-woken instance starts from the sample data.
   Oct 3, 2026 with Dr. Patel"), never the email address, services, codes or insurance IDs.
   Emails carry the amounts and the staff-approved message (checked for codes); the services
   list sits behind the verification page, which locks after 5 wrong tries.
+- Claude sees what each feature needs: the patient's first name and the computed balance for
+  messages, notes and the bill helper; the EOB itself for extraction; and for the Practice
+  insights analyst, patient names, visit dates, payer, provider, amounts and adjustment reasons
+  (names can be shortened or turned off with `INSIGHTS_PATIENT_NAMES`). Visit dates alone make
+  that PHI, so it is minimized, not de-identified.
 - Staff pages have no login yet (a single front-desk user); don't deploy with real data.
 - **Production use would require a Business Associate Agreement (BAA) with the AI provider**
   (and with the email provider), plus the usual HIPAA safeguards.
