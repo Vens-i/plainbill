@@ -348,3 +348,26 @@ export function tweenFlow(from: FlowModel, to: FlowModel, t: number): FlowModel 
   nodes.sort((a, b) => order(a.id) - order(b.id));
   return { nodes: nodes.filter((n) => n.cents > 0), links: links.filter((l) => l.cents > 0) };
 }
+
+export interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * The particle canvas sits above the diagram, so particles used to drift across the stage labels
+ * ("Patient share $3,523" at 1280×720). Particles are clipped out of each label's box, padded to
+ * cover the label's white halo.
+ */
+export function labelKeepOut(labels: Box[], pad = 3): Box[] {
+  return labels
+    .filter((b) => b.width > 0 && b.height > 0)
+    .map((b) => ({
+      x: b.x - pad,
+      y: b.y - pad,
+      width: b.width + 2 * pad,
+      height: b.height + 2 * pad,
+    }));
+}

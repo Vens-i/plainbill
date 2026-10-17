@@ -3,6 +3,7 @@ import {
   bezierPoint,
   buildFlow,
   FlowMismatchError,
+  labelKeepOut,
   layoutFlow,
   particleCount,
   tweenFlow,
@@ -146,5 +147,15 @@ describe('animation helpers', () => {
     });
     const mid = tweenFlow(before, after, 0.5);
     expect(mid.nodes.find((n) => n.id === 'owed-0-30')!.cents).toBe(12000);
+  });
+});
+
+describe('labelKeepOut', () => {
+  it('pads each label box so particles stay clear of the text and its halo', () => {
+    // Found in the browser pass: at 1280×720 particles drifted across "Patient share $3,523".
+    expect(labelKeepOut([{ x: 10, y: 20, width: 100, height: 14 }])).toEqual([
+      { x: 7, y: 17, width: 106, height: 20 },
+    ]);
+    expect(labelKeepOut([{ x: 0, y: 0, width: 0, height: 0 }])).toEqual([]);
   });
 });

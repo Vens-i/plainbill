@@ -13,9 +13,11 @@ import { formatMoneyShort } from '@plainbill/core';
 import {
   bezierPoint,
   buildFlow,
+  labelKeepOut,
   layoutFlow,
   particleCount,
   tweenFlow,
+  type Box,
   type FlowLayout,
   type FlowModel,
   type FlowNode,
@@ -182,6 +184,13 @@ export function MoneyFlowWidget(params: AgWidgetParams) {
     [shown, size],
   );
 
+  // Where the labels are, so particles stay out of them (the canvas is drawn above the SVG).
+  const keepOut = useRef<Box[]>([]);
+  useLayoutEffect(() => {
+    const labels = frame.current?.querySelectorAll<SVGTextElement>('.flow-label') ?? [];
+    keepOut.current = labelKeepOut([...labels].map((t) => t.getBBox()));
+  });
+
   // Particles on a canvas over the ribbons. The canvas only exists once there is a layout.
   const layoutRef = useRef(layout);
   layoutRef.current = layout;
@@ -202,7 +211,13 @@ export function MoneyFlowWidget(params: AgWidgetParams) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, el.width, el.height);
       if (l) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, l.width, l.height);
+        for (const b of keepOut.current) ctx.rect(b.x, b.y, b.width, b.height);
+        ctx.clip('evenodd');
         for (const shape of l.links) drawParticles(ctx, shape, now);
+        ctx.restore();
       }
       raf = requestAnimationFrame(draw);
     };
