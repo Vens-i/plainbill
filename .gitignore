@@ -31,7 +31,6 @@ Thumbs.db
 # local agent tooling
 .claude/
 
-# local-only instructions and notes (not part of the project)
-CLAUDE.md
-.claude/
-*.local.md
+# Markdown stays local (instructions, notes, reports), except the README
+*.md
+!/README.md
