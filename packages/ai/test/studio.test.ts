@@ -143,6 +143,40 @@ describe('toAnthropicParams', () => {
     });
   });
 
+  it('closes a conversation that ends with the assistant with a user turn (no prefill)', () => {
+    // Captured live: the data agent answered in text, so Studio re-asked it with
+    // toolChoice complete_task and a conversation ending in that answer. Sonnet 5.5: 400 "This
+    // model does not support assistant message prefill."
+    const input: StudioTurnRequest['input'] = [
+      ...request().input,
+      {
+        type: 'function_call',
+        callId: 'toolu_9',
+        name: 'view_schema',
+        arguments: '{}',
+      },
+      { type: 'function_call_output', callId: 'toolu_9', output: '{"success":true}' },
+      {
+        kind: 'output',
+        type: 'message',
+        role: 'assistant',
+        content: [{ type: 'text', text: 'payments.method has 1 distinct value: PayPal.' }],
+      },
+    ];
+    const forced = toAnthropicParams(request({ input, toolChoice: { name: 'view_schema' } }), 'm');
+    expect(forced.messages.at(-1)).toEqual({
+      role: 'user',
+      content: [
+        { type: 'text', text: 'Respond by calling the `view_schema` tool now, not with text.' },
+      ],
+    });
+    const free = toAnthropicParams(request({ input }), 'm');
+    expect(free.messages.at(-1)).toEqual({
+      role: 'user',
+      content: [{ type: 'text', text: 'Continue.' }],
+    });
+  });
+
   it('caches the conversation as well as the instructions', () => {
     expect(toAnthropicParams(request(), 'm').cache_control).toEqual({ type: 'ephemeral' });
   });

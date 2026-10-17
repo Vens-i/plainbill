@@ -114,6 +114,7 @@ export function toAnthropicParams(
       description: t.description,
       input_schema: t.parameters ?? { type: 'object', properties: {} },
     }));
+  let forced: string | null = null;
   if (tools.length) {
     params.tools = tools;
     const choice = request.toolChoice;
@@ -121,14 +122,20 @@ export function toAnthropicParams(
     // Current models refuse a forced tool_choice ("any" / "tool" is a 400), so a forced turn
     // (Studio forces complete_task when a sub-agent answers in text) becomes an instruction at
     // the end of the conversation, where it doesn't disturb the cached prefix.
-    const forced =
+    forced =
       choice === 'required'
         ? 'Respond by calling one of the provided tools, not with text.'
         : choice && typeof choice === 'object' && tools.some((t) => t.name === choice.name)
           ? `Respond by calling the \`${choice.name}\` tool now, not with text.`
           : null;
-    if (forced && messages.at(-1)?.role === 'user')
-      messages.push({ role: 'system', content: forced });
+  }
+  // When Studio re-asks a sub-agent that answered in text, the conversation ends with that
+  // answer, which current models read as a prefill (a 400). A system message can only follow a
+  // user turn, so close the conversation with a user turn carrying the instruction instead.
+  if (messages.at(-1)?.role === 'assistant') {
+    messages.push({ role: 'user', content: [{ type: 'text', text: forced ?? 'Continue.' }] });
+  } else if (forced && messages.length) {
+    messages.push({ role: 'system', content: forced });
   }
   params.output_config = { effort: 'low' };
   if (request.responseFormat?.type === 'json') {
