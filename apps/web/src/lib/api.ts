@@ -14,6 +14,7 @@ import type {
   MessageVariant,
   PatientBill,
   PatientStatement,
+  PatientSummary,
   PayLinkInfo,
   PaymentOption,
   PayResult,
@@ -75,6 +76,7 @@ export const api = {
   practice: () => get<PracticeInfo>('/practice'),
   balances: () => get<BalanceRow[]>('/balances'),
   kpis: () => get<Kpis>('/kpis'),
+  patients: () => get<PatientSummary[]>('/patients'),
   agingChart: () => get<AgingChart>('/charts/aging'),
   denialsChart: () => get<DenialsChart>('/charts/denials-by-payer'),
 

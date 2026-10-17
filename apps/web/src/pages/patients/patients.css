@@ -1,0 +1,98 @@
+/* Patients page: the dashboard's grid styles (styles.css) plus a few cells of its own. */
+.pt-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  overflow: hidden;
+}
+.status-pill.pt-chip {
+  font-size: 11.5px;
+  padding: 2px 9px 2px 3px;
+  gap: 6px;
+}
+.pt-chip .status-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+}
+.pt-chip-count {
+  font-weight: 600;
+  opacity: 0.8;
+}
+.pt-activity {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pt-activity-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--chip);
+  color: var(--ink-2);
+}
+.pt-activity-payment .pt-activity-icon {
+  background: var(--green);
+  color: #fff;
+}
+.pt-activity-statement_view .pt-activity-icon,
+.pt-activity-invoice_sent .pt-activity-icon {
+  background: #e2ebf7;
+  color: #23518c;
+}
+.pt-activity-reminder .pt-activity-icon {
+  background: var(--teal-100);
+  color: var(--teal-800);
+}
+.pt-cell-center {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+.pt-mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.btn.pt-open {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+/* The pinned totals row: what the patients on screen owe, to match the dashboard's Outstanding. */
+.ag-row.pt-row-total {
+  background: var(--header);
+  font-weight: 700;
+}
+.pt-total-label {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* Visits under a patient: an inset grid on the subtle panel color. */
+.grid-card .ag-details-row {
+  padding: 12px 20px 16px 44px;
+  background: var(--surface-3);
+}
+.grid-card .ag-details-row .ag-root-wrapper {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+/* An auto-height grid keeps room for its "no rows" overlay; a patient's visits never need it. */
+.grid-card .ag-details-row .ag-grid-scrolling-rows.ag-layout-auto-height {
+  min-height: 0;
+}

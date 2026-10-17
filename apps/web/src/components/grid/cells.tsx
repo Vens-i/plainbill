@@ -36,7 +36,7 @@ export const DRAWER_STATUSES: ReadonlyArray<BalanceRow['status']> = ['ready', 'r
 type Params = ICellRendererParams<BalanceRow, unknown, BalancesGridContext>;
 
 /** Re-render when a node is expanded or collapsed. */
-function useExpanded(node: IRowNode): boolean {
+export function useExpanded(node: IRowNode): boolean {
   const [expanded, setExpanded] = useState(node.expanded);
   useEffect(() => {
     const update = () => setExpanded(node.expanded);

@@ -47,10 +47,7 @@ const router = createBrowserRouter([
       },
       {
         path: '/patients',
-        lazy: async () => {
-          const { Placeholder } = await import('./pages/Placeholder');
-          return { element: <Placeholder title="Patients" phase="a later phase" /> };
-        },
+        lazy: async () => ({ Component: (await import('./pages/patients/Patients')).Patients }),
       },
       { path: '*', element: <Navigate to="/dashboard" replace /> },
     ],
