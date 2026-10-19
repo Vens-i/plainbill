@@ -88,14 +88,26 @@ describe('Patients page: totals reconcile with the dashboard', () => {
     expect(james).toMatchObject({ owedCents: 0, patientShareCents: 0, oldestOpenDays: null });
     expect(james.visits[0]).toMatchObject({ status: 'denied', owedCents: null });
 
-    // No contact details on a list page.
-    for (const key of ['dob', 'memberId', 'email', 'addressLine1', 'address'])
+    // Date of birth (and age on the demo's today) for matching the patient; no other contact details.
+    expect(maria).toMatchObject({ dob: '1984-04-17', age: 42 });
+    expect(aisha).toMatchObject({ dob: '1995-08-21', age: 31 });
+    expect(s.patients.every((p) => p.dob !== null)).toBe(true);
+    for (const key of ['memberId', 'email', 'addressLine1', 'address'])
       expect(aisha).not.toHaveProperty(key);
   });
 
-  it('searches by name', async () => {
-    const res = await app.inject({ method: 'GET', url: '/api/patients?q=bel' });
-    expect((res.json() as PatientSummary[]).map((p) => p.name)).toEqual(['Aisha Bello']);
+  it('searches by name or date of birth', async () => {
+    const names = async (q: string) =>
+      (
+        (
+          await app.inject({ method: 'GET', url: `/api/patients?q=${encodeURIComponent(q)}` })
+        ).json() as PatientSummary[]
+      ).map((p) => p.name);
+    expect(await names('bel')).toEqual(['Aisha Bello']);
+    expect(await names('04/17/1984')).toEqual(['Maria Delgado']);
+    expect(await names('4/17/1984')).toEqual(['Maria Delgado']);
+    expect(await names('1984-04-17')).toEqual(['Maria Delgado']);
+    expect(await names('09/04/1958')).toEqual(['James Whitfield']);
   });
 
   it('still agrees after Robert Chen pays, and shows the payment as his last activity', async () => {

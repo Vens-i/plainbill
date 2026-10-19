@@ -3,10 +3,16 @@
  * rows as the dashboard, so a patient's "still owed" always adds up to the Outstanding KPI.
  */
 import { and, asc, inArray } from 'drizzle-orm';
-import { formatMoneyShort, STATUS_ORDER, type IsoDate } from '@plainbill/core';
+import {
+  ageOn,
+  dobSearchForms,
+  formatMoneyShort,
+  STATUS_ORDER,
+  type IsoDate,
+} from '@plainbill/core';
 import type { BalanceRow, PatientActivity, PatientSummary, PatientVisit } from '../contract';
 import type { DbLike } from '../db/client';
-import { events, payments } from '../db/schema';
+import { events, patients, payments } from '../db/schema';
 import { isOpen } from './dashboard';
 
 const METHOD_LABEL: Record<string, string> = { paypal: 'PayPal', card: 'card', cash: 'cash' };
@@ -130,6 +136,15 @@ export function getPatients(db: DbLike, rows: BalanceRow[], today: IsoDate): Pat
     if (!lastActivity.has(patientId)) lastActivity.set(patientId, a);
   }
 
+  const dobs = new Map(
+    db
+      .select({ id: patients.id, dob: patients.dob })
+      .from(patients)
+      .where(inArray(patients.id, [...byPatient.keys()]))
+      .all()
+      .map((p) => [p.id, p.dob]),
+  );
+
   const summaries = [...byPatient].map(([patientId, list]): PatientSummary => {
     const first = list[0]!;
     const visits = list.map(toVisit);
@@ -141,10 +156,13 @@ export function getPatients(db: DbLike, rows: BalanceRow[], today: IsoDate): Pat
       null,
     );
     const last = first.patientName.slice(first.patientFirstName.length).trim();
+    const dob = dobs.get(patientId) ?? null;
     return {
       patientId,
       name: first.patientName,
       sortName: last ? `${last}, ${first.patientFirstName}` : first.patientFirstName,
+      dob,
+      age: dob ? ageOn(dob, today) : null,
       visitCount: list.length,
       billedCents: sum((v) => v.billedCents),
       patientShareCents: sum((v) => v.patientShareCents),
@@ -163,4 +181,11 @@ export function getPatients(db: DbLike, rows: BalanceRow[], today: IsoDate): Pat
     };
   });
   return summaries.sort((a, b) => a.sortName.localeCompare(b.sortName));
+}
+
+/** Search by name or date of birth ("bello", "04/17/1984", "1984-04-17", "4/17/1984"). */
+export function matchesPatient(p: Pick<PatientSummary, 'name' | 'dob'>, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q || p.name.toLowerCase().includes(q)) return true;
+  return p.dob != null && dobSearchForms(p.dob).some((form) => form.includes(q));
 }

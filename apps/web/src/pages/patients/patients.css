@@ -96,3 +96,15 @@
 .grid-card .ag-details-row .ag-grid-scrolling-rows.ag-layout-auto-height {
   min-height: 0;
 }
+
+.pt-dob {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink);
+}
+.pt-dob-age {
+  font-size: 12px;
+  color: var(--ink-3);
+}
