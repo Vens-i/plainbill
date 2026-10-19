@@ -37,7 +37,12 @@ export interface FlowNode {
   column: 0 | 1 | 2;
   cents: number;
   visits: number;
+  /** The stage bar. */
   color: string;
+  /** The streams into this stage: a pale tint, so the page stays calm. */
+  tint: string;
+  /** The stage name's text color (the aging pills' ink for ages). */
+  ink: string;
   /** What clicking the node filters the other widgets to, if anything. */
   filter: { field: 'balances.aging' | 'balances.status'; value: string } | null;
 }
@@ -57,13 +62,25 @@ export interface FlowModel {
 
 const cents = (dollars: number) => Math.round(dollars * 100);
 
+// Teal for the money that moved, warm neutrals for write-offs, a muted red for denials, and the
+// aging pills' colors (CLAUDE.md) for what's still owed, older getting warmer.
 const NODES: Array<Omit<FlowNode, 'cents' | 'visits'>> = [
-  { id: 'billed', label: 'Billed', column: 0, color: '#1C2B2D', filter: null },
+  {
+    id: 'billed',
+    label: 'Billed',
+    column: 0,
+    color: '#134545',
+    tint: '#134545',
+    ink: '#1C2B2D',
+    filter: null,
+  },
   {
     id: 'discount',
     label: 'Insurance discount',
     column: 1,
-    color: '#B3ADA2',
+    color: '#B9B2A6',
+    tint: '#ECE8E1',
+    ink: '#1C2B2D',
     filter: null,
   },
   {
@@ -71,30 +88,62 @@ const NODES: Array<Omit<FlowNode, 'cents' | 'visits'>> = [
     label: 'Denied claims',
     column: 1,
     color: '#B5483E',
+    tint: '#F6E3DF',
+    ink: '#9B2C24',
     filter: { field: 'balances.status', value: 'Denied' },
   },
-  { id: 'insurance', label: 'Insurance paid', column: 1, color: '#6F9C96', filter: null },
-  { id: 'share', label: 'Patient share', column: 1, color: '#1D5C5C', filter: null },
-  { id: 'collected', label: 'Collected', column: 2, color: '#2E7D4A', filter: null },
+  {
+    id: 'insurance',
+    label: 'Insurance paid',
+    column: 1,
+    color: '#6F9C96',
+    tint: '#E2EEEC',
+    ink: '#1C2B2D',
+    filter: null,
+  },
+  {
+    id: 'share',
+    label: 'Patient share',
+    column: 1,
+    color: '#1D5C5C',
+    tint: '#D3E4E1',
+    ink: '#1C2B2D',
+    filter: null,
+  },
+  {
+    id: 'collected',
+    label: 'Collected',
+    column: 2,
+    color: '#2E7D4A',
+    tint: '#DCEFE1',
+    ink: '#24633A',
+    filter: null,
+  },
   {
     id: 'owed-0-30',
     label: 'Owed · 0–30 days',
     column: 2,
     color: '#8C9695',
+    tint: '#ECEAE5',
+    ink: '#454B4D',
     filter: { field: 'balances.aging', value: '0–30 days' },
   },
   {
     id: 'owed-31-60',
     label: 'Owed · 31–60 days',
     column: 2,
-    color: '#D9A53C',
+    color: '#D3A03F',
+    tint: '#FAEFD6',
+    ink: '#7A4E00',
     filter: { field: 'balances.aging', value: '31–60 days' },
   },
   {
     id: 'owed-61-90',
     label: 'Owed · 61–90 days',
     column: 2,
-    color: '#C46A2E',
+    color: '#C0743F',
+    tint: '#F8E1CC',
+    ink: '#7D3F12',
     filter: { field: 'balances.aging', value: '61–90 days' },
   },
   {
@@ -102,6 +151,8 @@ const NODES: Array<Omit<FlowNode, 'cents' | 'visits'>> = [
     label: 'Owed · 90+ days',
     column: 2,
     color: '#9B2C24',
+    tint: '#FAE5E1',
+    ink: '#9B2C24',
     filter: { field: 'balances.aging', value: '90+ days' },
   },
 ];
@@ -203,6 +254,7 @@ export interface LinkShape {
   curve: [Point, Point, Point, Point];
   thickness: number;
   color: string;
+  tint: string;
 }
 
 export interface Point {
@@ -226,50 +278,86 @@ export interface LayoutOptions {
   padY?: number;
   nodeWidth?: number;
   gap?: number;
+  /** Gap above the patient share, where its label sits clear of the streams fanning out. */
+  shareGap?: number;
+  /** Gap between the outcomes on the right. */
+  rightGap?: number;
+  /** Least room an outcome on the right takes, so its label never touches the next one. */
+  minSlot?: number;
 }
 
 export function layoutFlow(model: FlowModel, opts: LayoutOptions): FlowLayout {
   const { width, height } = opts;
   const padLeft = opts.padLeft ?? 120;
   const padRight = opts.padRight ?? 170;
-  const padY = opts.padY ?? 14;
-  const nodeWidth = opts.nodeWidth ?? 14;
-  const gap = opts.gap ?? 14;
+  const padY = opts.padY ?? 12;
+  const nodeWidth = opts.nodeWidth ?? 12;
+  const gap = opts.gap ?? 16;
+  const shareGap = opts.shareGap ?? 28;
+  const rightGap = opts.rightGap ?? 2;
+  const minSlot = opts.minSlot ?? 22;
   const innerH = height - padY * 2;
   const byColumn = (c: 0 | 1 | 2) => model.nodes.filter((n) => n.column === c);
   const total = (ns: FlowNode[]) => ns.reduce((s, n) => s + n.cents, 0);
+  const left = byColumn(0);
+  const middle = byColumn(1);
+  const right = byColumn(2);
+  // The patient share's label sits above it, so it always has room there, even on top.
+  const gapBefore = (n: FlowNode, i: number) =>
+    n.id === 'share' && right.length ? shareGap : i === 0 ? 0 : gap;
+  const middleGaps = middle.reduce((s, n, i) => s + gapBefore(n, i), 0);
+  const rightGaps = rightGap * Math.max(0, right.length - 1);
+  // Each outcome on the right gets a slot at least one label tall, so small ages never stack
+  // their labels on each other; the bar sits in the middle of its slot.
+  const slot = (n: FlowNode, scale: number) => Math.max(minSlot, n.cents * scale);
+  const rightSlots = (scale: number) => right.reduce((s, n) => s + slot(n, scale), 0) + rightGaps;
+  // The outcomes start level with the patient share's top, so the streams fanning out never
+  // climb into the labels above; what they need beyond the share hangs below it.
+  const hasShare = middle.some((n) => n.id === 'share');
+  const overhang = (scale: number) =>
+    hasShare ? Math.max(0, rightSlots(scale) - total(right) * scale) : 0;
 
   // One scale for the whole diagram (cents → px), set by the column that needs the most room.
-  const scale = Math.min(
-    ...([0, 1, 2] as const)
-      .map((c) => byColumn(c))
-      .filter((ns) => ns.length > 0)
-      .map((ns) => (innerH - gap * (ns.length - 1)) / Math.max(1, total(ns))),
-  );
+  // The right column's slots depend on the scale, so settle it in a few passes (it only shrinks).
+  const fit = (ns: FlowNode[], gaps: number) =>
+    ns.length ? Math.max(0, innerH - gaps) / Math.max(1, total(ns)) : Infinity;
+  let scale = Math.min(fit(left, 0), fit(middle, middleGaps), fit(right, rightGaps));
+  for (let pass = 0; pass < 3; pass++) {
+    const padded = right.reduce((s, n) => s + Math.max(0, minSlot - n.cents * scale), 0);
+    scale = Math.min(
+      fit(left, 0),
+      fit(middle, middleGaps + overhang(scale)),
+      fit(right, rightGaps + padded),
+    );
+  }
+  if (!Number.isFinite(scale)) scale = 0;
   const span = width - padLeft - padRight - nodeWidth;
   const colX = [padLeft, padLeft + span / 2, padLeft + span];
 
   const boxes = new Map<FlowNodeId, NodeBox>();
-  const stack = (ns: FlowNode[], top: number) => {
-    let y = top;
-    for (const n of ns) {
-      const h = Math.max(2, n.cents * scale);
-      boxes.set(n.id, { node: n, x: colX[n.column]!, y, w: nodeWidth, h });
-      y += h + gap;
-    }
-    return y - gap;
-  };
-  const centered = (ns: FlowNode[]) =>
-    padY + (innerH - (total(ns) * scale + gap * Math.max(0, ns.length - 1))) / 2;
-
-  stack(byColumn(0), centered(byColumn(0)));
-  stack(byColumn(1), centered(byColumn(1)));
-  // Column 2 fans out of the patient share: centered on it, kept on the canvas.
-  const right = byColumn(2);
+  const h = (n: FlowNode) => Math.max(2, n.cents * scale);
+  const leftH = total(left) * scale;
+  let y = padY + (innerH - leftH) / 2;
+  for (const n of left) {
+    boxes.set(n.id, { node: n, x: colX[0]!, y, w: nodeWidth, h: h(n) });
+    y += h(n);
+  }
+  const middleH = middle.reduce((s, n) => s + h(n), 0) + middleGaps;
+  y = padY + Math.max(0, (innerH - middleH - overhang(scale)) / 2);
+  middle.forEach((n, i) => {
+    y += gapBefore(n, i);
+    boxes.set(n.id, { node: n, x: colX[1]!, y, w: nodeWidth, h: h(n) });
+    y += h(n);
+  });
   const share = boxes.get('share');
-  const rightH = total(right) * scale + gap * Math.max(0, right.length - 1);
-  const wanted = share ? share.y + share.h / 2 - rightH / 2 : centered(right);
-  stack(right, Math.min(Math.max(padY, wanted), height - padY - rightH));
+  const rightH = rightSlots(scale);
+  const rightTop = share ? share.y : padY + (innerH - rightH) / 2;
+  y = Math.max(padY, Math.min(rightTop, height - padY - rightH));
+  for (const n of right) {
+    const room = slot(n, scale);
+    boxes.set(n.id, { node: n, x: colX[2]!, y: y + (room - h(n)) / 2, w: nodeWidth, h: h(n) });
+    y += room + rightGap;
+  }
 
   // Ribbons: stacked in each node in target (or source) order, so they never cross at a node.
   const outOffset = new Map<FlowNodeId, number>();
@@ -300,6 +388,7 @@ export function layoutFlow(model: FlowModel, opts: LayoutOptions): FlowLayout {
       curve: [c0, { x: mx, y: c0.y }, { x: mx, y: c3.y }, c3],
       thickness,
       color: t.node.color,
+      tint: t.node.tint,
     });
   }
   return { width, height, nodes: [...boxes.values()], links: shapes };
@@ -318,9 +407,9 @@ export function bezierPoint([p0, p1, p2, p3]: LinkShape['curve'], t: number): Po
   };
 }
 
-/** Particles per stream: about one per $120, at least one, at most 36. */
+/** Particles per stream: about one per $200, at least one, at most 24. A hint of motion. */
 export function particleCount(link: FlowLink): number {
-  return Math.min(36, Math.max(1, Math.round(link.cents / 12_000)));
+  return Math.min(24, Math.max(1, Math.round(link.cents / 20_000)));
 }
 
 /** Interpolate two models' amounts (same node and link ids) for a smooth update. */

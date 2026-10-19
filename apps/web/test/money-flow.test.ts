@@ -120,6 +120,42 @@ describe('layoutFlow', () => {
     expect(fromBilled.reduce((s, l) => s + l.thickness, 0)).toBeCloseTo(billed.h, 5);
   });
 
+  it('leaves room above the patient share for its label, and the streams out of it never climb', () => {
+    // Found in review: "Patient share $3,523" sat on its own outgoing streams, and the stream to
+    // Collected climbed into the "Insurance paid" label.
+    const share = layout.nodes.find((b) => b.node.id === 'share')!;
+    const above = layout.nodes
+      .filter((b) => b.node.column === 1 && b.y < share.y)
+      .sort((a, b) => b.y - a.y)[0]!;
+    expect(share.y - (above.y + above.h)).toBeGreaterThanOrEqual(24);
+    for (const l of layout.links.filter((l) => l.link.from === 'share')) {
+      expect(l.curve[3].y).toBeGreaterThanOrEqual(l.curve[0].y - 0.5);
+    }
+    const right = layout.nodes.filter((b) => b.node.column === 2).sort((a, b) => a.y - b.y);
+    expect(right[0]!.y).toBeGreaterThanOrEqual(share.y - 0.5); // sub-pixel
+    // Each outcome's label (centered on its bar) has a label's height to itself.
+    for (let i = 1; i < right.length; i++) {
+      const mid = (b: (typeof right)[number]) => b.y + b.h / 2;
+      expect(mid(right[i]!) - mid(right[i - 1]!)).toBeGreaterThanOrEqual(22);
+    }
+  });
+
+  it('keeps room above the patient share when it is the only stage in the middle', () => {
+    // Found in review: filtered to 90+ days, "Patient share" was cut off at the top.
+    const only = buildFlow([ROWS[2]!]);
+    const share = layoutFlow(only, { width: 1000, height: 300 }).nodes.find(
+      (b) => b.node.id === 'share',
+    )!;
+    expect(share.y).toBeGreaterThanOrEqual(24);
+  });
+
+  it('gives every stream a pale tint and its stage color for tracing', () => {
+    for (const l of layout.links) {
+      expect(l.tint).toMatch(/^#[0-9A-F]{6}$/i);
+      expect(l.color).toBe(layout.nodes.find((b) => b.node.id === l.link.to)!.node.color);
+    }
+  });
+
   it('starts and ends each particle path on its nodes', () => {
     const l = layout.links[0]!;
     expect(bezierPoint(l.curve, 0)).toEqual(l.curve[0]);
@@ -131,8 +167,8 @@ describe('animation helpers', () => {
   it('scales particles with the money', () => {
     const m = buildFlow(ROWS);
     const counts = Object.fromEntries(m.links.map((l) => [l.id, particleCount(l)]));
-    expect(counts['billed>denied']).toBe(20);
-    expect(counts['share>owed-0-30']).toBe(2);
+    expect(counts['billed>denied']).toBe(12);
+    expect(counts['share>owed-0-30']).toBe(1);
   });
 
   it('tweens between two states and lands exactly on the new one', () => {
