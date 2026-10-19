@@ -3,7 +3,7 @@
  * patient (services/send.ts).
  */
 import type { FastifyInstance } from 'fastify';
-import { templateMessage } from '@plainbill/ai';
+import { noteLanguage } from '@plainbill/core';
 import type {
   DraftMessageResult,
   DrawerData,
@@ -28,7 +28,15 @@ import { renderStatementPdf } from '../services/statement-pdf';
 import { refreshSuggestions, type RefreshResult } from '../services/suggestions';
 import { publishChanged, type RouteContext } from './context';
 
-const VARIANTS: readonly MessageVariant[] = ['default', 'simpler', 'spanish'];
+const VARIANTS: readonly MessageVariant[] = ['default', 'simpler'];
+
+/** A NOTE_LANGUAGES code, or null when missing; anything else is refused. */
+function parseLang(value: unknown): string | null {
+  if (value === undefined || value === null) return null;
+  const lang = noteLanguage(typeof value === 'string' ? value : null);
+  if (!lang) throw new DrawerError(`Unknown language ${JSON.stringify(value)}.`);
+  return lang.code;
+}
 
 function parseOption(value: unknown): PaymentOption {
   const o = value as Partial<{ type: string; months: number; minimumCents: number }> | undefined;
@@ -44,12 +52,23 @@ function parseOption(value: unknown): PaymentOption {
 
 function parseDraft(body: unknown): DraftInput {
   const b = body as
-    Partial<{ message: unknown; messageSource: unknown; paymentOption: unknown }> | undefined;
+    | Partial<{
+        message: unknown;
+        messageSource: unknown;
+        messageLang: unknown;
+        paymentOption: unknown;
+      }>
+    | undefined;
   if (typeof b?.message !== 'string' || !b.message.trim())
     throw new DrawerError('The message is empty.');
   const source =
     b.messageSource === 'ai' || b.messageSource === 'template' ? b.messageSource : 'edited';
-  return { message: b.message, messageSource: source, paymentOption: parseOption(b.paymentOption) };
+  return {
+    message: b.message,
+    messageSource: source,
+    messageLang: parseLang(b.messageLang),
+    paymentOption: parseOption(b.paymentOption),
+  };
 }
 
 export function registerDrawerRoutes(api: FastifyInstance, ctx: RouteContext): void {
@@ -59,38 +78,41 @@ export function registerDrawerRoutes(api: FastifyInstance, ctx: RouteContext): v
     return n;
   };
   const drawer = (balanceId: number): DrawerData =>
-    getDrawerData(
-      ctx.db,
-      balanceId,
-      ctx.today(),
-      { available: ctx.ai.available, model: ctx.ai.model },
-      templateMessage,
-    );
+    getDrawerData(ctx.db, balanceId, ctx.today(), {
+      available: ctx.ai.available,
+      model: ctx.ai.model,
+    });
 
   api.get<{ Params: { id: string } }>('/balances/:id/drawer', async (request) =>
     drawer(id(request.params.id)),
   );
 
-  api.post<{ Params: { id: string }; Body: { variant?: unknown; paymentOption?: unknown } }>(
-    '/balances/:id/message',
-    async (request): Promise<DraftMessageResult> => {
-      const variant = VARIANTS.find((v) => v === request.body?.variant) ?? 'default';
-      const result = await draftMessage(
-        ctx.db,
-        id(request.params.id),
-        ctx.today(),
-        ctx.ai.drafter,
-        variant,
-        parseOption(request.body?.paymentOption),
-      );
-      return {
-        text: result.text,
-        variant: result.variant,
-        source: result.source,
-        notes: result.notes,
-      };
-    },
-  );
+  api.post<{
+    Params: { id: string };
+    Body: { variant?: unknown; lang?: unknown; paymentOption?: unknown };
+  }>('/balances/:id/message', async (request): Promise<DraftMessageResult> => {
+    const body = request.body;
+    // "spanish" was a variant before any language could be chosen; still accepted.
+    const legacySpanish = body?.variant === 'spanish';
+    const variant = VARIANTS.find((v) => v === body?.variant) ?? 'default';
+    const lang = parseLang(body?.lang) ?? (legacySpanish ? 'es' : 'en');
+    const result = await draftMessage(
+      ctx.db,
+      id(request.params.id),
+      ctx.today(),
+      ctx.ai.drafter,
+      { variant, lang },
+      parseOption(body?.paymentOption),
+    );
+    return {
+      text: result.text,
+      variant: result.variant,
+      lang: result.lang,
+      requestedLang: result.requestedLang,
+      source: result.source,
+      notes: result.notes,
+    };
+  });
 
   api.put<{ Params: { id: string } }>('/balances/:id/draft', async (request) => {
     saveDraft(ctx.db, id(request.params.id), ctx.today(), parseDraft(request.body));

@@ -95,6 +95,8 @@ export interface BalanceRow {
     sentVia: 'paypal' | 'local' | null;
     paypalInvoiceNumber: string | null;
     paypalStatus: string | null;
+    /** The message's language (code and native name, "Tiếng Việt"); null if not recorded. */
+    messageLang: { code: string; language: string } | null;
     /** The patient's latest look at the itemized statement, and the notes' language. */
     statementView: { at: string; lang: string; language: string } | null;
   } | null;
@@ -242,7 +244,8 @@ export interface IntakeApproveResult {
 export type PaymentOption =
   { type: 'full' } | { type: 'partial'; minimumCents: number } | { type: 'plan'; months: 3 | 6 };
 
-export type MessageVariant = 'default' | 'simpler' | 'spanish';
+/** "Make simpler" is separate from the language: any language can be simpler. */
+export type MessageVariant = 'default' | 'simpler';
 
 export interface DrawerData {
   balance: BalanceRow;
@@ -257,9 +260,18 @@ export interface DrawerData {
     message: string;
     messageSource: 'ai' | 'template' | 'edited';
     variant: MessageVariant;
+    /** The message's language (a NOTE_LANGUAGES code). */
+    lang: string;
+    /**
+     * The language staff chose, or the patient's preferred one for a new draft. Differs from
+     * `lang` when there was no template in it and English stood in.
+     */
+    requestedLang: string;
     paymentOption: PaymentOption;
     saved: boolean;
   };
+  /** The language the patient last read a statement in, if they ever have. */
+  patientLang: string | null;
   /** "Written from the 835 remittance." */
   messageProvenance: string;
   plans: Array<{ months: 3 | 6; firstCents: number; regularCents: number; eligible: boolean }>;
@@ -271,6 +283,9 @@ export interface DrawerData {
 export interface DraftMessageResult {
   text: string;
   variant: MessageVariant;
+  /** The language the text is in; English when there was no template in `requestedLang`. */
+  lang: string;
+  requestedLang: string;
   source: 'ai' | 'template';
   notes: string[];
 }

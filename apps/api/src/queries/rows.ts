@@ -344,6 +344,12 @@ export function getBalanceRows(db: DbLike, today: IsoDate, ids?: number[]): Bala
             sentVia: invoice.sentVia,
             paypalInvoiceNumber: invoice.paypalInvoiceNumber,
             paypalStatus: invoice.paypalStatus,
+            messageLang: invoice.messageLang
+              ? {
+                  code: invoice.messageLang,
+                  language: noteLanguage(invoice.messageLang)?.native ?? invoice.messageLang,
+                }
+              : null,
             statementView,
           }
         : null,

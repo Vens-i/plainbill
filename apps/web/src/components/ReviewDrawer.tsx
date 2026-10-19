@@ -63,6 +63,7 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
   const [message, setMessage] = useState('');
   const [source, setSource] = useState<Source>('template');
   const [variant, setVariant] = useState<MessageVariant>('default');
+  const [lang, setLang] = useState('en');
   const [option, setOption] = useState<PaymentOption>({ type: 'full' });
   const [drafting, setDrafting] = useState(false);
   const [notes, setNotes] = useState<string[]>([]);
@@ -72,16 +73,17 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
   const draftSeq = useRef(0);
 
   const draft = useCallback(
-    async (v: MessageVariant, o: PaymentOption) => {
+    async (v: MessageVariant, l: string, o: PaymentOption) => {
       const seq = ++draftSeq.current;
       setDrafting(true);
       setNotes([]);
       try {
-        const r = await api.draftMessage(balanceId, v, o);
+        const r = await api.draftMessage(balanceId, { variant: v, lang: l }, o);
         if (seq !== draftSeq.current) return;
         setMessage(r.text);
         setSource(r.source);
         setVariant(r.variant);
+        setLang(r.lang);
         setNotes(r.notes);
       } catch (e) {
         if (seq === draftSeq.current)
@@ -100,8 +102,9 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
       setSource(d.draft.messageSource);
       setOption(d.draft.paymentOption);
       setVariant('default');
+      setLang(d.draft.lang);
       if (redraft && d.balance.status === 'ready' && !d.draft.saved && d.ai.available)
-        void draft('default', d.draft.paymentOption);
+        void draft('default', d.draft.requestedLang, d.draft.paymentOption);
     },
     [draft],
   );
@@ -140,7 +143,7 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
     if (data && sameOption(o, option)) return;
     setOption(o);
     // Keep the wording in step with the option unless staff edited it by hand.
-    if (source !== 'edited') void draft(variant, o);
+    if (source !== 'edited') void draft(variant, lang, o);
   };
 
   const resolveFlag = (path: string, value: string) =>
@@ -161,6 +164,7 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
       const d = await api.saveDraft(balanceId, {
         message,
         messageSource: source,
+        messageLang: lang,
         paymentOption: option,
       });
       setData(d);
@@ -172,6 +176,7 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
       const r = await api.send(balanceId, {
         message,
         messageSource: source,
+        messageLang: lang,
         paymentOption: option,
       });
       toast(sentToast(r));
@@ -185,6 +190,7 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
       const d = await api.saveDraft(balanceId, {
         message,
         messageSource: source,
+        messageLang: lang,
         paymentOption: option,
       });
       setData(d);
@@ -198,6 +204,7 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
       const d = await api.saveDraft(balanceId, {
         message,
         messageSource: source,
+        messageLang: lang,
         paymentOption: option,
       });
       setData(d);
@@ -311,14 +318,18 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
                       </span>
                       <div style={{ flex: 1 }} />
                       {(['default', 'simpler', 'spanish'] as const)
-                        .filter((v) => v !== variant)
+                        .filter((v) => (v === 'spanish' ? lang !== 'es' : v !== variant))
                         .map((v) => (
                           <button
                             key={v}
                             type="button"
                             className="link-btn"
                             disabled={drafting}
-                            onClick={() => void draft(v, option)}
+                            onClick={() =>
+                              void (v === 'spanish'
+                                ? draft('default', 'es', option)
+                                : draft(v, lang, option))
+                            }
                           >
                             {v === 'default'
                               ? 'Original'

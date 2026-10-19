@@ -4,10 +4,11 @@
  * Every amount here comes from the computed balance. The AI only drafts wording, and a message
  * can't be sent if it mentions a figure the core didn't produce.
  */
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import {
   checkMessage,
   eobToClaims,
+  messageTemplate,
   reviewSummary,
   withFieldValue,
   type MessageDrafter,
@@ -18,13 +19,14 @@ import {
   formatMoney,
   formatMonthDay,
   nextStatus,
+  noteLanguage,
   PLAN_MONTHS,
   planOption,
   type IsoDate,
 } from '@plainbill/core';
 import type { BalanceRow, DrawerData, MessageVariant, PaymentOption } from '../contract';
 import type { Db } from '../db/client';
-import { balances, intakeItems, invoices, patients, practices, visits } from '../db/schema';
+import { balances, events, intakeItems, invoices, patients, practices, visits } from '../db/schema';
 import { getBalanceRows } from '../queries/rows';
 import { replaceVisitClaim } from './ingest';
 import { IntakeError, itemForBalance, resolveFlag } from './intake';
@@ -142,12 +144,32 @@ function reviewInfo(db: Db, r: BalanceRow): DrawerData['review'] {
   };
 }
 
+/**
+ * The language the patient last chose (or read) on any of their statements, across all their
+ * bills; null if they have never opened one.
+ */
+export function patientLanguage(db: Db, patientId: number): string | null {
+  const latest = db
+    .select({ payload: events.payload })
+    .from(events)
+    .innerJoin(balances, eq(events.balanceId, balances.id))
+    .innerJoin(visits, eq(balances.visitId, visits.id))
+    .where(
+      and(
+        eq(visits.patientId, patientId),
+        inArray(events.type, ['statement.viewed', 'statement.language']),
+      ),
+    )
+    .orderBy(desc(events.id))
+    .get();
+  return noteLanguage(String(latest?.payload.lang ?? ''))?.code ?? null;
+}
+
 export function getDrawerData(
   db: Db,
   balanceId: number,
   today: IsoDate,
   ai: { available: boolean; model: string | null },
-  templateMessage: (f: MessageFacts, v: MessageVariant) => string,
 ): DrawerData {
   const r = balanceRow(db, balanceId, today);
   const practice = practiceName(db);
@@ -165,19 +187,27 @@ export function getDrawerData(
     .get();
   const dueDate = dueDateFor(r, today);
   const option = (draft?.paymentOption as PaymentOption | null) ?? defaultOption(r);
-  const message =
-    draft?.message ?? templateMessage(buildMessageFacts(r, practice, option, dueDate), 'default');
+  const patientLang = patient ? patientLanguage(db, patient.id) : null;
+  // A saved draft keeps its message and language. A new one starts in the patient's language:
+  // the template when there is one in it, else English until the AI drafts it.
+  const requestedLang = draft ? (draft.messageLang ?? 'en') : (patientLang ?? 'en');
+  const template = draft?.message
+    ? null
+    : messageTemplate(buildMessageFacts(r, practice, option, dueDate), 'default', requestedLang);
 
   return {
     balance: r,
     review: reviewInfo(db, r),
     draft: {
-      message,
+      message: template ? template.text : draft!.message!,
       messageSource: draft?.messageSource ?? 'template',
       variant: 'default',
+      lang: template?.lang ?? requestedLang,
+      requestedLang,
       paymentOption: option,
       saved: Boolean(draft),
     },
+    patientLang,
     messageProvenance: PROVENANCE[r.sourceKind],
     plans: PLAN_MONTHS.map((months) => ({ ...planOption(r.remainingCents, months), months })),
     partialMinimumCents: PARTIAL_MINIMUM_CENTS,
@@ -195,19 +225,21 @@ export async function draftMessage(
   balanceId: number,
   today: IsoDate,
   drafter: MessageDrafter,
-  variant: MessageVariant,
+  request: { variant: MessageVariant; lang: string },
   option: PaymentOption,
 ) {
   const r = balanceRow(db, balanceId, today);
   return drafter.draft(
     buildMessageFacts(r, practiceName(db), option, dueDateFor(r, today)),
-    variant,
+    request,
   );
 }
 
 export interface DraftInput {
   message: string;
   messageSource: 'ai' | 'template' | 'edited';
+  /** The message's language (a NOTE_LANGUAGES code); null when the client didn't say. */
+  messageLang: string | null;
   paymentOption: PaymentOption;
 }
 
@@ -246,6 +278,7 @@ export function saveDraft(db: Db, balanceId: number, today: IsoDate, input: Draf
   const values = {
     message: input.message,
     messageSource: input.messageSource,
+    messageLang: input.messageLang,
     paymentOption: input.paymentOption,
     amountCents: r.remainingCents,
   };

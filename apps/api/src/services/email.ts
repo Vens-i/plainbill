@@ -18,6 +18,11 @@ export interface BillEmailData {
   patientFirstName: string;
   /** Staff-approved message (starts with the greeting). */
   message: string;
+  /**
+   * The message's language. Only the message is translated: the rest of the email (headings,
+   * breakdown, buttons) is English for now, so the message paragraphs carry their own `lang`.
+   */
+  messageLang?: string | null;
   visitDate: IsoDate;
   dueDate: IsoDate;
   billedCents: number;
@@ -138,6 +143,7 @@ export function renderBillEmail(d: BillEmailData): RenderedEmail {
   const widths = barWidths(segs.map((s) => s.cents));
   const owes = formatMoney(d.amountDueCents);
   const paras = paragraphs(d.message);
+  const msgLang = d.messageLang && d.messageLang !== 'en' ? ` lang="${esc(d.messageLang)}"` : '';
   const extras = [
     d.plansAvailable ? 'payment plans available' : null,
     d.partialMinimumCents ? `pay part now (${formatMoney(d.partialMinimumCents)} minimum)` : null,
@@ -179,7 +185,7 @@ export function renderBillEmail(d: BillEmailData): RenderedEmail {
 ${paras
   .map(
     (p, i) =>
-      `<tr><td style="padding:${i === 0 ? '32px' : '0'} 32px ${i === paras.length - 1 ? '24px' : '14px'};font-size:16px;line-height:1.55;color:#1C2B2D">${p}</td></tr>`,
+      `<tr><td style="padding:${i === 0 ? '32px' : '0'} 32px ${i === paras.length - 1 ? '24px' : '14px'};font-size:16px;line-height:1.55;color:#1C2B2D"${msgLang}>${p}</td></tr>`,
   )
   .join('\n')}
 <tr><td style="padding:0 32px">

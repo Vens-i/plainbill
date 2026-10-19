@@ -164,6 +164,8 @@ export interface SendInvoiceInput {
   openCount?: number;
   message?: string;
   messageSource?: 'ai' | 'template' | 'edited';
+  /** The message's language (a NOTE_LANGUAGES code). */
+  messageLang?: string | null;
   paymentOption?: PaymentOptionJson;
   /** Token for the patient's /pay/:token link. */
   payToken?: string;
@@ -194,6 +196,7 @@ export function markInvoiceSent(
       openCount: input.openCount ?? 0,
       message: input.message ?? null,
       messageSource: input.messageSource ?? null,
+      messageLang: input.messageLang ?? null,
       paymentOption: input.paymentOption ?? null,
       payToken: input.payToken ?? null,
       sentVia: input.paypal ? ('paypal' as const) : ('local' as const),

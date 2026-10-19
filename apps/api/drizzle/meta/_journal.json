@@ -50,6 +50,13 @@
       "when": 1791918737930,
       "tag": "0006_statement_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1792435868463,
+      "tag": "0007_message_language",
+      "breakpoints": true
     }
   ]
 }

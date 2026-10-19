@@ -140,6 +140,7 @@ export function billEmailData(
   r: BalanceRow,
   invoice: {
     message: string | null;
+    messageLang?: string | null;
     dueDate: string | null;
     payToken: string | null;
     paypalPayerUrl: string | null;
@@ -158,6 +159,7 @@ export function billEmailData(
     },
     patientFirstName: r.patientFirstName,
     message: invoice.message ?? `Hi ${r.patientFirstName},`,
+    messageLang: invoice.message ? (invoice.messageLang ?? null) : 'en',
     visitDate: r.visitDate,
     dueDate: invoice.dueDate ?? dueDateFor(r, ctx.today()),
     billedCents: r.billedCents,
@@ -261,6 +263,7 @@ export async function sendBalanceInvoice(
     dueDate,
     message,
     messageSource: input.messageSource,
+    messageLang: input.messageLang,
     paymentOption: input.paymentOption,
     payToken,
     ...(paypal ? { paypal } : {}),
@@ -277,6 +280,7 @@ export async function sendBalanceInvoice(
   const rendered = renderBillEmail(
     billEmailData(ctx, r, {
       message,
+      messageLang: input.messageLang,
       dueDate,
       payToken,
       paypalPayerUrl: paypal?.payerUrl ?? null,
@@ -304,7 +308,7 @@ export async function sendBalanceInvoice(
 export function emailPreview(
   ctx: Ctx,
   balanceId: number,
-  draft: { message: string; paymentOption: DraftInput['paymentOption'] },
+  draft: { message: string; lang: string; paymentOption: DraftInput['paymentOption'] },
 ): EmailPreview {
   const { db } = ctx;
   const r = balanceRow(db, balanceId, ctx.today());
@@ -343,6 +347,7 @@ export function emailPreview(
   const rendered = renderBillEmail(
     billEmailData(ctx, r, {
       message: sent ? invoice.message : draft.message,
+      messageLang: sent ? invoice.messageLang : draft.lang,
       dueDate: sent ? invoice.dueDate : dueDateFor(r, ctx.today()),
       payToken: sent ? invoice.payToken : null,
       paypalPayerUrl: sent ? invoice.paypalPayerUrl : null,

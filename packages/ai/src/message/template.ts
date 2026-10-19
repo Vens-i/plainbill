@@ -1,6 +1,9 @@
 /**
  * Deterministic patient messages. Used when no API key is configured, when the model's draft
  * fails the guard twice, and in tests. Same facts, same rules as the AI draft.
+ *
+ * Hand-written in English and Spanish only. Other languages have no template: callers fall back
+ * to English and say so (see `messageTemplate`), never label English as another language.
  */
 import { formatMoneyShort, formatMonthDay } from '@plainbill/core';
 import type { MessageFacts, MessageVariant } from './facts';
@@ -65,11 +68,39 @@ function shareSpanish(f: MessageFacts): string {
   return parts.join(' más ');
 }
 
-export function templateMessage(f: MessageFacts, variant: MessageVariant): string {
+/** Languages with a hand-written template. */
+export const TEMPLATE_LANGUAGES: readonly string[] = ['en', 'es'];
+
+export function hasMessageTemplate(lang: string): boolean {
+  return TEMPLATE_LANGUAGES.includes(lang);
+}
+
+/** The template in `lang` when there is one, else English; `lang` says which it is. */
+export function messageTemplate(
+  f: MessageFacts,
+  variant: MessageVariant,
+  lang: string,
+): { text: string; lang: string } {
+  const used = hasMessageTemplate(lang) ? lang : 'en';
+  return { text: templateMessage(f, variant, used), lang: used };
+}
+
+/** The template in English (default) or Spanish; any other language code gets English. */
+export function templateMessage(f: MessageFacts, variant: MessageVariant, lang = 'en'): string {
   const date = formatMonthDay(f.visitDate);
   const name = f.patientFirstName;
 
-  if (variant === 'spanish') {
+  if (lang === 'es' && variant === 'simpler') {
+    const covered = f.selfPay ? '' : ' Su seguro ya pagó el resto.';
+    const plan = f.plan
+      ? f.plan.firstCents === f.plan.regularCents
+        ? ` Puede pagar todo junto o en ${f.plan.months} pagos de ${m(f.plan.regularCents)}.`
+        : ` Puede pagar todo junto o en ${f.plan.months} pagos más pequeños.`
+      : '';
+    return `Hola ${name}. Debe ${m(f.owesCents)} por su visita del ${spanishDate(f.visitDate)}${spanishProvider(f)}.${covered}${plan}`;
+  }
+
+  if (lang === 'es') {
     const provider = spanishProvider(f);
     const intro = `Hola ${name}, gracias por su visita del ${spanishDate(f.visitDate)}${provider}.`;
     if (f.selfPay) {

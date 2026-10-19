@@ -3,7 +3,14 @@
  * Deliberately minimal: first name, provider, visit date and amounts — no service
  * descriptions, procedure or diagnosis codes, or insurance IDs, so the model cannot leak them.
  */
-export type MessageVariant = 'default' | 'simpler' | 'spanish';
+/** Wording: the usual message, or a shorter one in very simple words. Any language takes either. */
+export type MessageVariant = 'default' | 'simpler';
+
+/** What staff asked for: a variant and a language (a NOTE_LANGUAGES code from @plainbill/core). */
+export interface MessageRequest {
+  variant: MessageVariant;
+  lang: string;
+}
 
 export interface MessageFacts {
   patientFirstName: string;

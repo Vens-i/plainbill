@@ -200,6 +200,8 @@ export const invoices = sqliteTable(
     /** The plain-language message staff approved (AI draft or template, possibly edited). */
     message: text('message'),
     messageSource: text('message_source', { enum: ['ai', 'template', 'edited'] }),
+    /** The message's language (a NOTE_LANGUAGES code); null on rows from before it was kept. */
+    messageLang: text('message_lang'),
     paymentOption: text('payment_option', { mode: 'json' }).$type<PaymentOptionJson>(),
     createdAt: createdAt(),
   },

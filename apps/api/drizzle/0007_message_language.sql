@@ -1,0 +1,1 @@
+ALTER TABLE `invoices` ADD `message_lang` text;

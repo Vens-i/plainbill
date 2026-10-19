@@ -238,7 +238,8 @@ describe('Intake → dashboard → Review & Send', () => {
         paymentOption: { type: 'plan', months: 3 },
       },
     );
-    expect(spanish.json).toMatchObject({ source: 'template' });
+    // "spanish" was a variant before the language picker; it still drafts in Spanish.
+    expect(spanish.json).toMatchObject({ source: 'template', lang: 'es', variant: 'default' });
     expect(spanish.json.text).toMatch(/^Hola Maria/);
   });
 

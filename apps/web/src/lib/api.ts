@@ -69,6 +69,8 @@ const get = <T>(path: string) => request<T>('GET', path);
 export interface DraftInput {
   message: string;
   messageSource: 'ai' | 'template' | 'edited';
+  /** The message's language (a NOTE_LANGUAGES code). */
+  messageLang: string;
   paymentOption: PaymentOption;
 }
 
@@ -97,8 +99,15 @@ export const api = {
   discardIntake: () => request<{ batch: null }>('POST', '/intake/batch/discard'),
 
   drawer: (id: number) => get<DrawerData>(`/balances/${id}/drawer`),
-  draftMessage: (id: number, variant: MessageVariant, paymentOption: PaymentOption) =>
-    request<DraftMessageResult>('POST', `/balances/${id}/message`, { variant, paymentOption }),
+  draftMessage: (
+    id: number,
+    message: { variant: MessageVariant; lang: string },
+    paymentOption: PaymentOption,
+  ) =>
+    request<DraftMessageResult>('POST', `/balances/${id}/message`, {
+      ...message,
+      paymentOption,
+    }),
   saveDraft: (id: number, draft: DraftInput) =>
     request<DrawerData>('PUT', `/balances/${id}/draft`, draft),
   send: (id: number, draft: DraftInput) =>
