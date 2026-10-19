@@ -38,17 +38,6 @@ export function Dashboard() {
   const [reminder, setReminder] = useState<{ row: BalanceRow; anchor: HTMLElement } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [view, setView] = useState<View>('action');
-  const [chartOpen, setChartOpen] = useState(false);
-  const chartHost = useRef<HTMLDivElement>(null);
-
-  // "Chart this": an integrated chart in the panel above the grid, redrawn when the grouping
-  // changes. It stays linked to the grid, so filters and live payments update it.
-  const hasRows = rows !== null;
-  useEffect(() => {
-    if (!chartOpen || !hasRows || !chartHost.current) return;
-    const chart = grid.current?.chart(chartHost.current);
-    return () => chart?.destroyChart();
-  }, [chartOpen, groupBy, hasRows]);
 
   const refreshSummary = useCallback(async () => {
     const [k, a, d] = await Promise.all([api.kpis(), api.agingChart(), api.denialsChart()]);
@@ -178,22 +167,6 @@ export function Dashboard() {
             >
               <span aria-hidden="true">✦</span> {refreshing ? 'Thinking…' : 'Refresh suggestions'}
             </button>
-            <button
-              type="button"
-              className="chart-this"
-              aria-pressed={chartOpen}
-              aria-controls="balances-chart"
-              onClick={() => setChartOpen((open) => !open)}
-              disabled={!rows}
-              title="Chart the balances on screen by the current grouping"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-                <rect x="1" y="7" width="3" height="6" rx="1" />
-                <rect x="5.5" y="3" width="3" height="10" rx="1" />
-                <rect x="10" y="5" width="3" height="8" rx="1" />
-              </svg>
-              Chart this
-            </button>
             <label className="group-by">
               Group by
               <select value={groupBy} onChange={(e) => setGroupBy(e.target.value as GroupBy)}>
@@ -211,19 +184,6 @@ export function Dashboard() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          {chartOpen && (
-            <div className="grid-chart" id="balances-chart">
-              <div className="grid-chart-host" ref={chartHost} />
-              <button
-                type="button"
-                className="grid-chart-close"
-                aria-label="Close chart"
-                onClick={() => setChartOpen(false)}
-              >
-                ×
-              </button>
-            </div>
-          )}
           {rows && practice && (
             <BalancesGrid
               ref={grid}
