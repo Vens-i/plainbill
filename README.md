@@ -40,6 +40,9 @@ balance that never gets paid.
 - One grid of every balance, grouped by status, with a suggested next step for each one.
 - Send a bill in one click: a PayPal invoice plus a short, friendly email with a link to the
   explained statement.
+- The email's message is drafted in the patient's language (any of the statement's 10), starting
+  with the one they last read their statement in, and can be made simpler. Every figure in it is
+  checked against the bill first.
 - Payments show up live on the dashboard.
 
 **For the office manager**
