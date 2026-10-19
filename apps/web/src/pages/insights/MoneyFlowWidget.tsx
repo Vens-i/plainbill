@@ -4,8 +4,10 @@
  * Every billed dollar flows left to right into where it ended up, with particles moving along
  * each stream in proportion to the money. It reads balances through Studio's data engine, so
  * page filters reshape it; clicking a stage (an age bucket, Denied) cross-filters the rest of
- * the report; and when a payment lands, the streams re-balance and a coin travels from what was
- * owed into Collected. Amounts are the core's, summed in cents (flow.ts); nothing is estimated.
+ * the report (the selection shows above the chart, with a way to clear it); hovering a stage or
+ * stream traces it and dims the rest; and when a payment lands, the streams re-balance and a coin
+ * travels from what was owed into Collected. Amounts are the core's, summed in cents (flow.ts);
+ * nothing is estimated.
  */
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { AgWidgetField, AgWidgetParams } from 'ag-studio';
@@ -24,6 +26,7 @@ import {
   type FlowNodeId,
   type FlowRow,
   type LinkShape,
+  type NodeBox,
 } from './flow';
 
 const FIELDS = [
@@ -71,6 +74,22 @@ function hash(text: string, i: number): number {
   return ((h >>> 0) % 10_000) / 10_000;
 }
 
+/** What's being traced: a hovered stream, or a hovered, focused or selected stage. */
+type Hot = { link: string } | { node: FlowNodeId } | null;
+
+/** The streams a trace lights up: the stream itself, or every stream into and out of the stage. */
+function hotLinks(hot: Hot, layout: FlowLayout | null): Set<string> {
+  if (!hot || !layout) return new Set();
+  if ('link' in hot) return new Set([hot.link]);
+  return new Set(
+    layout.links
+      .filter((l) => l.link.from === hot.node || l.link.to === hot.node)
+      .map((l) => l.link.id),
+  );
+}
+
+const pct = (cents: number, of: number) => (of > 0 ? `${Math.round((cents / of) * 100)}%` : '');
+
 interface Burst {
   key: number;
   from: { x: number; y: number };
@@ -88,6 +107,7 @@ export function MoneyFlowWidget(params: AgWidgetParams) {
   const [error, setError] = useState<string | null>(null);
   const [hover, setHover] = useState<{ text: string; x: number; y: number } | null>(null);
   const [selected, setSelected] = useState<FlowNodeId | null>(null);
+  const [traced, setTraced] = useState<Hot>(null);
   const [burst, setBurst] = useState<Burst | null>(null);
   const fieldsRef = useRef<Map<string, AgWidgetField>>(new Map());
   const reduced = useMemo(prefersReducedMotion, []);
@@ -191,9 +211,18 @@ export function MoneyFlowWidget(params: AgWidgetParams) {
     keepOut.current = labelKeepOut([...labels].map((t) => t.getBBox()));
   });
 
+  // Hovering wins; otherwise the cross-filter selection stays traced.
+  const hot: Hot = useMemo(
+    () => traced ?? (selected ? { node: selected } : null),
+    [traced, selected],
+  );
+  const lit = useMemo(() => hotLinks(hot, layout), [hot, layout]);
+
   // Particles on a canvas over the ribbons. The canvas only exists once there is a layout.
   const layoutRef = useRef(layout);
   layoutRef.current = layout;
+  const litRef = useRef(lit);
+  litRef.current = lit;
   const hasLayout = layout !== null;
   useEffect(() => {
     const el = canvas.current;
@@ -216,7 +245,11 @@ export function MoneyFlowWidget(params: AgWidgetParams) {
         ctx.rect(0, 0, l.width, l.height);
         for (const b of keepOut.current) ctx.rect(b.x, b.y, b.width, b.height);
         ctx.clip('evenodd');
-        for (const shape of l.links) drawParticles(ctx, shape, now);
+        const focus = litRef.current;
+        for (const shape of l.links) {
+          const dim = focus.size > 0 && !focus.has(shape.link.id);
+          drawParticles(ctx, shape, now, dim ? 0.12 : 0.6);
+        }
         ctx.restore();
       }
       raf = requestAnimationFrame(draw);
@@ -232,8 +265,15 @@ export function MoneyFlowWidget(params: AgWidgetParams) {
     widgetApi.toggleCrossFilter({ type: 'value', group: 0, field, value: node.filter.value });
     setSelected((s) => (s === node.id ? null : node.id));
   };
+  const selectedNode = target?.nodes.find((n) => n.id === selected) ?? null;
 
   const settled = shown === target;
+  const billedNow = shown?.nodes.find((n) => n.id === 'billed')?.cents ?? 0;
+  const isLit = (id: FlowNodeId) =>
+    hot !== null &&
+    (('node' in hot && hot.node === id) ||
+      (layout?.links.some((l) => lit.has(l.link.id) && (l.link.from === id || l.link.to === id)) ??
+        false));
   const billed = target?.nodes.find((n) => n.id === 'billed')?.cents ?? 0;
   const collected = target?.nodes.find((n) => n.id === 'collected')?.cents ?? 0;
   const owed = (target?.nodes ?? [])
@@ -245,7 +285,23 @@ export function MoneyFlowWidget(params: AgWidgetParams) {
       <p className="flow-summary">
         <strong>{$(billed)}</strong> billed · <strong className="flow-in">{$(collected)}</strong>{' '}
         collected · <strong className="flow-owed">{$(owed)}</strong> still owed
-        <span className="flow-hint">Hover a stream · click an age or Denied to filter</span>
+        {selectedNode ? (
+          <span className="flow-filter" role="status">
+            Filtered to <strong>{selectedNode.label}</strong>
+            <button
+              type="button"
+              className="flow-filter-clear"
+              onClick={() => toggle(selectedNode)}
+            >
+              Clear filter
+            </button>
+          </span>
+        ) : (
+          <span className="flow-hint">Hover to trace · click an age or Denied to filter</span>
+        )}
+      </p>
+      <p className="flow-caption">
+        Read left to right: every billed dollar ends in exactly one place.
       </p>
       <div className="flow-stage" ref={frame}>
         {error ? (
@@ -255,12 +311,15 @@ export function MoneyFlowWidget(params: AgWidgetParams) {
         ) : layout ? (
           <>
             <svg
-              className={reduced ? 'flow-svg' : 'flow-svg flow-enter'}
+              className={`flow-svg${reduced ? '' : ' flow-enter'}${lit.size ? ' flow-focus' : ''}`}
               width={layout.width}
               height={layout.height}
               role="img"
               aria-label={`Where every dollar went: ${$(billed)} billed, ${$(collected)} collected, ${$(owed)} still owed.`}
-              onMouseLeave={() => setHover(null)}
+              onMouseLeave={() => {
+                setHover(null);
+                setTraced(null);
+              }}
             >
               <defs>
                 <clipPath id={clipId}>
@@ -278,11 +337,12 @@ export function MoneyFlowWidget(params: AgWidgetParams) {
                   <path
                     key={l.link.id}
                     d={l.path}
-                    className="flow-link"
-                    fill={l.color}
+                    className={`flow-link${lit.has(l.link.id) ? ' flow-hot' : ''}`}
+                    style={{ '--tint': l.tint, '--color': l.color } as React.CSSProperties}
+                    onMouseEnter={() => setTraced({ link: l.link.id })}
                     onMouseMove={(e) =>
                       setHover({
-                        text: `${label(l.link.from, layout)} → ${label(l.link.to, layout)}: ${$(l.link.cents)} · ${l.link.visits} ${l.link.visits === 1 ? 'visit' : 'visits'}`,
+                        text: `${label(l.link.from, layout)} → ${label(l.link.to, layout)}: ${$(l.link.cents)} · ${pct(l.link.cents, billedNow)} of billed · ${l.link.visits} ${l.link.visits === 1 ? 'visit' : 'visits'}`,
                         x: e.nativeEvent.offsetX,
                         y: e.nativeEvent.offsetY,
                       })
@@ -293,11 +353,14 @@ export function MoneyFlowWidget(params: AgWidgetParams) {
               {layout.nodes.map((b) => (
                 <g
                   key={b.node.id}
-                  className={`flow-node${b.node.filter ? ' flow-clickable' : ''}${selected === b.node.id ? ' flow-selected' : ''}`}
+                  className={`flow-node${b.node.filter ? ' flow-clickable' : ''}${selected === b.node.id ? ' flow-selected' : ''}${isLit(b.node.id) ? ' flow-node-hot' : ''}`}
                   onClick={() => toggle(b.node)}
+                  onMouseEnter={() => setTraced({ node: b.node.id })}
+                  onFocus={() => setTraced({ node: b.node.id })}
+                  onBlur={() => setTraced(null)}
                   onMouseMove={(e) =>
                     setHover({
-                      text: `${b.node.label}: ${$(b.node.cents)} · ${b.node.visits} ${b.node.visits === 1 ? 'visit' : 'visits'}${b.node.filter ? ' · click to filter' : ''}`,
+                      text: `${b.node.label}: ${$(b.node.cents)}${b.node.column > 0 ? ` · ${pct(b.node.cents, billedNow)} of billed` : ''} · ${b.node.visits} ${b.node.visits === 1 ? 'visit' : 'visits'}${b.node.filter ? (selected === b.node.id ? ' · click to clear the filter' : ' · click to filter') : ''}`,
                       x: e.nativeEvent.offsetX,
                       y: e.nativeEvent.offsetY,
                     })
@@ -329,18 +392,19 @@ export function MoneyFlowWidget(params: AgWidgetParams) {
                     />
                   )}
                   <rect x={b.x} y={b.y} width={b.w} height={b.h} rx={3} fill={b.node.color} />
-                  <text
-                    className="flow-label"
-                    x={b.node.column === 0 ? b.x - 10 : b.x + b.w + 8}
-                    y={b.y + b.h / 2}
-                    textAnchor={b.node.column === 0 ? 'end' : 'start'}
-                    dominantBaseline="middle"
-                  >
-                    <tspan className="flow-label-name">{b.node.label}</tspan>
+                  <text className="flow-label" {...labelAt(b, layout)} dominantBaseline="middle">
+                    <tspan className="flow-label-name" style={{ fill: b.node.ink }}>
+                      {b.node.label}
+                    </tspan>
                     <tspan className="flow-label-amount" dx="6">
                       {/* Whole dollars while streams are moving; exact once they settle. */}
                       {$(settled ? b.node.cents : Math.round(b.node.cents / 100) * 100)}
                     </tspan>
+                    {b.node.column === 1 && (
+                      <tspan className="flow-label-pct" dx="6">
+                        {pct(b.node.cents, billedNow)}
+                      </tspan>
+                    )}
                   </text>
                 </g>
               ))}
@@ -380,11 +444,30 @@ export function MoneyFlowWidget(params: AgWidgetParams) {
   );
 }
 
+/**
+ * Where a stage's label goes: left of Billed; right of the other stages, except a stage with
+ * streams leaving it (the patient share), whose label sits just above it, clear of the streams.
+ */
+function labelAt(b: NodeBox, layout: FlowLayout) {
+  if (b.node.column === 0) {
+    return { x: b.x - 10, y: b.y + b.h / 2, textAnchor: 'end' as const };
+  }
+  if (layout.links.some((l) => l.link.from === b.node.id)) {
+    return { x: b.x, y: b.y - 11, textAnchor: 'start' as const };
+  }
+  return { x: b.x + b.w + 8, y: b.y + b.h / 2, textAnchor: 'start' as const };
+}
+
 function label(id: FlowNodeId, layout: FlowLayout): string {
   return layout.nodes.find((b) => b.node.id === id)?.node.label ?? id;
 }
 
-function drawParticles(ctx: CanvasRenderingContext2D, shape: LinkShape, now: number) {
+function drawParticles(
+  ctx: CanvasRenderingContext2D,
+  shape: LinkShape,
+  now: number,
+  alpha: number,
+) {
   const n = particleCount(shape.link);
   const spread = Math.max(0, shape.thickness / 2 - 2.5);
   ctx.fillStyle = shape.color;
@@ -395,9 +478,9 @@ function drawParticles(ctx: CanvasRenderingContext2D, shape: LinkShape, now: num
     const t = ((now / TRIP_MS) * speed + phase) % 1;
     const p = bezierPoint(shape.curve, t);
     // Fade in and out at the ends so particles appear to come out of the nodes.
-    ctx.globalAlpha = Math.min(1, t * 6, (1 - t) * 6) * 0.9;
+    ctx.globalAlpha = Math.min(1, t * 6, (1 - t) * 6) * alpha;
     ctx.beginPath();
-    ctx.arc(p.x, p.y + lane, shape.thickness > 10 ? 2.4 : 1.8, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y + lane, shape.thickness > 10 ? 2 : 1.5, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
