@@ -467,6 +467,91 @@
 .msg-head .link-btn + .link-btn {
   margin-left: 6px;
 }
+.lang-menu {
+  position: relative;
+  margin-left: 6px;
+}
+.lang-menu-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+.lang-menu-button:hover:not([disabled]) {
+  border-color: var(--teal-200);
+  color: var(--teal-800);
+}
+.lang-menu-button[disabled] {
+  color: var(--ink-3);
+  cursor: progress;
+}
+.lang-menu-button[aria-expanded='true'] {
+  border-color: var(--teal-700);
+  color: var(--teal-800);
+}
+.lang-menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  min-width: 250px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+}
+.lang-menu-list button {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--ink);
+  font-size: 13px;
+  text-align: left;
+}
+.lang-menu-list button:hover,
+.lang-menu-list button:focus-visible {
+  background: var(--teal-50);
+  outline: none;
+}
+.lang-menu-list button[aria-checked='true'] {
+  font-weight: 700;
+  color: var(--teal-800);
+}
+.lang-menu-check {
+  width: 12px;
+  flex: none;
+  color: var(--teal-700);
+}
+.lang-menu-name {
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 400;
+}
+.lang-menu-tag {
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--teal-100);
+  color: var(--teal-800);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
 .msg-badge {
   font-size: 11px;
   font-weight: 700;

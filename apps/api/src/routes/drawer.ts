@@ -115,8 +115,11 @@ export function registerDrawerRoutes(api: FastifyInstance, ctx: RouteContext): v
   });
 
   api.put<{ Params: { id: string } }>('/balances/:id/draft', async (request) => {
-    saveDraft(ctx.db, id(request.params.id), ctx.today(), parseDraft(request.body));
-    return drawer(id(request.params.id));
+    const balanceId = id(request.params.id);
+    saveDraft(ctx.db, balanceId, ctx.today(), parseDraft(request.body));
+    // The row's detail panel shows the draft's language.
+    publishChanged(ctx, [balanceId]);
+    return drawer(balanceId);
   });
 
   api.post<{ Params: { id: string } }>(

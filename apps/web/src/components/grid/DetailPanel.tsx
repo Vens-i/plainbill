@@ -95,6 +95,12 @@ export function DetailPanel({
           <div className="pb-owes-label">{owesLabel}</div>
           <div className="pb-owes-value">{owesValue}</div>
           {note && <div className="pb-owes-note">{note}</div>}
+          {data.invoice?.messageLang && (
+            <div className="pb-owes-note">
+              {data.invoice.status === 'draft' ? 'Draft message' : 'Message'} in{' '}
+              <span lang={data.invoice.messageLang.code}>{data.invoice.messageLang.language}</span>
+            </div>
+          )}
           {data.invoice?.statementView && (
             <div className="pb-owes-note">
               Viewed statement · {data.invoice.statementView.language}

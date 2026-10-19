@@ -7,7 +7,7 @@
  * patient our breakdown with PayPal's button and the secure pay link.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { formatLongDate, formatMoney, formatMoneyShort } from '@plainbill/core';
+import { formatLongDate, formatMoney, formatMoneyShort, noteLanguage } from '@plainbill/core';
 import type {
   DrawerData,
   MessageVariant,
@@ -16,6 +16,7 @@ import type {
 } from '@plainbill/api/contract';
 import { api, ApiError } from '../lib/api';
 import { FlagChoices } from './FlagChoices';
+import { MessageLanguageMenu } from './MessageLanguageMenu';
 import { StatusPill } from './StatusPill';
 import { toast } from './Toast';
 
@@ -63,7 +64,9 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
   const [message, setMessage] = useState('');
   const [source, setSource] = useState<Source>('template');
   const [variant, setVariant] = useState<MessageVariant>('default');
+  /** The language the message is in, and the one staff picked (English may stand in). */
   const [lang, setLang] = useState('en');
+  const [requested, setRequested] = useState('en');
   const [option, setOption] = useState<PaymentOption>({ type: 'full' });
   const [drafting, setDrafting] = useState(false);
   const [notes, setNotes] = useState<string[]>([]);
@@ -76,6 +79,7 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
     async (v: MessageVariant, l: string, o: PaymentOption) => {
       const seq = ++draftSeq.current;
       setDrafting(true);
+      setRequested(l);
       setNotes([]);
       try {
         const r = await api.draftMessage(balanceId, { variant: v, lang: l }, o);
@@ -103,6 +107,8 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
       setOption(d.draft.paymentOption);
       setVariant('default');
       setLang(d.draft.lang);
+      setRequested(d.draft.requestedLang);
+      setNotes([]);
       if (redraft && d.balance.status === 'ready' && !d.draft.saved && d.ai.available)
         void draft('default', d.draft.requestedLang, d.draft.paymentOption);
     },
@@ -143,7 +149,7 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
     if (data && sameOption(o, option)) return;
     setOption(o);
     // Keep the wording in step with the option unless staff edited it by hand.
-    if (source !== 'edited') void draft(variant, lang, o);
+    if (source !== 'edited') void draft(variant, requested, o);
   };
 
   const resolveFlag = (path: string, value: string) =>
@@ -317,30 +323,30 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
                             : 'Template'}
                       </span>
                       <div style={{ flex: 1 }} />
-                      {(['default', 'simpler', 'spanish'] as const)
-                        .filter((v) => (v === 'spanish' ? lang !== 'es' : v !== variant))
-                        .map((v) => (
-                          <button
-                            key={v}
-                            type="button"
-                            className="link-btn"
-                            disabled={drafting}
-                            onClick={() =>
-                              void (v === 'spanish'
-                                ? draft('default', 'es', option)
-                                : draft(v, lang, option))
-                            }
-                          >
-                            {v === 'default'
-                              ? 'Original'
-                              : v === 'simpler'
-                                ? 'Make simpler'
-                                : 'Spanish'}
-                          </button>
-                        ))}
+                      <button
+                        type="button"
+                        className="link-btn"
+                        disabled={drafting}
+                        onClick={() =>
+                          void draft(
+                            variant === 'simpler' ? 'default' : 'simpler',
+                            requested,
+                            option,
+                          )
+                        }
+                      >
+                        {variant === 'simpler' ? 'Original' : 'Make simpler'}
+                      </button>
+                      <MessageLanguageMenu
+                        value={requested}
+                        patientLang={data.patientLang}
+                        disabled={drafting}
+                        onChange={(l) => void draft(variant, l, option)}
+                      />
                     </div>
                     <textarea
                       className="msg-text"
+                      lang={lang}
                       value={drafting ? '' : message}
                       placeholder={drafting ? '✦ Drafting…' : ''}
                       onChange={(e) => {
@@ -360,6 +366,17 @@ export function ReviewDrawer({ balanceId, onClose }: Props) {
                         {n}
                       </div>
                     ))}
+                    {!drafting && lang !== requested && notes.length === 0 && (
+                      <div className="msg-note">
+                        There’s no {noteLanguage(requested)?.name ?? requested} template, so this is
+                        the English one.
+                      </div>
+                    )}
+                    {!drafting && lang !== requested && (
+                      <div className="msg-note" role="status">
+                        This message is in English and will be sent in English.
+                      </div>
+                    )}
                   </section>
 
                   <section>
