@@ -4,6 +4,7 @@
 import type { ICellRendererParams } from 'ag-grid-community';
 import {
   agingLabel,
+  formatDob,
   formatShortDate,
   STATUS_META,
   type AgingBucket,
@@ -64,6 +65,18 @@ function AgingPill({ days, bucket }: { days: number; bucket: AgingBucket }) {
         {agingLabel(bucket)}
       </span>
     </div>
+  );
+}
+
+/** "04/17/1984" with the age beside it, to match the patient at the desk or on the phone. */
+export function DobCell({ data, node }: PatientParams) {
+  if (!data || node.rowPinned) return null;
+  if (!data.dob) return <span className="pb-muted">Not on file</span>;
+  return (
+    <span className="pt-dob">
+      {formatDob(data.dob)}
+      {data.age != null && <span className="pt-dob-age">{data.age} y</span>}
+    </span>
   );
 }
 

@@ -546,13 +546,17 @@ export interface PatientVisit {
 
 /**
  * GET /api/patients: one row per patient, summed in integer cents from the dashboard's rows.
- * Contact details (DOB, member ID, address, email) are deliberately not here.
+ * Date of birth is here so staff can match the patient; member ID, address and email are not.
  */
 export interface PatientSummary {
   patientId: number;
   name: string;
   /** "Delgado, Maria", for sorting by last name. */
   sortName: string;
+  /** Null when no remittance or intake gave one. */
+  dob: IsoDate | null;
+  /** Age on the practice's today (demo-aware). */
+  age: number | null;
   visitCount: number;
   billedCents: number;
   patientShareCents: number;

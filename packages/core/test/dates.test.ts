@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   addMonths,
+  ageOn,
+  dobSearchForms,
   daysBetween,
+  formatDob,
   formatLongDate,
   formatMonthDay,
   formatShortDate,
@@ -44,5 +47,16 @@ describe('dates', () => {
     expect(formatLongDate('2026-10-03')).toBe('Oct 3, 2026');
     expect(formatMonthDay('2026-10-03')).toBe('Oct 3');
     expect(monthKey('2026-10-03')).toBe('2026-10');
+    expect(formatDob('1984-04-17')).toBe('04/17/1984');
+    expect(formatDob('1958-09-04')).toBe('09/04/1958');
+    expect(dobSearchForms('1958-09-04')).toEqual(['1958-09-04', '09/04/1958', '9/4/1958']);
+  });
+
+  it('counts age in whole years, turning over on the birthday', () => {
+    expect(ageOn('1984-04-17', '2026-10-10')).toBe(42);
+    expect(ageOn('1988-10-30', '2026-10-10')).toBe(37);
+    expect(ageOn('1988-10-10', '2026-10-10')).toBe(38);
+    expect(ageOn('2000-02-29', '2027-02-28')).toBe(26);
+    expect(ageOn('2000-02-29', '2027-03-01')).toBe(27);
   });
 });

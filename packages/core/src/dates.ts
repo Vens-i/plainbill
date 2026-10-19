@@ -101,6 +101,25 @@ export function formatLongDate(date: IsoDate): string {
   return `${MONTHS[m - 1]} ${d}, ${y}`;
 }
 
+/** "04/17/1984", the way the front desk reads a date of birth. */
+export function formatDob(date: IsoDate): string {
+  const [y, m, d] = parts(date);
+  return `${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}/${y}`;
+}
+
+/** Every way staff type a date of birth: "1984-04-17", "04/17/1984", "4/17/1984". */
+export function dobSearchForms(date: IsoDate): string[] {
+  const us = formatDob(date);
+  return [date, us, us.replace(/(^|\/)0/g, '$1')];
+}
+
+/** Age in whole years on `today` (one less until this year's birthday). */
+export function ageOn(dob: IsoDate, today: IsoDate): number {
+  const [by, bm, bd] = parts(dob);
+  const [ty, tm, td] = parts(today);
+  return ty - by - (tm < bm || (tm === bm && td < bd) ? 1 : 0);
+}
+
 /** "Oct 3" */
 export function formatMonthDay(date: IsoDate): string {
   const [, m, d] = parts(date);

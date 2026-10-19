@@ -19,7 +19,7 @@ import type {
   RowClickedEvent,
   RowDataUpdatedEvent,
 } from 'ag-grid-community';
-import { formatMoney, formatMoneyShort, formatShortDate } from '@plainbill/core';
+import { dobSearchForms, formatMoney, formatMoneyShort, formatShortDate } from '@plainbill/core';
 import type { PatientSummary, PatientVisit } from '@plainbill/api/contract';
 import { useShell } from '../../components/AppShell';
 import { ReviewDrawer } from '../../components/ReviewDrawer';
@@ -28,6 +28,7 @@ import { PAID_NOW_WINDOW_MS } from '../../lib/dashboard';
 import { useServerEvents } from '../../lib/useServerEvents';
 import { gridTheme } from '../../theme';
 import {
+  DobCell,
   LastActivityCell,
   OldestOpenCell,
   PatientCaretCell,
@@ -56,6 +57,8 @@ function totalsRow(rows: PatientSummary[]): PatientSummary {
     patientId: -1,
     name: `Total · ${plural(rows.length, 'patient')}`,
     sortName: '',
+    dob: null,
+    age: null,
     visitCount: sum((p) => p.visitCount),
     billedCents: sum((p) => p.billedCents),
     patientShareCents: sum((p) => p.patientShareCents),
@@ -207,6 +210,15 @@ export function Patients() {
         cellRenderer: PatientNameCell,
         getQuickFilterText: (p) => p.data?.name ?? '',
         sort: 'asc',
+      },
+      {
+        colId: 'dob',
+        headerName: 'Date of birth',
+        field: 'dob',
+        width: 140,
+        cellRenderer: DobCell,
+        // Typed either way: "04/17/1984", "4/17/1984" or "1984-04-17".
+        getQuickFilterText: (p) => (p.data?.dob ? dobSearchForms(p.data.dob).join(' ') : ''),
       },
       { headerName: 'Visits', field: 'visitCount', width: 78, type: 'rightAligned' },
       {
@@ -413,8 +425,8 @@ export function Patients() {
           <input
             className="quick-filter"
             type="search"
-            placeholder="Search by name…"
-            aria-label="Search patients by name"
+            placeholder="Search name or DOB…"
+            aria-label="Search patients by name or date of birth"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
