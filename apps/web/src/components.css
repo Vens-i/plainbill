@@ -804,66 +804,6 @@
   opacity: 0.6;
   cursor: default;
 }
-.chart-this {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  box-shadow: 0 1px 2px rgba(28, 43, 45, 0.08);
-}
-.chart-this svg {
-  fill: var(--teal-700);
-}
-.chart-this:hover {
-  border-color: var(--teal-700);
-}
-.chart-this:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-.chart-this[aria-pressed='true'] {
-  border-color: var(--teal-700);
-  background: var(--teal-50);
-  color: var(--teal-800);
-}
-/* "Chart this" panel between the toolbar and the grid; AG Grid draws the chart into the host. */
-.grid-chart {
-  position: relative;
-  /* Room on the right for the close button, clear of the chart's own menu. */
-  padding: 12px 44px 8px 16px;
-  border-bottom: 1px solid var(--line-soft);
-  background: var(--surface);
-}
-.grid-chart-host {
-  height: 320px;
-}
-.grid-chart-close {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  width: 28px;
-  height: 28px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--ink-3);
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-}
-.grid-chart-close:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-}
 .ai-btn[aria-disabled='true'] {
   cursor: not-allowed;
   opacity: 0.75;

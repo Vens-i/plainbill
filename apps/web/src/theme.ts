@@ -146,7 +146,7 @@ export const CHART_COLORS = {
 };
 
 /**
- * Where a bill's money went, shared by the Breakdown sparkline and the "Chart this" chart:
+ * Where a bill's money went, shared by the Breakdown sparkline and integrated charts:
  * warm gray for the discount, blue for insurance, green for what the patient paid, teal for
  * what's still owed.
  */

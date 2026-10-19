@@ -1,14 +1,13 @@
 /**
  * The patient balances grid: AG Grid Enterprise with row grouping (by status by default),
  * master/detail, quick filter, custom renderers, a Breakdown sparkline per row, integrated charts
- * ("Chart this", or select cells and right-click → Chart Range), and a live payment flash driven
- * by Server-Sent Events.
+ * (select cells and right-click → Chart Range), and a live payment flash driven by Server-Sent
+ * Events.
  */
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, type Ref } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import type { AgChartTheme, AgSparklineOptions } from 'ag-charts-community';
 import type {
-  ChartRef,
   ColDef,
   GetRowIdParams,
   GridApi,
@@ -25,7 +24,6 @@ import {
   formatMoney,
   formatMoneyShort,
   formatShortDate,
-  STATUS_META,
   STATUS_ORDER,
   type BalanceStatus,
   type IsoDate,
@@ -51,11 +49,6 @@ export interface BalancesGridHandle {
   applyPayment(row: BalanceRow): void;
   /** Expand a row's details and scroll to it. */
   reveal(id: number): void;
-  /**
-   * Draw an integrated chart of the rows that pass the filters, by the current grouping, into
-   * `container`. Destroy it through the returned ref.
-   */
-  chart(container: HTMLElement): ChartRef | undefined;
 }
 
 interface Props {
@@ -94,14 +87,6 @@ const BREAKDOWN_SPARKLINE: AgSparklineOptions<BreakdownBar> = {
     }),
   },
 };
-
-/** "Chart this": the category column for each grouping; the series are the money columns. */
-const CHART_CATEGORY: Record<GroupBy, string> = {
-  status: 'statusLabel',
-  payer: 'payer',
-  provider: 'groupProvider',
-};
-const CHART_SERIES = ['billed', 'insurancePaid', 'owes'];
 
 /** Integrated charts in the Plainbill palette and font. Money columns hold cents. */
 const PLAINBILL_CHART_THEME: AgChartTheme = {
@@ -176,14 +161,6 @@ export function BalancesGrid({
   const columnDefs = useMemo<ColDef<BalanceRow>[]>(
     () => [
       { colId: 'status', field: 'status', hide: true, rowGroup: groupBy === 'status' },
-      // The status's label ("Needs review"), as the category for "Chart this".
-      {
-        colId: 'statusLabel',
-        headerName: 'Status',
-        valueGetter: (p) => (p.data ? STATUS_META[p.data.status].label : null),
-        hide: true,
-        chartDataType: 'category',
-      },
       {
         colId: 'groupPayer',
         valueGetter: (p) => p.data?.payerName,
@@ -408,26 +385,6 @@ export function BalancesGrid({
       if (node.parent && !node.parent.expanded) node.parent.setExpanded(true);
       node.setExpanded(true);
       scrollToRow(id);
-    },
-    chart(container) {
-      // Rows that pass the filters, summed per category. The chart stays linked to the grid, so
-      // a live payment moves its bars too.
-      return apiRef.current?.createRangeChart({
-        cellRange: { columns: [CHART_CATEGORY[groupBy], ...CHART_SERIES] },
-        chartContainer: container,
-        chartType: 'groupedColumn',
-        aggFunc: 'sum',
-        suppressChartRanges: true,
-        chartThemeName: 'plainbill',
-        chartThemeOverrides: {
-          common: {
-            title: {
-              enabled: true,
-              text: `Billed, insurance paid and patient owes, by ${groupBy}`,
-            },
-          },
-        },
-      });
     },
   }));
 
